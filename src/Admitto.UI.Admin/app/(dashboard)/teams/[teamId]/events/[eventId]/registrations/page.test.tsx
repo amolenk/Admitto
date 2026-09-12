@@ -80,8 +80,8 @@ function mockData(overrides: {
     });
 }
 
-function renderPage() {
-    setRoute({ params: { teamId: TEAM_ID, eventId: EVENT_ID } });
+function renderPage(searchParams = new URLSearchParams()) {
+    setRoute({ params: { teamId: TEAM_ID, eventId: EVENT_ID }, searchParams });
     return renderWithProviders(<RegistrationsPage />);
 }
 
@@ -457,6 +457,17 @@ describe("RegistrationsPage", () => {
         await screen.findByText("ada@example.com");
 
         await user.click(screen.getByRole("button", { name: "Add registration" }));
+
+        expect(await screen.findByRole("heading", { name: "Add registration" })).toBeInTheDocument();
+        expect(screen.getByLabelText("First name")).toBeInTheDocument();
+    });
+
+    // Given the registrations page is opened with the create-registration query
+    // When the page loads
+    // Then the actual add-registration sheet opens
+    it("route_createRegistrationQuery_opensAddRegistrationSheet", async () => {
+        renderPage(new URLSearchParams("create=1"));
+        await screen.findByText("ada@example.com");
 
         expect(await screen.findByRole("heading", { name: "Add registration" })).toBeInTheDocument();
         expect(screen.getByLabelText("First name")).toBeInTheDocument();

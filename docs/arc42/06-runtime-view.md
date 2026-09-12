@@ -209,6 +209,8 @@ The previous Partner API route `GET /api/events/{eventId}/registrations/{registr
 
 The admin scanner is online-only. It reads the literal `RegistrationId` from the QR code and sends that raw value together with the selected team and event to the Admin API; the server performs all scope and registration validation. Crew can list registrations, open attendee detail, create registrations, and check attendees in; cancellation, ticket changes, email resend, and reconfirmation remain Organizer/Owner operations. Check-in requires the selected event to be `Active`, but does not require the current time to be within the event's start/end dates.
 
+The scanner client defaults to the rear camera and allows a camera switch; a keyboard-wedge scanner feeds the raw `RegistrationId` into the same authoritative check-in API path. On success it shows the attendee and ticket selections for two seconds, resumes scanning, increments the visible checked-in count locally, and invalidates/refetches the attendance summary. `AlreadyCheckedIn`, `Cancelled`, `InvalidForEvent`, and `EventNotActive` are terminal outcomes shown until dismissal; only a network failure retains the credential for an explicit retry. An early-arrival warning appears from 30 minutes before the event start until start time and can be acknowledged without blocking scanning.
+
 ```mermaid
 sequenceDiagram
   participant Scanner as Admin scanner

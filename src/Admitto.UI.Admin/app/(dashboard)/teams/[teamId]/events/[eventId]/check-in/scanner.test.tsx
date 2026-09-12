@@ -18,8 +18,9 @@ function response(outcome: "success" | "alreadyCheckedIn" | "cancelled" | "inval
 
 function fakeDecoder() {
     let decode: ((value: string) => void) | undefined;
-    const decoder: DecoderAdapter = { start: vi.fn(async (callback) => { decode = callback; }), stop: vi.fn(async () => undefined) };
-    return { decoder, scan: (value: string) => decode?.(value) };
+    let queued: string | undefined;
+    const decoder: DecoderAdapter = { start: vi.fn(async (callback) => { decode = callback; if (queued) { callback(queued); queued = undefined; } }), stop: vi.fn(async () => undefined) };
+    return { decoder, scan: (value: string) => { if (decode) decode(value); else queued = value; } };
 }
 
 function SummaryHarness({ decoder }: { decoder: DecoderAdapter }) {
@@ -38,7 +39,7 @@ describe("check-in scanner", () => {
     // Given a fake decoder emits a credential
     // When the scanner receives the decoded value
     // Then it immediately dispatches one check-in request and shows the attendee and ticket
-    it("shows a successful attendee and ticket for two seconds", async () => {
+    it("submit_successfulCredential_showsAttendeeAndTicket", async () => {
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} timeZone="Europe/Amsterdam" decoder={fake.decoder} />);
         await act(async () => fake.scan("credential-1"));
@@ -50,7 +51,7 @@ describe("check-in scanner", () => {
     // Given the scanner page is open before the early-arrival window
     // When the 30-minute threshold passes
     // Then the warning appears without interrupting scanning
-    it("shows the early-arrival warning when the threshold arrives", async () => {
+    it("clock_thresholdArrives_showsEarlyArrivalWarning", async () => {
         vi.useFakeTimers();
         const startsAt = new Date(2030, 0, 1, 10, 0).toISOString();
         vi.setSystemTime(new Date(new Date(startsAt).getTime() - 30 * 60_000 - 1000));
@@ -69,7 +70,7 @@ describe("check-in scanner", () => {
     // Given the scanner has paused after a successful scan
     // When two seconds elapse
     // Then the result clears and a later camera callback is accepted
-    it("automatically resumes camera scanning after two seconds", async () => {
+    it("timer_twoSecondsElapse_resumesCameraScanning", async () => {
         vi.useFakeTimers();
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
@@ -88,7 +89,7 @@ describe("check-in scanner", () => {
     // Given the camera reports the same visible QR code more than once
     // When the first check-in succeeds
     // Then the credential is suppressed until the success state is reset
-    it("does not resubmit a successful credential while it remains visible", async () => {
+    it("submit_duplicateDecoderValue_doesNotResubmitWhileSuccessVisible", async () => {
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
 
@@ -101,7 +102,7 @@ describe("check-in scanner", () => {
     // Given a keyboard wedge sends an Enter key outside an editable field
     // When the scanner receives the wedge payload
     // Then it submits the credential without requiring manual confirmation
-    it("accepts keyboard wedge input", async () => {
+    it("keydown_wedgePayloadArrives_submitsCredential", async () => {
         renderWithProviders(<CheckInScanner {...props} decoder={fakeDecoder().decoder} />);
         await act(async () => { for (const key of ["w", "e", "d", "g", "e", "Enter"]) window.dispatchEvent(new KeyboardEvent("keydown", { key })); });
         expect(post).toHaveBeenCalledWith(expect.stringContaining("/check-in"), { credential: "wedge" });
@@ -115,7 +116,7 @@ describe("check-in scanner", () => {
         ["cancelled", /Cancelled/],
         ["invalidForEvent", /not valid for this event/],
         ["eventNotActive", /not active/],
-    ] as const)("retains the %s outcome until dismissal", async (outcome, message) => {
+    ] as const)("submit_%s_outcomeRemainsUntilDismissed", async (outcome, message) => {
         post.mockResolvedValueOnce(response(outcome));
         const fake = fakeDecoder();
         const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
@@ -128,10 +129,29 @@ describe("check-in scanner", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
+    // Given a terminal non-success outcome is displayed
+    // When another camera value and keyboard-wedge value arrive
+    // Then neither replaces the outcome until it is dismissed
+    it("input_terminalOutcomeBlocksDecoderAndWedgeUntilDismissed", async () => {
+        post.mockResolvedValueOnce(response("alreadyCheckedIn")).mockResolvedValueOnce(response("success"));
+        const fake = fakeDecoder();
+        const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
+
+        await act(async () => fake.scan("duplicate"));
+        await act(async () => fake.scan("ignored-camera"));
+        await act(async () => { for (const key of ["i", "g", "n", "o", "r", "e", "d", "Enter"]) window.dispatchEvent(new KeyboardEvent("keydown", { key })); });
+        expect(post).toHaveBeenCalledTimes(1);
+        expect(screen.getByText(/Already checked in/)).toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "Dismiss" }));
+        await act(async () => fake.scan("accepted-after-dismiss"));
+        expect(post).toHaveBeenCalledTimes(2);
+    });
+
     // Given a cancelled registration is scanned
     // When the cancelled outcome is displayed
     // Then the operator can open the existing registration workflow
-    it("offers the registration workflow for cancelled outcomes", async () => {
+    it("submit_cancelledOutcome_linksToCreateRegistration", async () => {
         post.mockResolvedValueOnce(response("cancelled"));
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
@@ -140,14 +160,14 @@ describe("check-in scanner", () => {
 
         expect(screen.getByRole("link", { name: "Create registration" })).toHaveAttribute(
             "href",
-            "/teams/team/events/event/registrations",
+            "/teams/team/events/event/registrations?create=1",
         );
     });
 
     // Given the scanner shows an authoritative check-in count
     // When a check-in succeeds
     // Then the visible count increments immediately
-    it("increments the visible count immediately after success", async () => {
+    it("submit_successfulCheckIn_incrementsVisibleCountImmediately", async () => {
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} summary={{ checkedInCount: 2, expectedCount: 4 }} decoder={fake.decoder} />);
 
@@ -160,7 +180,7 @@ describe("check-in scanner", () => {
     // Given a matching registration returned by manual lookup
     // When the operator selects it and confirms check-in
     // Then the selected registration credential is submitted
-    it("looks up a registration and confirms the selected candidate", async () => {
+    it("lookup_eligibleCandidate_confirmSubmitsRegistration", async () => {
         get.mockResolvedValueOnce([{ registrationId: "r-manual", name: "Jane Doe", email: "jane@example.com", state: "eligible", checkedInAt: null }]);
         const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fakeDecoder().decoder} />);
         await user.type(screen.getByRole("textbox", { name: "Manual search" }), "jane");
@@ -174,7 +194,7 @@ describe("check-in scanner", () => {
     // Given a selected registration and a temporary network failure
     // When the operator retries the check-in
     // Then the retained selection and credential are submitted successfully
-    it("retains the manual selection for a network retry", async () => {
+    it("submit_networkFailure_retryResubmitsRetainedCredential", async () => {
         get.mockResolvedValueOnce([{ registrationId: "r-retry", name: "Retry Person", email: "retry@example.com", state: "eligible", checkedInAt: null }]);
         post.mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(response("success"));
         const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fakeDecoder().decoder} />);
@@ -192,7 +212,7 @@ describe("check-in scanner", () => {
     // Given the scanner is displaying the server's check-in summary
     // When a check-in succeeds and the authoritative summary changes
     // Then the scanner invalidates/refetches that query and renders the new values
-    it("refetches and renders updated authoritative summary values after success", async () => {
+    it("submit_successfulCheckIn_refetchesAuthoritativeSummary", async () => {
         let authoritativeCount = 2;
         get.mockImplementation((url: string) => {
             if (url === SUMMARY_URL) {

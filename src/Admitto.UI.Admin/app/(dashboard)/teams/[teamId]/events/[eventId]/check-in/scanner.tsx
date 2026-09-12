@@ -18,11 +18,6 @@ export type DecoderAdapter = {
     stop: () => Promise<void>;
 };
 
-export type CheckInClient = {
-    checkIn: (credential: string) => Promise<CheckInResponse>;
-    lookup: (query: string) => Promise<CheckInLookupCandidateDto[]>;
-};
-
 export function createHtml5QrDecoder(elementId: string): DecoderAdapter {
     let scanner: any;
     return {
@@ -47,7 +42,6 @@ type Props = {
     timeZone: string;
     decoder?: DecoderAdapter;
     summary?: CheckInSummaryDto;
-    checkInClient?: CheckInClient;
 };
 
 type Status = {
@@ -56,7 +50,7 @@ type Status = {
     message: string;
 } | null;
 
-export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: suppliedDecoder, summary, checkInClient }: Props) {
+export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: suppliedDecoder, summary }: Props) {
     const queryClient = useQueryClient();
     const defaultDecoder = useMemo(() => createHtml5QrDecoder("check-in-reader"), []);
     const decoder = suppliedDecoder ?? defaultDecoder;
@@ -76,22 +70,27 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
     const lastSequence = useRef("");
     const cameraPaused = useRef(false);
     const successTimer = useRef<number | undefined>(undefined);
-
-    const client = useMemo<CheckInClient>(() => checkInClient ?? {
-        checkIn: (credential) => apiClient.post<CheckInResponse>(
-            `/api/teams/${teamId}/events/${eventId}/registrations/check-in`,
-            { credential },
-        ),
-        lookup: (query) => apiClient.get<CheckInLookupCandidateDto[]>(
-            `/api/teams/${teamId}/events/${eventId}/registrations/check-in/lookup?query=${encodeURIComponent(query)}`,
-        ),
-    }, [checkInClient, eventId, teamId]);
+    const statusRef = useRef<Status>(null);
+    const cameraOperation = useRef(Promise.resolve());
+    const audioContext = useRef<AudioContext | null>(null);
 
     const mutedRef = useRef(false);
+    const setScannerStatus = useCallback((next: Status) => {
+        statusRef.current = next;
+        setStatus(next);
+    }, []);
+    const initializeAudio = useCallback(() => {
+        try {
+            audioContext.current ??= new AudioContext();
+            if (audioContext.current.state === "suspended") void audioContext.current.resume();
+        } catch { /* optional */ }
+    }, []);
     const sound = useCallback((success: boolean) => {
         if (mutedRef.current) return;
         try {
-            const context = new AudioContext();
+            audioContext.current ??= new AudioContext();
+            const context = audioContext.current;
+            if (context.state === "suspended") void context.resume();
             const oscillator = context.createOscillator();
             oscillator.frequency.value = success ? 880 : 180;
             oscillator.connect(context.destination);
@@ -100,18 +99,28 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
         } catch { /* optional */ }
     }, []);
 
+    const outcomeStatus = useCallback((response: CheckInResponse, kind: Exclude<Status, null>["kind"]): Status => {
+        if (kind === "duplicate") return { kind, response, message: `Already checked in${response.checkedInAt ? ` at ${formatInEventZone(response.checkedInAt, timeZone, "HH:mm")}` : ""}` };
+        if (kind === "cancelled") return { kind, response, message: "Cancelled — Create Registration is required." };
+        if (kind === "inactive") return { kind, response, message: "This event is not active." };
+        return { kind: "invalid", response, message: "This credential is not valid for this event." };
+    }, [timeZone]);
+
     const submit = useCallback(async (credential: string) => {
         const value = credential.trim();
-        if (!value || inFlight.current || lastSequence.current === value) return;
+        if (!value || inFlight.current || statusRef.current || lastSequence.current === value) return;
         lastSequence.current = value;
         setPendingCredential(value);
         inFlight.current = true;
         try {
-            const response = await client.checkIn(value);
+            const response = await apiClient.post<CheckInResponse>(
+                `/api/teams/${teamId}/events/${eventId}/registrations/check-in`,
+                { credential: value },
+            );
             const outcome = mapCheckInOutcome(response);
             if (outcome.kind === "success") {
                 const tickets = response.ticketSelections?.map((ticket) => ticket.name).join(", ");
-                setStatus({ kind: "success", response, message: `${response.name ?? "Checked in"}${tickets ? ` · ${tickets}` : ""}` });
+                setScannerStatus({ kind: "success", response, message: `${response.name ?? "Checked in"}${tickets ? ` · ${tickets}` : ""}` });
                 setSelected(null);
                 setPendingCredential("");
                 cameraPaused.current = true;
@@ -122,37 +131,27 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
                 successTimer.current = window.setTimeout(() => {
                     lastSequence.current = "";
                     cameraPaused.current = false;
-                    setStatus(null);
+                    setScannerStatus(null);
                     setCameraOn(true);
                 }, 2000);
-            } else if (outcome.kind === "duplicate") {
-                setStatus({ kind: "duplicate", response, message: `Already checked in${response.checkedInAt ? ` at ${formatInEventZone(response.checkedInAt, timeZone, "HH:mm")}` : ""}` });
-                sound(false);
-            } else if (outcome.kind === "cancelled") {
-                setStatus({ kind: "cancelled", response, message: "Cancelled — Create Registration is required." });
-                sound(false);
-            } else if (outcome.kind === "inactive") {
-                setStatus({ kind: "inactive", response, message: "This event is not active." });
-                sound(false);
             } else {
-                setStatus({ kind: "invalid", response, message: "This credential is not valid for this event." });
+                setScannerStatus(outcomeStatus(response, outcome.kind));
                 sound(false);
             }
         } catch {
-            lastSequence.current = "";
-            setStatus({ kind: "network", message: "Network error. Your credential is retained — retry when ready." });
+            setScannerStatus({ kind: "network", message: "Network error. Your credential is retained — retry when ready." });
             sound(false);
         } finally {
             inFlight.current = false;
         }
-    }, [client, eventId, queryClient, sound, teamId, timeZone]);
+    }, [eventId, outcomeStatus, queryClient, setScannerStatus, sound, teamId]);
 
     const lookup = useCallback(async () => {
         if (searchQuery.trim().length < 2) return setCandidates([]);
         try {
-            setCandidates(await client.lookup(searchQuery));
+            setCandidates(await apiClient.get<CheckInLookupCandidateDto[]>(`/api/teams/${teamId}/events/${eventId}/registrations/check-in/lookup?query=${encodeURIComponent(searchQuery)}`));
         } catch { /* retain pending values */ }
-    }, [client, searchQuery]);
+    }, [eventId, searchQuery, teamId]);
 
     useEffect(() => setLocalCount(Number(summary?.checkedInCount ?? 0)), [summary?.checkedInCount]);
     useEffect(() => () => { if (successTimer.current) window.clearTimeout(successTimer.current); }, []);
@@ -163,14 +162,23 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
 
     useEffect(() => {
         let active = true;
-        if (cameraOn) decoder.start((value) => active && !cameraPaused.current && void submit(value), facingMode).catch(() => undefined);
-        return () => { active = false; void decoder.stop(); };
+        cameraOperation.current = cameraOperation.current
+            .then(async () => {
+                await decoder.stop();
+                if (active && cameraOn) await decoder.start((value) => active && !cameraPaused.current && void submit(value), facingMode);
+            })
+            .catch(() => undefined);
+        return () => {
+            active = false;
+            cameraOperation.current = cameraOperation.current.then(() => decoder.stop()).catch(() => undefined);
+        };
     }, [cameraOn, decoder, facingMode, submit]);
 
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
             const target = event.target as HTMLElement | null;
             if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
+            if (statusRef.current) { wedge.current = ""; return; }
             if (event.key === "Enter") { const value = wedge.current; wedge.current = ""; void submit(value); }
             else if (event.key.length === 1) wedge.current += event.key;
         };
@@ -185,14 +193,14 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
     const expected = Number(summary?.expectedCount ?? 0);
 
     return (
-        <div className="mx-auto w-full max-w-2xl space-y-5">
+        <div className="mx-auto w-full max-w-2xl space-y-5" onPointerDown={initializeAudio}>
             {warning && !warningAcknowledged && <div className="flex items-center justify-between rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm"><span><AlertTriangle className="mr-2 inline size-4" />Event starts at {formatInEventZone(startsAt, timeZone, "HH:mm")}</span><Button size="sm" variant="outline" onClick={() => setWarningAcknowledged(true)}>Got it</Button></div>}
             <Card className="overflow-hidden">
                 <div className="flex items-center justify-between border-b p-4"><div><p className="text-xs uppercase tracking-widest text-muted-foreground">Live check-in</p><h1 className="font-display text-2xl font-semibold">Scan a ticket</h1><p className="text-sm text-muted-foreground">{summary ? `${checkedIn} checked in · ${expected} expected · ${expected ? Math.round(checkedIn / expected * 100) : 0}%` : "Check-in summary unavailable"}</p></div><div className="flex items-center gap-2"><Badge variant="secondary">Authoritative count</Badge><Button variant="ghost" size="icon" aria-label={muted ? "Unmute sound" : "Mute sound"} onClick={() => setMuted((value) => { mutedRef.current = !value; return !value; })}>{muted ? <VolumeX /> : <Volume2 />}</Button></div></div>
                 <div className="bg-slate-950 p-4"><div id="check-in-reader" className="mx-auto aspect-square max-h-[55vh] w-full max-w-md rounded-2xl border border-white/20 bg-slate-900" /><div className="mt-3 flex justify-center gap-2">{!cameraPaused.current && <Button variant="secondary" onClick={() => setCameraOn((value) => !value)}>{cameraOn ? <CameraOff /> : <Camera />} {cameraOn ? "Stop camera" : "Start camera"}</Button>}<Button variant="secondary" onClick={() => setFacingMode((value) => value === "environment" ? "user" : "environment")}><Camera /> Switch camera</Button></div></div>
                 <div className="space-y-3 p-4"><p className="text-center text-sm text-muted-foreground">Camera defaults to the rear camera. A connected QR scanner also works.</p><div className="flex gap-2"><Input aria-label="Manual search" placeholder="Search attendee by name or email" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} /><Button variant="outline" aria-label="Search"><Search /></Button></div>{candidates.length > 0 && <div className="space-y-2">{candidates.map((candidate) => { const unavailable = candidate.state !== "eligible"; return <button type="button" disabled={unavailable} className="w-full rounded-lg border p-3 text-left hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" key={candidate.registrationId} onClick={() => setSelected(candidate)}><div className="font-medium">{candidate.name}</div><div className="text-xs text-muted-foreground">{candidate.email} · {candidate.state === "cancelled" ? "Cancelled" : candidate.state === "checkedIn" ? "Already checked in" : "Eligible"}</div></button>; })}</div>}</div>
             </Card>
-            {status && <div role="alert" className={`rounded-xl border p-4 ${status.kind === "success" ? "border-emerald-300 bg-emerald-50 text-emerald-950" : "border-amber-300/60 bg-amber-50"}`}><div className="flex items-center gap-2 font-medium">{status.kind === "success" && <Check className="size-4" />}{status.message}</div>{status.kind === "success" ? <p className="mt-1 text-xs opacity-70">Ready for the next scan</p> : <div className="mt-3 flex flex-wrap gap-2">{status.kind === "cancelled" && <Button asChild size="sm"><Link href={`/teams/${teamId}/events/${eventId}/registrations`}>Create registration</Link></Button>}{status.kind === "network" && <Button size="sm" variant="outline" onClick={() => { setStatus(null); void submit(pendingCredential); }}><RotateCcw className="size-3.5" /> Retry</Button>}{status.kind !== "network" && <Button size="sm" variant="outline" onClick={() => { setStatus(null); lastSequence.current = ""; }}>Dismiss</Button>}</div>}</div>}
+            {status && <div role="alert" className={`rounded-xl border p-4 ${status.kind === "success" ? "border-emerald-300 bg-emerald-50 text-emerald-950" : "border-amber-300/60 bg-amber-50"}`}><div className="flex items-center gap-2 font-medium">{status.kind === "success" && <Check className="size-4" />}{status.message}</div>{status.kind === "success" ? <p className="mt-1 text-xs opacity-70">Ready for the next scan</p> : <div className="mt-3 flex flex-wrap gap-2">{status.kind === "cancelled" && <Button asChild size="sm"><Link href={`/teams/${teamId}/events/${eventId}/registrations?create=1`}>Create registration</Link></Button>}{status.kind === "network" && <Button size="sm" variant="outline" onClick={() => { setScannerStatus(null); lastSequence.current = ""; void submit(pendingCredential); }}><RotateCcw className="size-3.5" /> Retry</Button>}<Button size="sm" variant="outline" onClick={() => { setScannerStatus(null); lastSequence.current = ""; }}>Dismiss</Button></div>}</div>}
             {selected && <div role="dialog" aria-label={`Check in ${selected.name}?`} className="rounded-xl border bg-card p-4"><h2 className="font-semibold">Check in {selected.name}?</h2><p className="mt-1 text-sm text-muted-foreground">This marks the attendee as present.</p><div className="mt-3 flex gap-2"><Button onClick={() => void submit(selected.registrationId)}>Confirm check-in</Button><Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button></div></div>}
         </div>
     );

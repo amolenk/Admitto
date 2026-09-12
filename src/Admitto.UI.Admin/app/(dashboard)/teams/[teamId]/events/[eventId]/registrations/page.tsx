@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -92,6 +92,7 @@ function displayDate(r: RegistrationListItemDto): string {
 
 export default function RegistrationsPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
+    const searchParams = useSearchParams();
 
     const registrationsQuery = useQuery({
         queryKey: ["registrations", teamId, eventId],
@@ -119,6 +120,10 @@ export default function RegistrationsPage() {
     const [page, setPage] = useState(1);
     const [addOpen, setAddOpen] = useState(false);
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (searchParams.get("create") === "1") setAddOpen(true);
+    }, [searchParams]);
 
     const registrations = registrationsQuery.data;
     const ticketTypes = ticketTypesQuery.data ?? [];
