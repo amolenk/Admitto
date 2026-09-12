@@ -38,40 +38,50 @@ describe("check-in scanner", () => {
     // Given a fake decoder emits a credential
     // When the scanner receives the decoded value
     // Then it immediately dispatches one check-in request and shows the attendee and ticket
-    it("dispatches decoded values and keeps success visible until the operator resumes", async () => {
+    it("shows a successful attendee and ticket for two seconds", async () => {
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} timeZone="Europe/Amsterdam" decoder={fake.decoder} />);
         await act(async () => fake.scan("credential-1"));
         expect(post).toHaveBeenCalledWith(expect.stringContaining("/check-in"), { credential: "credential-1" });
         expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Scan next" })).toBeInTheDocument();
+        expect(screen.getByText("Ready for the next scan")).toBeInTheDocument();
+    });
+
+    // Given the scanner page is open before the early-arrival window
+    // When the 30-minute threshold passes
+    // Then the warning appears without interrupting scanning
+    it("shows the early-arrival warning when the threshold arrives", async () => {
+        vi.useFakeTimers();
+        const startsAt = new Date(2030, 0, 1, 10, 0).toISOString();
+        vi.setSystemTime(new Date(new Date(startsAt).getTime() - 30 * 60_000 - 1000));
+        const fake = fakeDecoder();
+        renderWithProviders(<CheckInScanner {...props} startsAt={startsAt} decoder={fake.decoder} />);
+
+        expect(screen.queryByText(/Event starts at/)).not.toBeInTheDocument();
+        await act(async () => { vi.advanceTimersByTime(1000); });
+        expect(screen.getByText(/Event starts at/)).toBeInTheDocument();
+
+        await act(async () => fake.scan("early-arrival"));
+        expect(post).toHaveBeenCalledWith(expect.stringContaining("/check-in"), { credential: "early-arrival" });
+        vi.useRealTimers();
     });
 
     // Given the scanner has paused after a successful scan
-    // When the operator selects Scan next
-    // Then a later camera callback is accepted
-    it("resumes camera scanning only after an explicit Scan next action", async () => {
+    // When two seconds elapse
+    // Then the result clears and a later camera callback is accepted
+    it("automatically resumes camera scanning after two seconds", async () => {
+        vi.useFakeTimers();
         const fake = fakeDecoder();
-        const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
+        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
 
         await act(async () => fake.scan("first"));
-        await user.click(screen.getByRole("button", { name: "Scan next" }));
+        expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
+        await act(async () => { vi.advanceTimersByTime(2000); });
+        expect(screen.queryByText(/Jane Doe · General/)).not.toBeInTheDocument();
         await act(async () => fake.scan("second"));
 
         expect(post).toHaveBeenCalledTimes(2);
         expect(post).toHaveBeenLastCalledWith(expect.stringContaining("/check-in"), { credential: "second" });
-    });
-
-    // Given a successful result is visible
-    // When unrelated timer work runs
-    // Then no stale timeout clears or replaces the current result
-    it("does not use a stale success timer to clear the visible result", async () => {
-        vi.useFakeTimers();
-        const fake = fakeDecoder();
-        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
-        await act(async () => fake.scan("stable"));
-        act(() => vi.advanceTimersByTime(10_000));
-        expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
         vi.useRealTimers();
     });
 
@@ -116,6 +126,35 @@ describe("check-in scanner", () => {
 
         await user.click(screen.getByRole("button", { name: "Dismiss" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    // Given a cancelled registration is scanned
+    // When the cancelled outcome is displayed
+    // Then the operator can open the existing registration workflow
+    it("offers the registration workflow for cancelled outcomes", async () => {
+        post.mockResolvedValueOnce(response("cancelled"));
+        const fake = fakeDecoder();
+        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
+
+        await act(async () => fake.scan("cancelled-credential"));
+
+        expect(screen.getByRole("link", { name: "Create registration" })).toHaveAttribute(
+            "href",
+            "/teams/team/events/event/registrations",
+        );
+    });
+
+    // Given the scanner shows an authoritative check-in count
+    // When a check-in succeeds
+    // Then the visible count increments immediately
+    it("increments the visible count immediately after success", async () => {
+        const fake = fakeDecoder();
+        renderWithProviders(<CheckInScanner {...props} summary={{ checkedInCount: 2, expectedCount: 4 }} decoder={fake.decoder} />);
+
+        expect(screen.getByText("2 checked in · 4 expected · 50%")).toBeInTheDocument();
+        await act(async () => fake.scan("counted-credential"));
+
+        expect(screen.getByText("3 checked in · 4 expected · 75%")).toBeInTheDocument();
     });
 
     // Given a matching registration returned by manual lookup
