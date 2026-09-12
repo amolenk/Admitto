@@ -69,11 +69,12 @@ function attendeeSortKey(r: RegistrationListItemDto) {
     return [r.lastName ?? "", r.firstName ?? "", r.email].join(" ").toLowerCase();
 }
 
-type DisplayStatus = "cancelled" | "reconfirmed" | "registered";
+type DisplayStatus = "cancelled" | "reconfirmed" | "checkedIn" | "registered";
 
-/** Cancelled > Reconfirmed > Registered, matching the attendee detail page badge. */
+/** Cancelled > Checked in > Reconfirmed > Registered, matching the attendee detail page badge. */
 function displayStatus(r: RegistrationListItemDto): DisplayStatus {
     if (r.status === "cancelled") return "cancelled";
+    if (r.checkedInAt) return "checkedIn";
     if (r.hasReconfirmed) return "reconfirmed";
     return "registered";
 }
@@ -85,6 +86,8 @@ function displayDate(r: RegistrationListItemDto): string {
             return r.cancelledAt ?? r.createdAt;
         case "reconfirmed":
             return r.reconfirmedAt ?? r.createdAt;
+        case "checkedIn":
+            return r.checkedInAt ?? r.createdAt;
         default:
             return r.createdAt;
     }
@@ -275,6 +278,7 @@ export default function RegistrationsPage() {
                             <SelectItem value="all">All statuses</SelectItem>
                             <SelectItem value="registered">Registered</SelectItem>
                             <SelectItem value="reconfirmed">Reconfirmed</SelectItem>
+                            <SelectItem value="checkedIn">Checked in</SelectItem>
                             <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                     </Select>
@@ -352,6 +356,10 @@ export default function RegistrationsPage() {
                                                     ) : status === "reconfirmed" ? (
                                                         <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10">
                                                             Reconfirmed
+                                                        </Badge>
+                                                    ) : status === "checkedIn" ? (
+                                                        <Badge variant="outline" className="text-success border-success/30 bg-success/10">
+                                                            Checked in
                                                         </Badge>
                                                     ) : (
                                                         <Badge variant="outline" className="text-success border-success/30 bg-success/10">

@@ -126,6 +126,7 @@ export function registrationListItemDto(
         hasReconfirmed: false,
         reconfirmedAt: null,
         cancelledAt: null,
+        checkedInAt: null,
         ...overrides,
     };
 }

@@ -16,6 +16,7 @@ public sealed record RegistrationListItemDto(
     RegistrationStatus Status,
     bool HasReconfirmed,
     DateTimeOffset? ReconfirmedAt,
-    DateTimeOffset? CancelledAt);
+    DateTimeOffset? CancelledAt,
+    DateTimeOffset? CheckedInAt);
 
 public sealed record TicketSummaryDto(Guid Id, string Name);

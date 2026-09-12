@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:46303/"
+      "url": "http://localhost:40825/"
     }
   ],
   "paths": {
@@ -8531,7 +8531,8 @@
           "status",
           "hasReconfirmed",
           "reconfirmedAt",
-          "cancelledAt"
+          "cancelledAt",
+          "checkedInAt"
         ],
         "type": "object",
         "properties": {
@@ -8598,6 +8599,13 @@
             "format": "date-time"
           },
           "cancelledAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "checkedInAt": {
             "type": [
               "null",
               "string"

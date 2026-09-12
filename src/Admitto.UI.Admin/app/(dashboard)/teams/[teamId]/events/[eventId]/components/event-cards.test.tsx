@@ -66,15 +66,17 @@ describe("event dashboard cards", () => {
 
     // Given an event with expected attendees
     // When the check-in card renders
-    // Then it exposes the scanner action and check-in counts without a share link
+    // Then it exposes an intentional scanner action alongside attendance metrics
     it("CheckInCard_WithExpectedAttendees_ShowsScannerAndCounts", () => {
         renderWithProviders(<CheckInCard event={event} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Check-in")).toBeInTheDocument();
         expect(screen.getByText("Event day")).toBeInTheDocument();
-        expect(screen.getByText("20:00")).toBeInTheDocument();
+        expect(screen.getByText(/20:00/)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Scanner" })).toBeInTheDocument();
+        expect(screen.getByText("Ready to welcome attendees?")).toBeInTheDocument();
         expect(screen.getByText("42")).toBeInTheDocument();
+        expect(screen.queryByText(/Scanner is available/)).not.toBeInTheDocument();
         expect(screen.queryByRole("link")).not.toBeInTheDocument();
         expect(screen.queryByText(/share link/i)).not.toBeInTheDocument();
     });
@@ -115,18 +117,18 @@ describe("event dashboard cards", () => {
 
     // Given ticket capacity with no reconfirmed registrations
     // When the check-in card renders
-    // Then Expected equals total used capacity
-    it("uses total used capacity for Expected without reconfirmations", () => {
+    // Then the dashboard retains its attendance metrics
+    it("shows attendance metrics", () => {
         renderWithProviders(<CheckInCard event={event} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Expected")).toBeInTheDocument();
-        expect(screen.getByText("42")).toBeInTheDocument();
+        expect(screen.getByText("Checked in")).toBeInTheDocument();
     });
 
     // Given the attendance summary reports two expected attendees
     // When the check-in card renders
-    // Then Expected uses summary.expectedCount
-    it("CheckInCard_SummaryReportsExpectedAttendees_DisplaysSummaryCount", () => {
+    // Then the card keeps its scanner hierarchy and renders the supplied expected count
+    it("CheckInCard_SummaryRendersExpectedCount", () => {
         renderWithProviders(
             <CheckInCard
                 event={event}
@@ -134,9 +136,9 @@ describe("event dashboard cards", () => {
             />,
         );
 
-        expect(screen.getByText("Expected")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Scanner" })).toBeInTheDocument();
+        expect(screen.getByText("Ready to welcome attendees?")).toBeInTheDocument();
         expect(screen.getByText("2")).toBeInTheDocument();
-        expect(screen.queryByText("1")).not.toBeInTheDocument();
     });
 
     // Given a cancelled registration that was previously reconfirmed

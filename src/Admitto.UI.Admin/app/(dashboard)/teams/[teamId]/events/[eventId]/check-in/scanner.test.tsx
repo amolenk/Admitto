@@ -164,17 +164,16 @@ describe("check-in scanner", () => {
         );
     });
 
-    // Given the scanner shows an authoritative check-in count
+    // Given the scanner is open with an attendance summary
     // When a check-in succeeds
-    // Then the visible count increments immediately
-    it("submit_successfulCheckIn_incrementsVisibleCountImmediately", async () => {
+    // Then it does not expose attendance metrics in the scanner header
+    it("submit_successfulCheckIn_hidesAttendanceMetrics", async () => {
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} summary={{ checkedInCount: 2, expectedCount: 4 }} decoder={fake.decoder} />);
 
-        expect(screen.getByText("2 checked in · 4 expected · 50%")).toBeInTheDocument();
+        expect(screen.queryByText(/checked in · 4 expected/)).not.toBeInTheDocument();
         await act(async () => fake.scan("counted-credential"));
-
-        expect(screen.getByText("3 checked in · 4 expected · 75%")).toBeInTheDocument();
+        expect(screen.queryByText("Authoritative count")).not.toBeInTheDocument();
     });
 
     // Given a matching registration returned by manual lookup
@@ -222,11 +221,10 @@ describe("check-in scanner", () => {
         });
         const fake = fakeDecoder();
         renderWithProviders(<SummaryHarness decoder={fake.decoder} />);
-        expect(await screen.findByText("2 checked in · 4 expected · 50%")).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "Scan a ticket" })).toBeInTheDocument();
 
         authoritativeCount = 3;
         await act(async () => fake.scan("new-credential"));
-        expect(await screen.findByText("3 checked in · 4 expected · 75%")).toBeInTheDocument();
         expect(get.mock.calls.filter(([url]) => url === SUMMARY_URL).length).toBeGreaterThanOrEqual(2);
     });
 });

@@ -8,13 +8,14 @@ import {
     ArrowLeft,
     ArrowRightLeft,
     CheckCircle,
+    LogIn,
     Mail,
     Sparkles,
     Trash2,
     RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, TicketDetailDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
+import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
 import { formatInEventZone } from "@/lib/time-zones";
@@ -431,6 +432,10 @@ export default function AttendeeDetailPage() {
                                             <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
                                                 Cancelled
                                             </Badge>
+                                        ) : registration.checkedInAt ? (
+                                            <Badge variant="outline" className="text-success border-success/30 bg-success/10">
+                                                Checked in
+                                            </Badge>
                                         ) : registration.hasReconfirmed ? (
                                             <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10">
                                                 <CheckCircle className="size-3 mr-1" />
@@ -468,7 +473,7 @@ export default function AttendeeDetailPage() {
                                             <RotateCcw className="size-3.5" />
                                             {isResendingTicketEmail ? "Requesting…" : "Resend ticket email"}
                                         </Button>}
-                                        {!registration.checkedInAt && <Button variant="default" size="sm" onClick={() => setCheckInDialogOpen(true)}><CheckCircle className="size-3.5" /> Check in</Button>}
+                                        {!registration.checkedInAt && <Button variant="outline" size="sm" onClick={() => setCheckInDialogOpen(true)}><LogIn className="size-3.5" /> Check in</Button>}
                                         {canManageAttendees && !registration.hasReconfirmed && !registration.checkedInAt && (
                                             <Button
                                                 variant="outline"
@@ -836,7 +841,7 @@ const kindMeta: Record<
         color: "text-emerald-600",
         bgClass: "bg-emerald-50",
         borderClass: "border-emerald-200",
-        Icon: CheckCircle,
+        Icon: LogIn,
     },
     email: {
         color: "text-muted-foreground",
@@ -862,7 +867,7 @@ function TimelineItem({ entry }: { entry: TimelineEntry }) {
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[14px] font-medium">{entry.title}</span>
                         <Badge variant="outline" className="text-[0.65rem] text-muted-foreground capitalize">
-                            {entry.kind === "ticketschanged" ? "tickets changed" : entry.kind}
+                            {entry.kind === "ticketschanged" ? "tickets changed" : entry.kind === "checkedin" ? "Checked-in" : entry.kind}
                         </Badge>
                     </div>
                     <div className="text-[12.5px] text-muted-foreground mt-0.5">{entry.detail}</div>

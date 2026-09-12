@@ -62,6 +62,30 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         body[0].Email.ShouldBe("alice@example.com");
         body[0].Tickets.Length.ShouldBe(1);
         body[0].Tickets[0].Id.ShouldBe(GetRegistrationsFixture.TicketTypeId.Value);
+        body[0].CheckedInAt.ShouldBeNull();
+    }
+
+    // Given an event with a checked-in registration
+    // When a team member fetches the registrations for that event
+    // Then the response includes the registration's check-in timestamp
+    [TestMethod]
+    public async Task Organizer_GetsRegistrationList_IncludesCheckedInAt()
+    {
+        var fixture = GetRegistrationsFixture.CheckedIn();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.ApiClient.GetAsync(
+            fixture.Route,
+            testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<RegistrationItemDto[]>(
+            cancellationToken: testContext.CancellationToken);
+        body.ShouldNotBeNull();
+        var registration = body.ShouldHaveSingleItem();
+        registration.CheckedInAt.ShouldNotBeNull();
+        registration.CheckedInAt.Value.ShouldBe(fixture.CheckedInAt, TimeSpan.FromMilliseconds(1));
     }
 
     // Given an event with a single registration and a crew member of its team
@@ -106,7 +130,8 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         Guid Id,
         string Email,
         TicketDto[] Tickets,
-        DateTimeOffset CreatedAt);
+        DateTimeOffset CreatedAt,
+        DateTimeOffset? CheckedInAt);
 
     private sealed record TicketDto(Guid Id, string Name);
 }

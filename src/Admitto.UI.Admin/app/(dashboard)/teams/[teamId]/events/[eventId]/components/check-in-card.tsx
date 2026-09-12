@@ -11,6 +11,7 @@ import type { CheckInSummaryDto } from "@/lib/admitto-api/generated/types.gen";
 
 interface CheckInCardProps {
     event: TicketedEventDetailsDto;
+    /** Attendance figures remain useful context on the event dashboard. */
     summary?: CheckInSummaryDto;
 }
 
@@ -18,15 +19,11 @@ function formatStart(iso: string, zone: string): string {
     return formatInEventZone(iso, zone, "MMM d, yyyy · HH:mm");
 }
 
-function formatTime(iso: string, zone: string): string {
-    return formatInEventZone(iso, zone, "HH:mm");
-}
-
 export function CheckInCard({ event, summary }: CheckInCardProps) {
     const router = useRouter();
     const isArchived = event.status === "archived";
-    const expected = summary ? Number(summary.expectedCount) : null;
     const checkedIn = summary ? Number(summary.checkedInCount) : null;
+    const expected = summary ? Number(summary.expectedCount) : null;
 
     return (
         <Card className="p-5">
@@ -43,26 +40,24 @@ export function CheckInCard({ event, summary }: CheckInCardProps) {
                 </Badge>
             </div>
 
-            <div className="rounded-xl border bg-grid p-4">
-                <div className="flex items-start gap-4">
-                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border bg-card">
-                        <QrCode className="size-6 text-muted-foreground" />
+            <div className="rounded-xl border bg-grid p-5">
+                <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
+                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border bg-card shadow-sm">
+                        <QrCode className="size-7 text-primary" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] leading-relaxed">
+                    <div className="mt-4 min-w-0 flex-1 sm:ml-4 sm:mt-0">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Door check-in</p>
+                        <h4 className="mt-1 font-display text-lg font-semibold">Ready to welcome attendees?</h4>
+                        <p className="mt-1 text-[13.5px] leading-relaxed text-muted-foreground">
                             {isArchived ? (
                                 "This event is archived; check-in is unavailable."
                             ) : (
                                 <>
-                                    Scanner is available while the event is active. The event starts at{" "}
-                                    <span className="font-mono font-medium">
-                                        {formatTime(event.startsAt, event.timeZone)}
-                                    </span>{" "}
-                                    in {event.timeZone}.
+                                    Open the scanner to check attendees quickly at the door.
                                 </>
                             )}
                         </p>
-                        <div className="mt-3 flex gap-2">
+                        <div className="mt-4 flex justify-center gap-2 sm:justify-start">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -82,36 +77,17 @@ export function CheckInCard({ event, summary }: CheckInCardProps) {
             <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                 <CheckinPill n={checkedIn === null ? "—" : String(checkedIn)} label="Checked in" />
                 <CheckinPill n={expected === null ? "—" : String(expected)} label="Expected" primary />
-                <CheckinPill
-                    n={expected === null ? "—" : `${expected ? Math.round((checkedIn! / expected) * 100) : 0}%`}
-                    label="Complete"
-                    muted
-                />
+                <CheckinPill n={expected === null ? "—" : `${expected ? Math.round((checkedIn! / expected) * 100) : 0}%`} label="Complete" muted />
             </div>
+
         </Card>
     );
 }
 
-function CheckinPill({
-    n,
-    label,
-    primary,
-    muted,
-}: {
-    n: string;
-    label: string;
-    primary?: boolean;
-    muted?: boolean;
-}) {
+function CheckinPill({ n, label, primary, muted }: { n: string; label: string; primary?: boolean; muted?: boolean }) {
     return (
         <div className={`rounded-lg border py-2.5 ${primary ? "bg-primary/5" : "bg-muted"}`}>
-            <div
-                className={`font-mono text-lg font-semibold tabular-nums ${
-                    muted ? "text-muted-foreground" : primary ? "text-primary" : ""
-                }`}
-            >
-                {n}
-            </div>
+            <div className={`font-mono text-lg font-semibold tabular-nums ${muted ? "text-muted-foreground" : primary ? "text-primary" : ""}`}>{n}</div>
             <div className="mt-0.5 text-[11px] text-muted-foreground">{label}</div>
         </div>
     );

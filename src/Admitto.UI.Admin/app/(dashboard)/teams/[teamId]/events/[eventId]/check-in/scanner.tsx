@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Camera, CameraOff, Check, RotateCcw, Search, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,12 +18,13 @@ export type DecoderAdapter = {
 };
 
 export function createHtml5QrDecoder(elementId: string): DecoderAdapter {
-    let scanner: any;
+    let scanner: { stop: () => Promise<void>; clear: () => void } | undefined;
     return {
         async start(onValue, facingMode) {
             const { Html5Qrcode } = await import("html5-qrcode");
-            scanner = new Html5Qrcode(elementId);
-            await scanner.start({ facingMode }, { fps: 10, qrbox: { width: 260, height: 260 } }, onValue, () => undefined);
+            const current = new Html5Qrcode(elementId);
+            scanner = current;
+            await current.start({ facingMode }, { fps: 10, qrbox: { width: 260, height: 260 } }, onValue, () => undefined);
         },
         async stop() {
             const current = scanner;
@@ -50,7 +50,7 @@ type Status = {
     message: string;
 } | null;
 
-export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: suppliedDecoder, summary }: Props) {
+export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: suppliedDecoder }: Props) {
     const queryClient = useQueryClient();
     const defaultDecoder = useMemo(() => createHtml5QrDecoder("check-in-reader"), []);
     const decoder = suppliedDecoder ?? defaultDecoder;
@@ -63,7 +63,6 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
     const [cameraOn, setCameraOn] = useState(true);
     const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
     const [warningAcknowledged, setWarningAcknowledged] = useState(false);
-    const [localCount, setLocalCount] = useState(Number(summary?.checkedInCount ?? 0));
     const [now, setNow] = useState(() => Date.now());
     const wedge = useRef("");
     const inFlight = useRef(false);
@@ -79,25 +78,27 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
         statusRef.current = next;
         setStatus(next);
     }, []);
-    const initializeAudio = useCallback(() => {
+    const getAudioContext = useCallback(() => {
         try {
             audioContext.current ??= new AudioContext();
             if (audioContext.current.state === "suspended") void audioContext.current.resume();
+            return audioContext.current;
         } catch { /* optional */ }
+        return null;
     }, []);
+    const initializeAudio = useCallback(() => { void getAudioContext(); }, [getAudioContext]);
     const sound = useCallback((success: boolean) => {
         if (mutedRef.current) return;
         try {
-            audioContext.current ??= new AudioContext();
-            const context = audioContext.current;
-            if (context.state === "suspended") void context.resume();
+            const context = getAudioContext();
+            if (!context) return;
             const oscillator = context.createOscillator();
             oscillator.frequency.value = success ? 880 : 180;
             oscillator.connect(context.destination);
             oscillator.start();
             oscillator.stop(context.currentTime + 0.09);
         } catch { /* optional */ }
-    }, []);
+    }, [getAudioContext]);
 
     const outcomeStatus = useCallback((response: CheckInResponse, kind: Exclude<Status, null>["kind"]): Status => {
         if (kind === "duplicate") return { kind, response, message: `Already checked in${response.checkedInAt ? ` at ${formatInEventZone(response.checkedInAt, timeZone, "HH:mm")}` : ""}` };
@@ -125,7 +126,6 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
                 setPendingCredential("");
                 cameraPaused.current = true;
                 setCameraOn(false);
-                setLocalCount((count) => count + 1);
                 void queryClient.invalidateQueries({ queryKey: ["check-in-summary", teamId, eventId] });
                 sound(true);
                 successTimer.current = window.setTimeout(() => {
@@ -153,7 +153,6 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
         } catch { /* retain pending values */ }
     }, [eventId, searchQuery, teamId]);
 
-    useEffect(() => setLocalCount(Number(summary?.checkedInCount ?? 0)), [summary?.checkedInCount]);
     useEffect(() => () => { if (successTimer.current) window.clearTimeout(successTimer.current); }, []);
     useEffect(() => {
         const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -189,14 +188,11 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
     useEffect(() => { const timer = window.setTimeout(() => void lookup(), 250); return () => window.clearTimeout(timer); }, [lookup]);
 
     const warning = now >= new Date(startsAt).getTime() - 30 * 60_000 && now < new Date(startsAt).getTime();
-    const checkedIn = localCount;
-    const expected = Number(summary?.expectedCount ?? 0);
-
     return (
         <div className="mx-auto w-full max-w-2xl space-y-5" onPointerDown={initializeAudio}>
             {warning && !warningAcknowledged && <div className="flex items-center justify-between rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm"><span><AlertTriangle className="mr-2 inline size-4" />Event starts at {formatInEventZone(startsAt, timeZone, "HH:mm")}</span><Button size="sm" variant="outline" onClick={() => setWarningAcknowledged(true)}>Got it</Button></div>}
             <Card className="overflow-hidden">
-                <div className="flex items-center justify-between border-b p-4"><div><p className="text-xs uppercase tracking-widest text-muted-foreground">Live check-in</p><h1 className="font-display text-2xl font-semibold">Scan a ticket</h1><p className="text-sm text-muted-foreground">{summary ? `${checkedIn} checked in · ${expected} expected · ${expected ? Math.round(checkedIn / expected * 100) : 0}%` : "Check-in summary unavailable"}</p></div><div className="flex items-center gap-2"><Badge variant="secondary">Authoritative count</Badge><Button variant="ghost" size="icon" aria-label={muted ? "Unmute sound" : "Mute sound"} onClick={() => setMuted((value) => { mutedRef.current = !value; return !value; })}>{muted ? <VolumeX /> : <Volume2 />}</Button></div></div>
+                <div className="flex items-center justify-between border-b p-4"><div><p className="text-xs uppercase tracking-widest text-muted-foreground">Live check-in</p><h1 className="font-display text-2xl font-semibold">Scan a ticket</h1></div><Button variant="ghost" size="icon" aria-label={muted ? "Unmute sound" : "Mute sound"} onClick={() => setMuted((value) => { mutedRef.current = !value; return !value; })}>{muted ? <VolumeX /> : <Volume2 />}</Button></div>
                 <div className="bg-slate-950 p-4"><div id="check-in-reader" className="mx-auto aspect-square max-h-[55vh] w-full max-w-md rounded-2xl border border-white/20 bg-slate-900" /><div className="mt-3 flex justify-center gap-2">{!cameraPaused.current && <Button variant="secondary" onClick={() => setCameraOn((value) => !value)}>{cameraOn ? <CameraOff /> : <Camera />} {cameraOn ? "Stop camera" : "Start camera"}</Button>}<Button variant="secondary" onClick={() => setFacingMode((value) => value === "environment" ? "user" : "environment")}><Camera /> Switch camera</Button></div></div>
                 <div className="space-y-3 p-4"><p className="text-center text-sm text-muted-foreground">Camera defaults to the rear camera. A connected QR scanner also works.</p><div className="flex gap-2"><Input aria-label="Manual search" placeholder="Search attendee by name or email" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} /><Button variant="outline" aria-label="Search"><Search /></Button></div>{candidates.length > 0 && <div className="space-y-2">{candidates.map((candidate) => { const unavailable = candidate.state !== "eligible"; return <button type="button" disabled={unavailable} className="w-full rounded-lg border p-3 text-left hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" key={candidate.registrationId} onClick={() => setSelected(candidate)}><div className="font-medium">{candidate.name}</div><div className="text-xs text-muted-foreground">{candidate.email} · {candidate.state === "cancelled" ? "Cancelled" : candidate.state === "checkedIn" ? "Already checked in" : "Eligible"}</div></button>; })}</div>}</div>
             </Card>

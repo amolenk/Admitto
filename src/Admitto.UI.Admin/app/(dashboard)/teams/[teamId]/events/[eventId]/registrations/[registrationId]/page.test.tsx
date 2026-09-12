@@ -285,7 +285,12 @@ describe("AttendeeDetailPage", () => {
         renderPage();
 
         expect(await screen.findByText("Checked in · 2026-08-12 11:00")).toBeInTheDocument();
-        expect(screen.getByText("Checked in", { selector: "span" })).toBeInTheDocument();
+        const heading = screen.getByRole("heading", { level: 1, name: "Jane Doe" });
+        expect(within(heading.parentElement!).getByText("Checked in")).toBeInTheDocument();
+        expect(within(heading.parentElement!).queryByText("Registered")).not.toBeInTheDocument();
+        expect(within(heading.parentElement!).queryByText("Reconfirmed")).not.toBeInTheDocument();
+        expect(screen.getAllByText("Checked in", { selector: "span" })).toHaveLength(2);
+        expect(screen.getByText("Checked-in", { selector: "span" })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Check in" })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();

@@ -10,21 +10,25 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetRegistrations;
 internal sealed class GetRegistrationsFixture
 {
     private readonly bool _bobIsCrewMember;
+    private readonly bool _checkedIn;
 
     public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
+    public DateTimeOffset CheckedInAt { get; } = DateTimeOffset.UtcNow.AddMinutes(-5);
 
     public string Route => $"/admin/teams/{TeamId}/events/{EventId}/registrations";
 
-    private GetRegistrationsFixture(bool bobIsCrewMember = false)
+    private GetRegistrationsFixture(bool bobIsCrewMember = false, bool checkedIn = false)
     {
         _bobIsCrewMember = bobIsCrewMember;
+        _checkedIn = checkedIn;
     }
 
     public static GetRegistrationsFixture HappyFlow() => new();
     public static GetRegistrationsFixture BobIsCrewMember() => new(bobIsCrewMember: true);
+    public static GetRegistrationsFixture CheckedIn() => new(checkedIn: true);
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -81,6 +85,8 @@ internal sealed class GetRegistrationsFixture
             FirstName.From("Alice"),
             LastName.From("Doe"),
             [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), [])]);
+        if (_checkedIn)
+            registration.CheckIn(CheckedInAt);
 
         await environment.OrganizationDatabase.SeedAsync(db =>
         {

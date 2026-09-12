@@ -90,7 +90,8 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
                 r.Status,
                 r.HasReconfirmed,
                 r.ReconfirmedAt,
-                r.CancelledAt))
+                r.CancelledAt,
+                r.CheckedInAt))
             .ToList();
     }
 }
