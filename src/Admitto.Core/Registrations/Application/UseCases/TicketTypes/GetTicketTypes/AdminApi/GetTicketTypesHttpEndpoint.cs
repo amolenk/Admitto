@@ -10,7 +10,7 @@ public static class GetTicketTypesHttpEndpoint
         group
             .MapGet("/", GetTicketTypes)
             .WithName(nameof(GetTicketTypes))
-            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Crew));
 
         return group;
     }

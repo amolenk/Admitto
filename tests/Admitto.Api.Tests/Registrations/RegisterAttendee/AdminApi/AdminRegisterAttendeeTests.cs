@@ -12,7 +12,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
     // When a user who is not a member of the team tries to register an attendee
     // Then the API returns 403 Forbidden
     [TestMethod]
-    public async Task CrewMember_CannotAddRegistration_Returns403Forbidden()
+    public async Task AdminRegisterAttendee_NonMember_Returns403Forbidden()
     {
         var fixture = AdminRegisterAttendeeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -27,6 +27,29 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
             fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    // Given a ticketed event open for registration with an available ticket type
+    // When a Crew member registers an attendee
+    // Then the API returns 201 Created
+    [TestMethod]
+    public async Task AdminRegisterAttendee_CrewMember_Returns201Created()
+    {
+        var fixture = AdminRegisterAttendeeFixture.CrewMember();
+        await fixture.SetupAsync(Environment);
+
+        var request = new
+        {
+            FirstName = "Alice",
+            LastName = "Anderson",
+            Email = "alice@example.com",
+            TicketTypeIds = new[] { AdminRegisterAttendeeFixture.TicketTypeId.Value }
+        };
+
+        var response = await Environment.BobApiClient.PostAsJsonAsync(
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
     }
 
     // Given a ticketed event open for registration with an available ticket type

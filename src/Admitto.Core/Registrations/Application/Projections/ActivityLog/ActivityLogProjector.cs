@@ -11,7 +11,8 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
     : IDomainEventHandler<AttendeeRegisteredDomainEvent>,
       IDomainEventHandler<RegistrationReconfirmedDomainEvent>,
       IDomainEventHandler<RegistrationCancelledDomainEvent>,
-      IDomainEventHandler<TicketsChangedDomainEvent>
+      IDomainEventHandler<TicketsChangedDomainEvent>,
+      IDomainEventHandler<RegistrationCheckedInDomainEvent>
 {
     public ValueTask HandleAsync(
         AttendeeRegisteredDomainEvent domainEvent,
@@ -73,6 +74,20 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
             ActivityType.TicketsChanged,
             domainEvent.ChangedAt,
             metadata);
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(
+        RegistrationCheckedInDomainEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        AddEntry(
+            domainEvent.TeamId,
+            domainEvent.TicketedEventId,
+            domainEvent.RegistrationId,
+            ActivityType.CheckedIn,
+            domainEvent.CheckedInAt);
 
         return ValueTask.CompletedTask;
     }

@@ -44,6 +44,23 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
+    // Given a registered attendee and a Crew member of the owning team
+    // When that Crew member requests a ticket confirmation resend
+    // Then the API returns 403 Forbidden
+    [TestMethod]
+    public async Task RequestTicketConfirmationResend_CrewMember_Returns403()
+    {
+        var fixture = RequestTicketConfirmationResendFixture.RegisteredAttendeeWithCrewMember();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.BobApiClient.PostAsync(
+            fixture.ResendRoute,
+            content: null,
+            testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
     // Given no registration exists with the requested id
     // When a ticket confirmation resend is requested for that id
     // Then the API returns 404 Not Found

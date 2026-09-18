@@ -11,6 +11,7 @@ public sealed record RegistrationDetailDto(
     DateTimeOffset RegisteredAt,
     bool HasReconfirmed,
     DateTimeOffset? ReconfirmedAt,
+    DateTimeOffset? CheckedInAt,
     string? CancellationReason,
     IReadOnlyList<TicketDetailDto> Tickets,
     IReadOnlyDictionary<string, string> AdditionalDetails,

@@ -223,6 +223,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("cancelled_at");
 
+                    b.Property<DateTimeOffset?>("CheckedInAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_in_at");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -271,6 +275,12 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("uuid")
                         .HasColumnName("registration_cycle_id");
 
+                    b.Property<string>("SearchText")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("search_text");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -293,7 +303,13 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .IsUnique()
                         .HasDatabaseName("IX_registrations_event_id_email");
 
-                    b.ToTable("registrations", "registrations");
+                    b.HasIndex("TeamId", "EventId", "SearchText")
+                        .HasDatabaseName("IX_registrations_team_event_search_text");
+
+                    b.ToTable("registrations", "registrations", t =>
+                        {
+                            t.HasCheckConstraint("CK_registrations_cancelled_without_check_in", "status <> 'Cancelled' OR checked_in_at IS NULL");
+                        });
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Registrations.Domain.Entities.TicketCatalog", b =>

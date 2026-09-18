@@ -11,6 +11,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfCancelRegistration;
 internal sealed class SelfCancelRegistrationFixture
 {
     public const string AttendeeEmail = "alice@example.com";
+    private bool _checkedIn;
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
@@ -24,6 +25,7 @@ internal sealed class SelfCancelRegistrationFixture
 
     public static SelfCancelRegistrationFixture WithActiveRegistration() => new();
     public static SelfCancelRegistrationFixture WithCancelledRegistration() => new();
+    public static SelfCancelRegistrationFixture WithCheckedInRegistration() => new() { _checkedIn = true };
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment, bool alreadyCancelled = false)
     {
@@ -59,6 +61,9 @@ internal sealed class SelfCancelRegistrationFixture
 
         if (alreadyCancelled)
             registration.Cancel(CancellationReason.AttendeeRequest);
+
+        if (_checkedIn)
+            registration.CheckIn(DateTimeOffset.UtcNow);
 
         await environment.OrganizationDatabase.SeedAsync(db =>
         {

@@ -532,6 +532,69 @@ public sealed class RegistrationTests
         domainEvent.RegisteredAt.ShouldBe(resetAt);
     }
 
+    // Given a registered attendee
+    // When the attendee is checked in at a server timestamp
+    // Then the timestamp is stored and one check-in event is raised
+    [TestMethod]
+    public void CheckIn_RegisteredAtServerTime_SetsTimestampAndRaisesEvent()
+    {
+        var sut = NewRegistration();
+        ClearEvents(sut);
+        var checkedInAt = DateTimeOffset.UtcNow;
+
+        sut.CheckIn(checkedInAt);
+
+        sut.CheckedInAt.ShouldBe(checkedInAt);
+        sut.GetDomainEvents().OfType<RegistrationCheckedInDomainEvent>()
+            .ShouldHaveSingleItem()
+            .CheckedInAt.ShouldBe(checkedInAt);
+    }
+
+    // Given an attendee who has already checked in
+    // When check-in is repeated
+    // Then the original timestamp is retained and no second event is raised
+    [TestMethod]
+    public void CheckIn_RepeatedRequest_IsIdempotent()
+    {
+        var sut = NewRegistration();
+        var firstTimestamp = DateTimeOffset.UtcNow;
+        sut.CheckIn(firstTimestamp);
+        ClearEvents(sut);
+
+        sut.CheckIn(firstTimestamp.AddMinutes(1));
+
+        sut.CheckedInAt.ShouldBe(firstTimestamp);
+        sut.GetDomainEvents().OfType<RegistrationCheckedInDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a cancelled registration
+    // When check-in is attempted
+    // Then it throws the cancelled check-in error
+    [TestMethod]
+    public void CheckIn_CancelledRegistration_ThrowsCannotCheckInCancelled()
+    {
+        var sut = NewRegistration();
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        var result = ErrorResult.Capture(() => sut.CheckIn(DateTimeOffset.UtcNow));
+
+        result.Error.ShouldMatch(Registration.Errors.CannotCheckInCancelled);
+    }
+
+    // Given a registration that has checked in
+    // When cancellation is attempted
+    // Then it throws the checked-in cancellation error
+    [TestMethod]
+    public void Cancel_CheckedInRegistration_ThrowsCannotCancelCheckedIn()
+    {
+        var sut = NewRegistration();
+        sut.CheckIn(DateTimeOffset.UtcNow);
+
+        var result = ErrorResult.Capture(() => sut.Cancel(CancellationReason.AttendeeRequest));
+
+        result.Error.ShouldMatch(Registration.Errors.CannotCancelCheckedIn);
+    }
+
     private static Registration NewRegistration() =>
         Registration.Create(
             DefaultTeamId,

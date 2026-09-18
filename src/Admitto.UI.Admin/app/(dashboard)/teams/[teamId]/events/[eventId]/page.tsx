@@ -10,6 +10,7 @@ import { EventHeroCard } from "./components/event-hero-card";
 import { TicketBreakdownCard } from "./components/ticket-breakdown-card";
 import { CheckInCard } from "./components/check-in-card";
 import { SalesTrendCard } from "./components/sales-trend-card";
+import type { CheckInSummaryDto } from "@/lib/admitto-api/generated/types.gen";
 
 type EventWithStatus = TicketedEventDetailsDto & { isRegistrationOpen?: boolean };
 
@@ -23,6 +24,9 @@ async function fetchTicketTypes(teamId: string, eventId: string): Promise<Ticket
 
 async function fetchRegistrations(teamId: string, eventId: string): Promise<RegistrationListItemDto[]> {
     return apiClient.get<RegistrationListItemDto[]>(`/api/teams/${teamId}/events/${eventId}/registrations`);
+}
+async function fetchCheckInSummary(teamId: string, eventId: string): Promise<CheckInSummaryDto> {
+    return apiClient.get<CheckInSummaryDto>(`/api/teams/${teamId}/events/${eventId}/registrations/check-in/summary`);
 }
 
 export default function EventDashboardPage() {
@@ -44,6 +48,12 @@ export default function EventDashboardPage() {
         queryKey: ["registrations", teamId, eventId],
         queryFn: () => fetchRegistrations(teamId, eventId),
         throwOnError: false,
+    });
+    const summary = useQuery({
+        queryKey: ["check-in-summary", teamId, eventId],
+        queryFn: () => fetchCheckInSummary(teamId, eventId),
+        throwOnError: false,
+        refetchOnMount: "always",
     });
 
     if (event.isLoading) {
@@ -92,8 +102,7 @@ export default function EventDashboardPage() {
                     />
                     <CheckInCard
                         event={event.data}
-                        ticketTypes={ticketTypes.data ?? []}
-                        registrations={registrations.data}
+                        summary={summary.data}
                     />
                 </div>
             </div>

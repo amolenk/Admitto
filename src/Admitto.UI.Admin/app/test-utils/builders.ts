@@ -35,6 +35,7 @@ export function teamListItemDto(overrides: Partial<TeamListItemDto> = {}): TeamL
         version: 1,
         canManageTeamSettings: true,
         canCreateEvents: true,
+        canManageAttendees: true,
         ...overrides,
     };
 }
@@ -125,6 +126,7 @@ export function registrationListItemDto(
         hasReconfirmed: false,
         reconfirmedAt: null,
         cancelledAt: null,
+        checkedInAt: null,
         ...overrides,
     };
 }

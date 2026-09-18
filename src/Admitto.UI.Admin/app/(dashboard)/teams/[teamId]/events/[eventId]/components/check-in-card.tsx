@@ -1,75 +1,85 @@
 "use client";
 
-import { RegistrationListItemDto, TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
+import { formatInEventZone } from "@/lib/time-zones";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, QrCode } from "lucide-react";
-import { formatInEventZone } from "@/lib/time-zones";
-
-function daysUntil(iso: string): number {
-    const now = new Date();
-    const event = new Date(iso);
-    return Math.max(0, Math.ceil((event.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-}
-
-function formatTime(iso: string, zone: string): string {
-    return formatInEventZone(iso, zone, "HH:mm");
-}
+import { Clock, QrCode, ArrowUpRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import type { CheckInSummaryDto } from "@/lib/admitto-api/generated/types.gen";
 
 interface CheckInCardProps {
     event: TicketedEventDetailsDto;
-    ticketTypes: TicketTypeDto[];
-    registrations?: RegistrationListItemDto[];
+    /** Attendance figures remain useful context on the event dashboard. */
+    summary?: CheckInSummaryDto;
 }
 
-export function CheckInCard({ event, ticketTypes, registrations }: CheckInCardProps) {
-    const days = daysUntil(event.startsAt);
-    const totalUsed = ticketTypes.reduce((sum, t) => sum + Number(t.usedCapacity), 0);
-    const reconfirmedCount = (registrations ?? []).filter(
-        (registration) => registration.status === "registered" && registration.hasReconfirmed,
-    ).length;
-    const expected = reconfirmedCount >= 1 ? reconfirmedCount : totalUsed;
+function formatStart(iso: string, zone: string): string {
+    return formatInEventZone(iso, zone, "MMM d, yyyy · HH:mm");
+}
+
+export function CheckInCard({ event, summary }: CheckInCardProps) {
+    const router = useRouter();
+    const isArchived = event.status === "archived";
+    const checkedIn = summary ? Number(summary.checkedInCount) : null;
+    const expected = summary ? Number(summary.expectedCount) : null;
 
     return (
         <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3 flex items-center justify-between">
                 <div>
-                    <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
+                    <div className="text-[0.6875rem] font-semibold uppercase tracking-widest text-muted-foreground">
                         Check-in
                     </div>
-                    <h3 className="font-display text-lg font-semibold mt-0.5">Event day</h3>
+                    <h3 className="mt-0.5 font-display text-lg font-semibold">Event day</h3>
                 </div>
                 <Badge variant="outline" className="text-muted-foreground">
-                    <Clock className="size-3 mr-1" />
-                    {days} days
+                    <Clock className="mr-1 size-3" />
+                    {formatStart(event.startsAt, event.timeZone)}
                 </Badge>
             </div>
-            <div className="rounded-xl border p-4 bg-grid">
-                <div className="flex items-start gap-4">
-                    <div className="h-14 w-14 rounded-lg bg-card border grid place-items-center shrink-0">
-                        <QrCode className="size-6 text-muted-foreground" />
+
+            <div className="rounded-xl border bg-grid p-5">
+                <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
+                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border bg-card shadow-sm">
+                        <QrCode className="size-7 text-primary" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] leading-relaxed">
-                            Check-in opens automatically at{" "}
-                            <span className="font-mono font-medium">{formatTime(event.startsAt, event.timeZone)}</span>{" "}
-                            on event day. Share the QR scanner link with your door team.
+                    <div className="mt-4 min-w-0 flex-1 sm:ml-4 sm:mt-0">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Door check-in</p>
+                        <h4 className="mt-1 font-display text-lg font-semibold">Ready to welcome attendees?</h4>
+                        <p className="mt-1 text-[13.5px] leading-relaxed text-muted-foreground">
+                            {isArchived ? (
+                                "This event is archived; check-in is unavailable."
+                            ) : (
+                                <>
+                                    Open the scanner to check attendees quickly at the door.
+                                </>
+                            )}
                         </p>
-                        <div className="flex gap-2 mt-3">
-                            <Button variant="outline" size="sm">
+                        <div className="mt-4 flex justify-center gap-2 sm:justify-start">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isArchived}
+                                aria-label={isArchived ? "Scanner unavailable for archived event" : undefined}
+                                onClick={() => router.push(`/teams/${event.teamId}/events/${event.id}/check-in`)}
+                            >
                                 <QrCode className="size-3.5" />
-                                Scanner
+                                {isArchived ? "Scanner unavailable" : "Scanner"}
+                                <ArrowUpRight className="size-3.5" />
                             </Button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-3 mt-4 gap-3 text-center">
-                <CheckinPill n="0" label="Checked in" />
-                <CheckinPill n={String(expected)} label="Expected" primary />
-                <CheckinPill n="0%" label="Complete" muted />
+
+            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+                <CheckinPill n={checkedIn === null ? "—" : String(checkedIn)} label="Checked in" />
+                <CheckinPill n={expected === null ? "—" : String(expected)} label="Expected" primary />
+                <CheckinPill n={expected === null ? "—" : `${expected ? Math.round((checkedIn! / expected) * 100) : 0}%`} label="Complete" muted />
             </div>
+
         </Card>
     );
 }
@@ -77,10 +87,8 @@ export function CheckInCard({ event, ticketTypes, registrations }: CheckInCardPr
 function CheckinPill({ n, label, primary, muted }: { n: string; label: string; primary?: boolean; muted?: boolean }) {
     return (
         <div className={`rounded-lg border py-2.5 ${primary ? "bg-primary/5" : "bg-muted"}`}>
-            <div className={`font-mono tabular-nums text-lg font-semibold ${muted ? "text-muted-foreground" : primary ? "text-primary" : ""}`}>
-                {n}
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">{label}</div>
+            <div className={`font-mono text-lg font-semibold tabular-nums ${muted ? "text-muted-foreground" : primary ? "text-primary" : ""}`}>{n}</div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">{label}</div>
         </div>
     );
 }

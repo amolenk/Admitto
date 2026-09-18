@@ -3,6 +3,7 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
@@ -25,16 +26,22 @@ internal sealed class GetRegistrationDetailFixture
 
     private readonly bool _withAdditionalDetails;
     private readonly bool _seedOtherTeamApiKey;
+    private readonly bool _bobIsCrewMember;
 
     private GetRegistrationDetailFixture(
         bool withAdditionalDetails = false,
-        bool seedOtherTeamApiKey = false)
+        bool seedOtherTeamApiKey = false,
+        bool bobIsCrewMember = false)
     {
         _withAdditionalDetails = withAdditionalDetails;
         _seedOtherTeamApiKey = seedOtherTeamApiKey;
+        _bobIsCrewMember = bobIsCrewMember;
     }
 
     public static GetRegistrationDetailFixture WithActiveRegistration() => new();
+
+    public static GetRegistrationDetailFixture WithActiveRegistrationForCrewMember() =>
+        new(bobIsCrewMember: true);
 
     public static GetRegistrationDetailFixture WithPartnerRegistration() =>
         new(withAdditionalDetails: true);
@@ -113,6 +120,27 @@ internal sealed class GetRegistrationDetailFixture
             [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), [])]);
         OtherEventRegistrationId = otherEventRegistration.Id;
 
+        var bob = _bobIsCrewMember
+            ? await environment.OrganizationDatabase.Context.Users.GetAsync(
+                u => u.EmailAddress == EmailAddress.From("bob@example.com"))
+            : null;
+
+        if (bob is not null)
+        {
+            var creationRequest = team.RequestEventCreation(
+                EventName.From("DevConf"),
+                AbsoluteUrl.From("https://example.com"),
+                AbsoluteUrl.From("https://tickets.example.com"),
+                Slug.From("dev-conf"),
+                ticketedEvent.StartsAt,
+                ticketedEvent.EndsAt,
+                TimeZoneId.From("UTC"),
+                bob.Id,
+                DateTimeOffset.UtcNow);
+            team.RegisterEventCreated(creationRequest.Id, eventId, DateTimeOffset.UtcNow);
+            bob.AddTeamMembership(team.Id, TeamMembershipRole.Crew);
+        }
+
         Team? otherTeam = null;
         ApiKey? otherApiKey = null;
         if (_seedOtherTeamApiKey)
@@ -125,6 +153,8 @@ internal sealed class GetRegistrationDetailFixture
         {
             db.Teams.Add(team);
             db.ApiKeys.Add(ApiKeyTestHelper.CreateApiKeyEntity(team.Id));
+            if (bob is not null)
+                db.Users.Update(bob);
             if (otherTeam is not null)
                 db.Teams.Add(otherTeam);
             if (otherApiKey is not null)

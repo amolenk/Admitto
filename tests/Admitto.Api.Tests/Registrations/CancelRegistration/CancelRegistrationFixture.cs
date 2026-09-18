@@ -9,6 +9,8 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.CancelRegistration;
 
 internal sealed class CancelRegistrationFixture
 {
+    private bool _checkedIn;
+
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
 
@@ -19,6 +21,7 @@ internal sealed class CancelRegistrationFixture
     private CancelRegistrationFixture() { }
 
     public static CancelRegistrationFixture ActiveRegistration() => new();
+    public static CancelRegistrationFixture CheckedInRegistration() => new() { _checkedIn = true };
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -50,6 +53,9 @@ internal sealed class CancelRegistrationFixture
             LastName.From("Test"),
             [new TicketTypeSnapshot(TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
+
+        if (_checkedIn)
+            registration.CheckIn(DateTimeOffset.UtcNow);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>

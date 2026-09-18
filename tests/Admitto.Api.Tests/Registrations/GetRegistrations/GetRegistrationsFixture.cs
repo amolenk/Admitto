@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -8,16 +9,26 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetRegistrations;
 
 internal sealed class GetRegistrationsFixture
 {
+    private readonly bool _bobIsCrewMember;
+    private readonly bool _checkedIn;
+
     public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
+    public DateTimeOffset CheckedInAt { get; } = DateTimeOffset.UtcNow.AddMinutes(-5);
 
     public string Route => $"/admin/teams/{TeamId}/events/{EventId}/registrations";
 
-    private GetRegistrationsFixture() { }
+    private GetRegistrationsFixture(bool bobIsCrewMember = false, bool checkedIn = false)
+    {
+        _bobIsCrewMember = bobIsCrewMember;
+        _checkedIn = checkedIn;
+    }
 
     public static GetRegistrationsFixture HappyFlow() => new();
+    public static GetRegistrationsFixture BobIsCrewMember() => new(bobIsCrewMember: true);
+    public static GetRegistrationsFixture CheckedIn() => new(checkedIn: true);
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -38,6 +49,27 @@ internal sealed class GetRegistrationsFixture
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
                 TimeZoneId.From("UTC"));
+
+        var bob = _bobIsCrewMember
+            ? await environment.OrganizationDatabase.Context.Users.GetAsync(
+                u => u.EmailAddress == EmailAddress.From("bob@example.com"))
+            : null;
+
+        if (bob is not null)
+        {
+            var creationRequest = team.RequestEventCreation(
+                EventName.From("DevConf"),
+                AbsoluteUrl.From("https://example.com"),
+                AbsoluteUrl.From("https://tickets.example.com"),
+                Slug.From("dev-conf"),
+                ticketedEvent.StartsAt,
+                ticketedEvent.EndsAt,
+                TimeZoneId.From("UTC"),
+                bob.Id,
+                DateTimeOffset.UtcNow);
+            team.RegisterEventCreated(creationRequest.Id, eventId, DateTimeOffset.UtcNow);
+            bob.AddTeamMembership(team.Id, TeamMembershipRole.Crew);
+        }
         ticketedEvent.ConfigureRegistrationPolicy(
             TicketedEventRegistrationPolicy.Create(
                 DateTimeOffset.UtcNow.AddDays(-1),
@@ -53,8 +85,15 @@ internal sealed class GetRegistrationsFixture
             FirstName.From("Alice"),
             LastName.From("Doe"),
             [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), [])]);
+        if (_checkedIn)
+            registration.CheckIn(CheckedInAt);
 
-        await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
+        await environment.OrganizationDatabase.SeedAsync(db =>
+        {
+            db.Teams.Add(team);
+            if (bob is not null)
+                db.Users.Update(bob);
+        });
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(ticketedEvent);

@@ -49,18 +49,34 @@ describe("event dashboard cards", () => {
         expect(screen.queryByRole("button")).not.toBeInTheDocument();
     });
 
+    // Given an event whose UTC start crosses into the previous date in its event time zone
+    // When the check-in card renders
+    // Then it shows the event-local start date and time instead of a relative day count
+    it("CheckInCard_EventStartsAtCrossesUtcDateBoundary_ShowsEventLocalDateAndTime", () => {
+        const boundaryEvent = ticketedEventDetailsDto({
+            startsAt: "2027-06-13T01:30:00.000Z",
+            timeZone: "America/Los_Angeles",
+        });
+
+        renderWithProviders(<CheckInCard event={boundaryEvent} />);
+
+        expect(screen.getByText("Jun 12, 2027 · 18:30")).toBeInTheDocument();
+        expect(screen.queryByText(/days/)).not.toBeInTheDocument();
+    });
+
     // Given an event with expected attendees
     // When the check-in card renders
-    // Then it exposes the scanner action and check-in metadata without a share link
-    it("shows the scanner without a share link", () => {
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} />);
+    // Then it exposes an intentional scanner action alongside attendance metrics
+    it("CheckInCard_WithExpectedAttendees_ShowsScannerAndCounts", () => {
+        renderWithProviders(<CheckInCard event={event} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Check-in")).toBeInTheDocument();
         expect(screen.getByText("Event day")).toBeInTheDocument();
-        expect(screen.getByText("20:00")).toBeInTheDocument();
-        expect(screen.getByText("12 days")).toBeInTheDocument();
+        expect(screen.getByText(/20:00/)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Scanner" })).toBeInTheDocument();
+        expect(screen.getByText("Ready to welcome attendees?")).toBeInTheDocument();
         expect(screen.getByText("42")).toBeInTheDocument();
+        expect(screen.queryByText(/Scanner is available/)).not.toBeInTheDocument();
         expect(screen.queryByRole("link")).not.toBeInTheDocument();
         expect(screen.queryByText(/share link/i)).not.toBeInTheDocument();
     });
@@ -101,28 +117,28 @@ describe("event dashboard cards", () => {
 
     // Given ticket capacity with no reconfirmed registrations
     // When the check-in card renders
-    // Then Expected equals total used capacity
-    it("uses total used capacity for Expected without reconfirmations", () => {
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={[]} />);
+    // Then the dashboard retains its attendance metrics
+    it("shows attendance metrics", () => {
+        renderWithProviders(<CheckInCard event={event} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Expected")).toBeInTheDocument();
-        expect(screen.getByText("42")).toBeInTheDocument();
+        expect(screen.getByText("Checked in")).toBeInTheDocument();
     });
 
-    // Given two active reconfirmed registrations
+    // Given the attendance summary reports two expected attendees
     // When the check-in card renders
-    // Then Expected equals the reconfirmed count
-    it("uses the reconfirmed count for Expected when available", () => {
-        const registrations = [
-            registrationListItemDto({ id: "reg-1", hasReconfirmed: true }),
-            registrationListItemDto({ id: "reg-2", hasReconfirmed: true }),
-        ];
+    // Then the card keeps its scanner hierarchy and renders the supplied expected count
+    it("CheckInCard_SummaryRendersExpectedCount", () => {
+        renderWithProviders(
+            <CheckInCard
+                event={event}
+                summary={{ checkedInCount: 0, expectedCount: 2 }}
+            />,
+        );
 
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={registrations} />);
-
-        expect(screen.getByText("Expected")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Scanner" })).toBeInTheDocument();
+        expect(screen.getByText("Ready to welcome attendees?")).toBeInTheDocument();
         expect(screen.getByText("2")).toBeInTheDocument();
-        expect(screen.queryByText("42")).not.toBeInTheDocument();
     });
 
     // Given a cancelled registration that was previously reconfirmed

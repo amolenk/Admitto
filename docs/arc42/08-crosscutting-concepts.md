@@ -253,7 +253,7 @@ Application-email SMTP credentials are deployment secrets, supplied through host
 
 Attendee-held registration links, including QR-code retrieval and self-service cancellation/edit redirects, treat `RegistrationId` as a high-entropy bearer secret. Anonymous Public API links use `/e/{eventSlug}/...`; the event slug resolves `TicketedEventId`, and QR-code retrieval loads registrations only by `(eventId, registrationId)`. Partner self-service mutation endpoints use `/api/events/{eventSlug}/...`, resolve the slug to `TicketedEventId` within the API-key owner's team scope, and still require `X-Api-Key`.
 
-QR codes encode the literal registration ID string. They do not include a per-event HMAC signature, and `TicketedEvent` does not carry a QR signing key. Future check-in flows should validate QR payloads server-side under the selected event/team, or introduce a dedicated check-in token design if offline validation becomes a real requirement.
+QR codes encode the literal registration ID string. They do not include a per-event HMAC signature, and `TicketedEvent` does not carry a QR signing key. The admin check-in flow therefore validates the raw payload server-side under the selected team/event; scanners are online-only and hold no offline check-in credentials. A dedicated signed check-in token would be a separate design if offline validation ever became a requirement.
 
 **Endpoint validation order** for anonymous public QR-code retrieval: resolve event by `PublicSlug` (404) → load the aggregate by `(eventId, registrationId)` (404 on missing/wrong event) → return the PNG. Partner registration-bound mutation endpoints first authenticate `X-Api-Key` and resolve `TeamId` from the shared `team_id` claim (401), then resolve event and registration within that team scope. The attendee-editable self-service update endpoint replaces first name, last name, additional details, and final ticket selection atomically at `PUT /api/events/{eventSlug}/registrations/{registrationId}`; the previous ticket-only `/tickets` Partner route is intentionally not retained.
 
@@ -565,6 +565,12 @@ Because `TicketedEvent.Archive()` commits the projection onto `TicketCatalog` in
 ### Why not a separate lifecycle-guard aggregate?
 
 Previous designs used a dedicated `TicketedEventLifecycleGuard` aggregate to mirror event status from the Organization module into Registrations. That guard is gone: with `TicketedEvent` now owned by Registrations, the aggregate enforces its own invariants and the only out-of-aggregate projection is the single `EventStatus` field on `TicketCatalog`, which exists solely to make the status + capacity check atomic. See [ADR-008](../adr/adr-008-ticketed-event-ownership-in-registrations.md).
+
+### Attendance check-in
+
+Attendance is Registrations-owned state on `Registration`: nullable `CheckedInAt` is one-way and does not replace the `Registered`/`Cancelled` lifecycle status. A check-in is allowed only for a registration in the selected team/event while that event is `Active`; event start and end dates do not gate the operation. Cancellation and check-in are reciprocal invariants: cancelled registrations cannot be checked in, and checked-in registrations cannot be cancelled. Expected-attendee counts exclude cancelled registrations and include registered attendees who have not reconfirmed.
+
+The check-in domain event is handled in-transaction by the Registrations activity projection and writes only a timestamp-only timeline entry. It is not an integration event, notification trigger, or audit record. Concurrent scans are reconciled at the application boundary: exactly one returns `Success`, while every competing request returns `AlreadyCheckedIn` carrying the persisted `CheckedInAt` timestamp. The complete online scanner flow and its server-side team/event scoping are described in [§6.6.3](06-runtime-view.md#663-admin-qr-check-in).
 
 ## 8.15 Architecture enforcement (ArchUnitNET)
 

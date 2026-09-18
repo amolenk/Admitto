@@ -9,4 +9,5 @@ internal sealed record TeamListItemDto(
     string AccentColor,
     uint Version,
     bool CanManageTeamSettings,
-    bool CanCreateEvents);
+    bool CanCreateEvents,
+    bool CanManageAttendees);

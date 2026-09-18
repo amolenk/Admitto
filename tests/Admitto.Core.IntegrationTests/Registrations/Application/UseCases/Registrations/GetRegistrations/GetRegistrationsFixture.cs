@@ -14,11 +14,13 @@ internal sealed class GetRegistrationsFixture
     public TeamId TeamId { get; } = TeamId.New();
     public TicketTypeId GeneralId { get; } = TicketTypeId.New();
     public TicketTypeId VipId { get; } = TicketTypeId.New();
+    public DateTimeOffset CheckedInAt { get; } = DateTimeOffset.UtcNow.AddMinutes(-5);
 
     private bool _seedRegistrations;
     private bool _seedMultiTicketRegistration;
     private bool _seedOtherEventRegistration;
     private bool _seedCancelledRegistration;
+    private bool _seedCheckedInRegistration;
 
     private GetRegistrationsFixture() { }
 
@@ -43,6 +45,11 @@ internal sealed class GetRegistrationsFixture
     public static GetRegistrationsFixture WithCancelledAndActiveRegistration() => new()
     {
         _seedCancelledRegistration = true,
+    };
+
+    public static GetRegistrationsFixture WithCheckedInRegistration() => new()
+    {
+        _seedCheckedInRegistration = true,
     };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -132,6 +139,20 @@ internal sealed class GetRegistrationsFixture
                 db.Registrations.Add(cancelled);
                 db.Registrations.Add(active);
             });
+        }
+
+        if (_seedCheckedInRegistration)
+        {
+            var checkedIn = Registration.Create(
+                TeamId,
+                EventId,
+                EmailAddress.From("gina@example.com"),
+                FirstName.From("Gina"),
+                LastName.From("Doe"),
+                [new TicketTypeSnapshot(GeneralId, TicketTypeName.From(GeneralName), [])]);
+            checkedIn.CheckIn(CheckedInAt);
+
+            await environment.RegistrationsDatabase.SeedAsync(db => db.Registrations.Add(checkedIn));
         }
 
         if (_seedOtherEventRegistration)

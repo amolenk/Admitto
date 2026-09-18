@@ -16,6 +16,9 @@ internal sealed class GetTeamsFixture
     public Guid MemberTeamAcmeId { get; private set; }
     public Guid MemberTeamBetaId { get; private set; }
     public Guid NonMemberTeamGammaId { get; private set; }
+    public Guid CapabilityOwnerTeamId { get; private set; }
+    public Guid CapabilityOrganizerTeamId { get; private set; }
+    public Guid CapabilityCrewTeamId { get; private set; }
 
     private readonly bool _includeArchivedMembership;
 
@@ -34,6 +37,28 @@ internal sealed class GetTeamsFixture
     public static GetTeamsFixture AdminListsTeamsWithMixedCaseNames() => new();
 
     public static GetTeamsFixture UserListsOwnTeamsWithMixedCaseNames() => new();
+
+    public async ValueTask SetupRoleCapabilityTeamsAsync(IntegrationTestEnvironment environment)
+    {
+        var ownerTeam = new TeamBuilder().WithName("Owner Team").Build();
+        var organizerTeam = new TeamBuilder().WithName("Organizer Team").Build();
+        var crewTeam = new TeamBuilder().WithName("Crew Team").Build();
+        var user = User.Create(EmailAddress.From("member@example.com"));
+        user.AddTeamMembership(ownerTeam.Id, TeamMembershipRole.Owner);
+        user.AddTeamMembership(organizerTeam.Id, TeamMembershipRole.Organizer);
+        user.AddTeamMembership(crewTeam.Id, TeamMembershipRole.Crew);
+
+        await environment.OrganizationDatabase.SeedAsync(dbContext =>
+        {
+            dbContext.Teams.AddRange(ownerTeam, organizerTeam, crewTeam);
+            dbContext.Users.Add(user);
+        });
+
+        UserId = user.Id.Value;
+        CapabilityOwnerTeamId = ownerTeam.Id.Value;
+        CapabilityOrganizerTeamId = organizerTeam.Id.Value;
+        CapabilityCrewTeamId = crewTeam.Id.Value;
+    }
 
     public async ValueTask SetupAdminTeamsAsync(IntegrationTestEnvironment environment)
     {

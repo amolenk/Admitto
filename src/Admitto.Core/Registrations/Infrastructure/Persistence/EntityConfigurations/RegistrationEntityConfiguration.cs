@@ -74,9 +74,24 @@ public class RgregistrationEntityConfiguration : IEntityTypeConfiguration<Regist
         builder.Property(e => e.CancelledAt)
             .HasColumnName("cancelled_at");
 
+        builder.Property(e => e.CheckedInAt)
+            .HasColumnName("checked_in_at");
+
+        builder.Property(e => e.SearchText)
+            .HasColumnName("search_text")
+            .HasMaxLength(600)
+            .IsRequired();
+
         builder.HasIndex(e => new { e.EventId, e.Email })
             .HasDatabaseName("IX_registrations_event_id_email")
             .IsUnique();
+
+        builder.HasIndex(e => new { e.TeamId, e.EventId, e.SearchText })
+            .HasDatabaseName("IX_registrations_team_event_search_text");
+
+        builder.ToTable("registrations", t => t.HasCheckConstraint(
+            "CK_registrations_cancelled_without_check_in",
+            "status <> 'Cancelled' OR checked_in_at IS NULL"));
 
         builder.OwnsMany(e => e.Tickets, (OwnedNavigationBuilder<Registration, TicketTypeSnapshot> b) =>
         {

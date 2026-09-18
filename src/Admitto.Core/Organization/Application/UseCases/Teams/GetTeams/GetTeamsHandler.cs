@@ -28,7 +28,8 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
                     t.AccentColor.Value,
                     t.Version,
                     CanManageTeamSettings: true,
-                    CanCreateEvents: true))
+                    CanCreateEvents: true,
+                    CanManageAttendees: true))
                 .ToListAsync(cancellationToken);
         }
 
@@ -61,7 +62,8 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
         return teams
             .Select(t =>
             {
-                var isOwner = rolesByTeamId[t.Id] == TeamMembershipRole.Owner;
+                var role = rolesByTeamId[t.Id];
+                var isOwner = role == TeamMembershipRole.Owner;
 
                 return new TeamListItemDto(
                     t.TeamId,
@@ -69,7 +71,8 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
                     t.AccentColor,
                     t.Version,
                     CanManageTeamSettings: isOwner,
-                    CanCreateEvents: isOwner);
+                    CanCreateEvents: isOwner,
+                    CanManageAttendees: role is TeamMembershipRole.Owner or TeamMembershipRole.Organizer);
             })
             .ToList();
     }

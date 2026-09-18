@@ -11,7 +11,7 @@ public static class GetRegistrationDetailsHttpEndpoint
         group
             .MapGet("/{registrationId:guid}", GetRegistrationDetails)
             .WithName(nameof(GetRegistrationDetails))
-            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Crew));
 
         return group;
     }

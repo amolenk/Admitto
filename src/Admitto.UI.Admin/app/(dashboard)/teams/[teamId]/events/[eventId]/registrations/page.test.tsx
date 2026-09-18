@@ -80,8 +80,8 @@ function mockData(overrides: {
     });
 }
 
-function renderPage() {
-    setRoute({ params: { teamId: TEAM_ID, eventId: EVENT_ID } });
+function renderPage(searchParams = new URLSearchParams()) {
+    setRoute({ params: { teamId: TEAM_ID, eventId: EVENT_ID }, searchParams });
     return renderWithProviders(<RegistrationsPage />);
 }
 
@@ -315,7 +315,7 @@ describe("RegistrationsPage", () => {
         expect(screen.getByText("No results")).toBeInTheDocument();
     });
 
-    // Given registrations with each of the three statuses
+    // Given registrations with each of the four displayed statuses
     // When the Status filter is set to a specific status
     // Then only rows with that displayed status remain
     it("narrows rows with the status filter", async () => {
@@ -337,7 +337,14 @@ describe("RegistrationsPage", () => {
             status: "registered",
             hasReconfirmed: false,
         });
-        mockData({ registrations: [cancelled, reconfirmed, registered] });
+        const checkedIn = registrationListItemDto({
+            id: "r-checked-in",
+            email: "checked-in@example.com",
+            status: "registered",
+            hasReconfirmed: true,
+            checkedInAt: "2026-03-06T09:00:00Z",
+        });
+        mockData({ registrations: [cancelled, reconfirmed, checkedIn, registered] });
 
         const { user } = renderPage();
         await screen.findByText("cancelled@example.com");
@@ -347,6 +354,34 @@ describe("RegistrationsPage", () => {
         expect(screen.queryByText("cancelled@example.com")).not.toBeInTheDocument();
         expect(screen.queryByText("registered@example.com")).not.toBeInTheDocument();
         expect(screen.getByText("reconfirmed@example.com")).toBeInTheDocument();
+    });
+
+    // Given a checked-in registration
+    // When the Status filter is set to "Checked in"
+    // Then only the checked-in row remains
+    it("narrows rows to only Checked in with the status filter", async () => {
+        const checkedIn = registrationListItemDto({
+            id: "r-checked-in-filter",
+            email: "checked-in-filter@example.com",
+            status: "registered",
+            hasReconfirmed: true,
+            checkedInAt: "2026-03-06T09:00:00Z",
+        });
+        const registered = registrationListItemDto({
+            id: "r-registered-filter",
+            email: "registered-filter@example.com",
+            status: "registered",
+            hasReconfirmed: false,
+        });
+        mockData({ registrations: [checkedIn, registered] });
+
+        const { user } = renderPage();
+        await screen.findByText("checked-in-filter@example.com");
+
+        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Checked in");
+
+        expect(screen.getByText("checked-in-filter@example.com")).toBeInTheDocument();
+        expect(screen.queryByText("registered-filter@example.com")).not.toBeInTheDocument();
     });
 
     // Given registrations with each of the three statuses
@@ -457,6 +492,17 @@ describe("RegistrationsPage", () => {
         await screen.findByText("ada@example.com");
 
         await user.click(screen.getByRole("button", { name: "Add registration" }));
+
+        expect(await screen.findByRole("heading", { name: "Add registration" })).toBeInTheDocument();
+        expect(screen.getByLabelText("First name")).toBeInTheDocument();
+    });
+
+    // Given the registrations page is opened with the create-registration query
+    // When the page loads
+    // Then the actual add-registration sheet opens
+    it("route_createRegistrationQuery_opensAddRegistrationSheet", async () => {
+        renderPage(new URLSearchParams("create=1"));
+        await screen.findByText("ada@example.com");
 
         expect(await screen.findByRole("heading", { name: "Add registration" })).toBeInTheDocument();
         expect(screen.getByLabelText("First name")).toBeInTheDocument();

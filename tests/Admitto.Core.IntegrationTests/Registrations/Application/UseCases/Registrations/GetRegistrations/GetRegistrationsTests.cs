@@ -118,6 +118,25 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         active.ShouldNotBeNull().CancelledAt.ShouldBeNull();
     }
 
+    // Given a registration that has been checked in
+    // When the registrations are queried
+    // Then the authoritative check-in timestamp is returned
+    [TestMethod]
+    public async ValueTask WithCheckedInRegistration_PopulatesCheckedInAt()
+    {
+        var fixture = GetRegistrationsFixture.WithCheckedInRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationsQuery(fixture.EventId, fixture.TeamId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        var registration = result.ShouldHaveSingleItem();
+        registration.CheckedInAt.ShouldNotBeNull();
+        registration.CheckedInAt.Value.ShouldBe(fixture.CheckedInAt, TimeSpan.FromMilliseconds(1));
+    }
+
     private static GetRegistrationsHandler NewHandler() =>
         new(Environment.RegistrationsDatabase.Context);
 }

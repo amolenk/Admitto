@@ -37,6 +37,7 @@ internal sealed class GetRegistrationDetailsHandler(
             RegisteredAt: registration.CreatedAt,
             HasReconfirmed: registration.HasReconfirmed,
             ReconfirmedAt: registration.ReconfirmedAt,
+            CheckedInAt: registration.CheckedInAt,
             CancellationReason: registration.CancellationReason?.ToString(),
             Tickets: registration.Tickets
                 .Select(t => new TicketDetailDto(t.Id.Value, t.Name.Value))
