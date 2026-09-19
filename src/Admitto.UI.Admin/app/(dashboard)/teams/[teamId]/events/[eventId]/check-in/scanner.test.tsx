@@ -2,6 +2,7 @@ import { act, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useQuery } from "@tanstack/react-query";
 import { CheckInScanner, type DecoderAdapter } from "./scanner";
+import type { CheckInOperations } from "./check-in-operations";
 import { renderWithProviders } from "@/test-utils/render";
 import { apiClient } from "@/lib/api-client";
 
@@ -23,13 +24,21 @@ function fakeDecoder() {
     return { decoder, scan: (value: string) => { if (decode) decode(value); else queued = value; } };
 }
 
+function fakeOperations(overrides: Partial<CheckInOperations> = {}): CheckInOperations {
+    return {
+        checkIn: vi.fn().mockResolvedValue(response("success")),
+        lookup: vi.fn().mockResolvedValue([]),
+        ...overrides,
+    };
+}
+
 function SummaryHarness({ decoder }: { decoder: DecoderAdapter }) {
-    const summary = useQuery({
+    useQuery({
         queryKey: ["check-in-summary", "team", "event"],
         queryFn: () => apiClient.get<{ checkedInCount: number; expectedCount: number }>(SUMMARY_URL),
     });
 
-    return <CheckInScanner {...props} decoder={decoder} summary={summary.data} />;
+    return <CheckInScanner {...props} decoder={decoder} />;
 }
 
 describe("check-in scanner", () => {
@@ -164,18 +173,6 @@ describe("check-in scanner", () => {
         );
     });
 
-    // Given the scanner is open with an attendance summary
-    // When a check-in succeeds
-    // Then it does not expose attendance metrics in the scanner header
-    it("submit_successfulCheckIn_hidesAttendanceMetrics", async () => {
-        const fake = fakeDecoder();
-        renderWithProviders(<CheckInScanner {...props} summary={{ checkedInCount: 2, expectedCount: 4 }} decoder={fake.decoder} />);
-
-        expect(screen.queryByText(/checked in · 4 expected/)).not.toBeInTheDocument();
-        await act(async () => fake.scan("counted-credential"));
-        expect(screen.queryByText("Authoritative count")).not.toBeInTheDocument();
-    });
-
     // Given a matching registration returned by manual lookup
     // When the operator selects it and confirms check-in
     // Then the selected registration credential is submitted
@@ -226,5 +223,54 @@ describe("check-in scanner", () => {
         authoritativeCount = 3;
         await act(async () => fake.scan("new-credential"));
         expect(get.mock.calls.filter(([url]) => url === SUMMARY_URL).length).toBeGreaterThanOrEqual(2);
+    });
+
+    // Given a custom operation surface for a non-dashboard access context
+    // When the scanner scans a credential and searches manually
+    // Then it uses the supplied checkIn/lookup instead of any dashboard BFF route
+    it("operations_customSurfaceSupplied_usesSuppliedCheckInAndLookup", async () => {
+        const operations = fakeOperations();
+        const fake = fakeDecoder();
+        const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} operations={operations} />);
+
+        await act(async () => fake.scan("shared-credential"));
+
+        expect(operations.checkIn).toHaveBeenCalledWith("shared-credential");
+        expect(post).not.toHaveBeenCalled();
+        expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
+
+        await user.type(screen.getByRole("textbox", { name: "Manual search" }), "jane");
+        await waitFor(() => expect(operations.lookup).toHaveBeenCalledWith("jane"));
+        expect(get).not.toHaveBeenCalled();
+    });
+
+    // Given an access-context operation surface without a create-registration link
+    // When a cancelled registration is scanned
+    // Then the cancelled outcome still displays but omits dashboard administration
+    it("operations_omittedCreateRegistrationHref_hidesLinkButKeepsDismiss", async () => {
+        const operations = fakeOperations({ checkIn: vi.fn().mockResolvedValue(response("cancelled")) });
+        const fake = fakeDecoder();
+        const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} operations={operations} />);
+
+        await act(async () => fake.scan("cancelled-shared-credential"));
+
+        expect(screen.getByText(/Cancelled/)).toBeInTheDocument();
+        expect(screen.queryByText(/Create Registration is required/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Create registration" })).not.toBeInTheDocument();
+        await user.click(screen.getByRole("button", { name: "Dismiss" }));
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    // Given an access-context operation surface without an onCheckedIn callback
+    // When a check-in succeeds
+    // Then the scan still succeeds without requiring a dashboard summary refresh
+    it("operations_omittedOnCheckedIn_stillShowsSuccess", async () => {
+        const operations = fakeOperations();
+        const fake = fakeDecoder();
+        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} operations={operations} />);
+
+        await act(async () => fake.scan("no-callback-credential"));
+
+        expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
     });
 });

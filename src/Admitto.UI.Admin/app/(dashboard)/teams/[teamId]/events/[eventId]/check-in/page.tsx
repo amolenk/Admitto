@@ -18,7 +18,10 @@ export default function CheckInPage() {
         queryKey: ["event", teamId, eventId],
         queryFn: () => apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamId}/events/${eventId}`),
     });
-    const summaryQuery = useQuery({
+    // Kept mounted (though unused by the scanner) so a successful check-in's
+    // summary invalidation refetches this query while the page is open,
+    // preserving the prior summary-refresh behavior.
+    useQuery({
         queryKey: ["check-in-summary", teamId, eventId],
         queryFn: () => apiClient.get<CheckInSummaryDto>(`/api/teams/${teamId}/events/${eventId}/registrations/check-in/summary`),
         retry: false,
@@ -40,7 +43,6 @@ export default function CheckInPage() {
                     eventId={eventId}
                     startsAt={eventQuery.data.startsAt}
                     timeZone={eventQuery.data.timeZone}
-                    summary={summaryQuery.data}
                 />
             ) : (
                 <p className="text-destructive">Failed to load event.</p>
