@@ -88,6 +88,15 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
                 .HasColumnType("time");
         });
 
+        builder.OwnsOne(e => e.ScannerLink, sl =>
+        {
+            sl.Property(x => x.Secret)
+                .HasColumnName("scanner_link_secret")
+                .HasMaxLength(64);
+            sl.Property(x => x.CreatedAt).HasColumnName("scanner_link_created_at");
+            sl.Property(x => x.RevokedAt).HasColumnName("scanner_link_revoked_at");
+        });
+
         builder.OwnsOne(e => e.WaitlistPolicy, p =>
         {
             p.Property(x => x.QuietHoursStart)

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CheckInSummaryDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated/types.gen";
 import { CheckInScanner } from "./scanner";
+import { ScannerLinkCard } from "./scanner-link-card";
 
 export default function CheckInPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
@@ -38,12 +39,20 @@ export default function CheckInPage() {
             {eventQuery.isLoading ? (
                 <Skeleton className="mx-auto h-[600px] max-w-2xl" />
             ) : eventQuery.data ? (
+                <>
                 <CheckInScanner
                     teamId={teamId}
                     eventId={eventId}
                     startsAt={eventQuery.data.startsAt}
                     timeZone={eventQuery.data.timeZone}
                 />
+                <ScannerLinkCard
+                    teamId={teamId}
+                    eventId={eventId}
+                    isArchived={eventQuery.data.status === "archived"}
+                    timeZone={eventQuery.data.timeZone}
+                />
+                </>
             ) : (
                 <p className="text-destructive">Failed to load event.</p>
             )}

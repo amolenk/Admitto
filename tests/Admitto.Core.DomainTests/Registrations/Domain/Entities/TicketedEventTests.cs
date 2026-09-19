@@ -749,6 +749,244 @@ public sealed class TicketedEventTests
         ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.QuietHoursMustBePaired);
     }
 
+    // ── ScannerLink ──────────────────────────────────────────────────────────
+
+    // Given an active event with no scanner link
+    // When a scanner link is created
+    // Then it stores an active link with the given secret
+    [TestMethod]
+    public void CreateScannerLink_Active_StoresActiveLink()
+    {
+        var sut = NewEvent();
+        var secret = ScannerLinkSecret.New();
+        var now = DefaultStart.AddDays(-1);
+
+        sut.CreateScannerLink(secret, now);
+
+        sut.ScannerLink.ShouldNotBeNull();
+        sut.ScannerLink!.Secret.ShouldBe(secret);
+        sut.ScannerLink!.CreatedAt.ShouldBe(now);
+        sut.ScannerLink!.GetStatus(now, sut.EndsAt).ShouldBe(ScannerLinkStatus.Active);
+    }
+
+    // Given an event that already has a scanner link
+    // When a scanner link is created again
+    // Then it throws a scanner-link-already-exists business rule violation
+    [TestMethod]
+    public void CreateScannerLink_AlreadyExists_Throws()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-1));
+
+        var act = () => sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-1));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEvent.Errors.ScannerLinkAlreadyExists);
+    }
+
+    // Given an archived event
+    // When a scanner link is created
+    // Then it throws an event-not-active business rule violation
+    [TestMethod]
+    public void CreateScannerLink_Archived_Throws()
+    {
+        var sut = NewEvent();
+        sut.Archive();
+
+        var act = () => sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-1));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
+    }
+
+    // Given an event with an existing scanner link
+    // When the scanner link is regenerated
+    // Then the previous secret is replaced and the link is active again
+    [TestMethod]
+    public void RegenerateScannerLink_Existing_ReplacesSecret()
+    {
+        var sut = NewEvent();
+        var originalSecret = ScannerLinkSecret.New();
+        sut.CreateScannerLink(originalSecret, DefaultStart.AddDays(-2));
+        var newSecret = ScannerLinkSecret.New();
+        var now = DefaultStart.AddDays(-1);
+
+        sut.RegenerateScannerLink(newSecret, now);
+
+        sut.ScannerLink!.Secret.ShouldBe(newSecret);
+        sut.ScannerLink!.Secret.ShouldNotBe(originalSecret);
+        sut.ScannerLink!.CreatedAt.ShouldBe(now);
+        sut.ScannerLink!.GetStatus(now, sut.EndsAt).ShouldBe(ScannerLinkStatus.Active);
+    }
+
+    // Given an event with a revoked scanner link
+    // When the scanner link is regenerated
+    // Then it becomes active again with the new secret
+    [TestMethod]
+    public void RegenerateScannerLink_Revoked_ReactivatesLink()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+        sut.RevokeScannerLink(DefaultStart.AddDays(-1));
+        var newSecret = ScannerLinkSecret.New();
+        var now = DefaultStart.AddHours(-12);
+
+        sut.RegenerateScannerLink(newSecret, now);
+
+        sut.ScannerLink!.Secret.ShouldBe(newSecret);
+        sut.ScannerLink!.GetStatus(now, sut.EndsAt).ShouldBe(ScannerLinkStatus.Active);
+    }
+
+    // Given an event with no scanner link
+    // When the scanner link is regenerated
+    // Then it throws a scanner-link-not-found business rule violation
+    [TestMethod]
+    public void RegenerateScannerLink_NotFound_Throws()
+    {
+        var sut = NewEvent();
+
+        var act = () => sut.RegenerateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-1));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEvent.Errors.ScannerLinkNotFound);
+    }
+
+    // Given an archived event with an existing scanner link
+    // When the scanner link is regenerated
+    // Then it throws an event-not-active business rule violation
+    [TestMethod]
+    public void RegenerateScannerLink_Archived_Throws()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+        sut.Archive();
+
+        var act = () => sut.RegenerateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-1));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
+    }
+
+    // Given an event with an active scanner link
+    // When the scanner link is revoked
+    // Then its secret is cleared and its status becomes Revoked
+    [TestMethod]
+    public void RevokeScannerLink_Active_ClearsSecretAndRevokes()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+        var now = DefaultStart.AddDays(-1);
+
+        sut.RevokeScannerLink(now);
+
+        sut.ScannerLink!.Secret.ShouldBeNull();
+        sut.ScannerLink!.RevokedAt.ShouldBe(now);
+        sut.ScannerLink!.GetStatus(now, sut.EndsAt).ShouldBe(ScannerLinkStatus.Revoked);
+    }
+
+    // Given an event with no scanner link
+    // When the scanner link is revoked
+    // Then it throws a scanner-link-not-found business rule violation
+    [TestMethod]
+    public void RevokeScannerLink_NotFound_Throws()
+    {
+        var sut = NewEvent();
+
+        var act = () => sut.RevokeScannerLink(DefaultStart.AddDays(-1));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEvent.Errors.ScannerLinkNotFound);
+    }
+
+    // Given an event whose scanner link has already been revoked
+    // When the scanner link is revoked again
+    // Then it throws a scanner-link-already-revoked business rule violation
+    [TestMethod]
+    public void RevokeScannerLink_AlreadyRevoked_Throws()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+        sut.RevokeScannerLink(DefaultStart.AddDays(-1));
+
+        var act = () => sut.RevokeScannerLink(DefaultStart);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEvent.Errors.ScannerLinkAlreadyRevoked);
+    }
+
+    // Given an archived event with an existing scanner link
+    // When the scanner link is revoked
+    // Then it throws an event-not-active business rule violation
+    [TestMethod]
+    public void RevokeScannerLink_Archived_Throws()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+        sut.Archive();
+
+        var act = () => sut.RevokeScannerLink(DefaultStart.AddDays(-1));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
+    }
+
+    // Given an event whose scheduled end time has already passed
+    // When the scanner link's status is evaluated
+    // Then it reports Expired even though it was never explicitly revoked
+    [TestMethod]
+    public void ScannerLink_PastEventEnd_ReportsExpired()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+
+        sut.ScannerLink!.GetStatus(sut.EndsAt.AddMinutes(1), sut.EndsAt).ShouldBe(ScannerLinkStatus.Expired);
+    }
+
+    // Given an event whose scanner link is expired
+    // When the visible secret is requested
+    // Then it returns null even though the underlying secret is still stored
+    [TestMethod]
+    public void ScannerLink_Expired_HidesSecret()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+
+        var visible = sut.ScannerLink!.GetVisibleSecret(sut.EndsAt.AddMinutes(1), sut.EndsAt);
+
+        visible.ShouldBeNull();
+    }
+
+    // Given an event whose scanner link is revoked
+    // When the visible secret is requested
+    // Then it returns null
+    [TestMethod]
+    public void ScannerLink_Revoked_HidesSecret()
+    {
+        var sut = NewEvent();
+        sut.CreateScannerLink(ScannerLinkSecret.New(), DefaultStart.AddDays(-2));
+        sut.RevokeScannerLink(DefaultStart.AddDays(-1));
+
+        var visible = sut.ScannerLink!.GetVisibleSecret(DefaultStart.AddDays(-1), sut.EndsAt);
+
+        visible.ShouldBeNull();
+    }
+
+    // Given an event with an active, unexpired scanner link
+    // When the visible secret is requested
+    // Then it returns the current secret
+    [TestMethod]
+    public void ScannerLink_Active_ShowsSecret()
+    {
+        var sut = NewEvent();
+        var secret = ScannerLinkSecret.New();
+        var now = DefaultStart.AddDays(-1);
+        sut.CreateScannerLink(secret, now);
+
+        var visible = sut.ScannerLink!.GetVisibleSecret(now, sut.EndsAt);
+
+        visible.ShouldBe(secret);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static TicketedEvent NewEvent() => TicketedEvent.Create(
