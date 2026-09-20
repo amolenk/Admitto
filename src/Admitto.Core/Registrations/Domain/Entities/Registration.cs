@@ -192,7 +192,7 @@ public class Registration : Aggregate<RegistrationId>
         AddDomainEvent(new RegistrationReconfirmedDomainEvent(TeamId, EventId, Id, Email, now));
     }
 
-    public void CheckIn(DateTimeOffset serverNow)
+    public void CheckIn(DateTimeOffset serverNow, CheckInSource source = CheckInSource.Dashboard)
     {
         if (Status == RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.CannotCheckInCancelled);
@@ -201,7 +201,7 @@ public class Registration : Aggregate<RegistrationId>
             return;
 
         CheckedInAt = serverNow;
-        AddDomainEvent(new RegistrationCheckedInDomainEvent(TeamId, EventId, Id, serverNow));
+        AddDomainEvent(new RegistrationCheckedInDomainEvent(TeamId, EventId, Id, serverNow, source));
     }
 
     private static string BuildSearchText(EmailAddress email, FirstName firstName, LastName lastName) =>

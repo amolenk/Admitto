@@ -651,6 +651,32 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Registrations.Domain.Entities.TicketedEvent", b =>
                 {
+                    b.OwnsOne("Amolenk.Admitto.Core.Registrations.Domain.Entities.ScannerLink", "ScannerLink", b1 =>
+                        {
+                            b1.Property<Guid>("TicketedEventId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<DateTimeOffset>("CreatedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("scanner_link_created_at");
+
+                            b1.Property<DateTimeOffset?>("RevokedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("scanner_link_revoked_at");
+
+                            b1.Property<string>("Secret")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)")
+                                .HasColumnName("scanner_link_secret");
+
+                            b1.HasKey("TicketedEventId");
+
+                            b1.ToTable("ticketed_events", "registrations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketedEventId");
+                        });
+
                     b.OwnsOne("Amolenk.Admitto.Core.Registrations.Domain.ValueObjects.TicketedEventReconfirmPolicy", "ReconfirmPolicy", b1 =>
                         {
                             b1.Property<Guid>("TicketedEventId")
@@ -738,6 +764,8 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                     b.Navigation("ReconfirmPolicy");
 
                     b.Navigation("RegistrationPolicy");
+
+                    b.Navigation("ScannerLink");
 
                     b.Navigation("WaitlistPolicy")
                         .IsRequired();

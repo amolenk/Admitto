@@ -115,9 +115,9 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
-    // Given a TicketsChanged domain event with old and new ticket types
-    // When the projector handles the event
-    // Then a TicketsChanged activity log entry is created with metadata listing the old and new ticket type ids
+    // Given a registration's selected tickets change from one type to another
+    // When the change is recorded
+    // Then an activity log entry is created with metadata listing the old and new ticket type names
     [TestMethod]
     public async ValueTask HandleAsync_TicketsChanged_CreatesTicketsChangedEntryWithMetadata()
     {
@@ -152,10 +152,10 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             entry.OccurredAt.ShouldBe(changedAt);
 
             using var doc = JsonDocument.Parse(entry.Metadata!);
-            var from = doc.RootElement.GetProperty("from").EnumerateArray().Select(e => e.GetGuid()).ToArray();
-            var to = doc.RootElement.GetProperty("to").EnumerateArray().Select(e => e.GetGuid()).ToArray();
-            from.ShouldBe([earlyBirdId.Value]);
-            to.ShouldBe([workshopId.Value]);
+            var from = doc.RootElement.GetProperty("from").EnumerateArray().Select(e => e.GetString()).ToArray();
+            var to = doc.RootElement.GetProperty("to").EnumerateArray().Select(e => e.GetString()).ToArray();
+            from.ShouldBe(["Early Bird"]);
+            to.ShouldBe(["Workshop"]);
         });
     }
 
@@ -186,6 +186,39 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             entry.ActivityType.ShouldBe(ActivityType.CheckedIn);
             entry.OccurredAt.ShouldBe(checkedInAt);
             entry.Metadata.ShouldBeNull();
+        });
+    }
+
+    // Given a RegistrationCheckedIn domain event from the shared scanner
+    // When the projector handles the event
+    // Then the CheckedIn activity log entry records the shared-scanner source
+    [TestMethod]
+    public async ValueTask HandleAsync_RegistrationCheckedInFromSharedScanner_CreatesCheckedInEntryWithSourceMetadata()
+    {
+        var registrationId = RegistrationId.New();
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var checkedInAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var domainEvent = new RegistrationCheckedInDomainEvent(
+            teamId,
+            eventId,
+            registrationId,
+            checkedInAt,
+            CheckInSource.SharedScanner);
+
+        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context);
+        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var entry = await db.ActivityLog.SingleAsync(
+                a => a.RegistrationId == registrationId.Value,
+                testContext.CancellationToken);
+            entry.ActivityType.ShouldBe(ActivityType.CheckedIn);
+            entry.OccurredAt.ShouldBe(checkedInAt);
+
+            using var doc = JsonDocument.Parse(entry.Metadata!);
+            doc.RootElement.GetProperty("source").GetString().ShouldBe("SharedScanner");
         });
     }
 

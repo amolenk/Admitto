@@ -43,7 +43,7 @@ internal sealed class CheckInHandler(
         if (registration.CheckedInAt is not null)
             return CheckInResponse.ForRegistration(registration, CheckInOutcome.AlreadyCheckedIn);
 
-        registration.CheckIn(timeProvider.GetUtcNow());
+        registration.CheckIn(timeProvider.GetUtcNow(), command.Source);
         return CheckInResponse.ForRegistration(registration, CheckInOutcome.Success);
     }
 }

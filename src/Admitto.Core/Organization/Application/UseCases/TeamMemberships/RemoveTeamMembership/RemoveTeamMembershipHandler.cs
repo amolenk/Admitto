@@ -16,19 +16,9 @@ internal sealed class RemoveTeamMembershipHandler(IOrganizationWriteStore writeS
 
         if (user is null)
         {
-            throw new BusinessRuleViolationException(Errors.UserNotFound(emailAddress));
+            throw new BusinessRuleViolationException(TeamMembershipErrors.UserNotFound(emailAddress));
         }
 
         user.RemoveTeamMembership(TeamId.From(command.TeamId));
-    }
-
-    internal static class Errors
-    {
-        public static Error UserNotFound(EmailAddress email) =>
-            new(
-                "user.not_found",
-                "No user with the specified email address exists.",
-                Type: ErrorType.NotFound,
-                Details: new Dictionary<string, object?> { ["email"] = email.Value });
     }
 }

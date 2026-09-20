@@ -50,6 +50,8 @@ public static class OrganizationModuleExtensions
             services.AddKeyedScoped<IPostgresExceptionMapping, PostgresExceptionMapping>(
                 OrganizationModule.Key);
 
+            builder.AddKeycloakUserManagementServices();
+
             return builder;
         }
 
@@ -90,8 +92,6 @@ public static class OrganizationModuleExtensions
                         .RepeatForever())
                     .StartNow());
             });
-
-            builder.AddKeycloakUserManagementServices();
 
             // Bootstrap admin (only when configured)
             var bootstrapEmail = builder.Configuration[$"{BootstrapAdminUserOptions.SectionName}:EmailAddress"];

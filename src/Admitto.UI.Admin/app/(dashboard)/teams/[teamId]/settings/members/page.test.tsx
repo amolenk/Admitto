@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 
 import { FormError } from "@/components/form-error";
 import { apiClient } from "@/lib/api-client";
@@ -15,11 +16,14 @@ vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
 }));
 
+vi.mock("sonner", () => ({
+    toast: { success: vi.fn(), error: vi.fn() },
+}));
+
 const get = vi.mocked(apiClient.get);
 const post = vi.mocked(apiClient.post);
 const put = vi.mocked(apiClient.put);
 const del = vi.mocked(apiClient.delete);
-
 const TEAM_ID = "11111111-1111-1111-1111-111111111111";
 const alice = teamMemberDto("alice@example.com", "crew");
 const bob = teamMemberDto("bob@example.com", "owner");
@@ -32,6 +36,11 @@ function renderPage() {
 /** The row for a member, so role and remove controls can be scoped to one member. */
 function memberRow(email: string) {
     return screen.getByText(email).closest("div.flex.items-center") as HTMLElement;
+}
+
+/** The remove-member trigger button within a member row. */
+function removeButton(email: string) {
+    return memberRow(email).querySelector('[data-slot="alert-dialog-trigger"]') as HTMLElement;
 }
 
 /** Picks an option from a Radix Select trigger. */
@@ -217,7 +226,7 @@ describe("MembersPage remove member", () => {
         const { user } = renderPage();
         await screen.findByText("alice@example.com");
 
-        await user.click(within(memberRow("alice@example.com")).getByRole("button"));
+        await user.click(removeButton("alice@example.com"));
         await user.click(await screen.findByRole("button", { name: "Remove" }));
 
         await waitFor(() =>
@@ -233,9 +242,56 @@ describe("MembersPage remove member", () => {
         const { user } = renderPage();
         await screen.findByText("alice@example.com");
 
-        await user.click(within(memberRow("alice@example.com")).getByRole("button"));
+        await user.click(removeButton("alice@example.com"));
         await user.click(await screen.findByRole("button", { name: "Cancel" }));
 
         expect(del).not.toHaveBeenCalled();
+    });
+});
+describe("MembersPage resend invite", () => {
+    beforeEach(() => {
+        get.mockResolvedValue([alice, bob]);
+        post.mockResolvedValue(undefined);
+        vi.mocked(toast.success).mockClear();
+        vi.mocked(toast.error).mockClear();
+    });
+
+    // Given a member who has not yet accepted their invite
+    // When the owner clicks the resend-invite button for that member
+    // Then the resend-invite endpoint is called for that member and a success toast is shown
+    it("resends the invite for that member", async () => {
+        const { user } = renderPage();
+        await screen.findByText("alice@example.com");
+
+        await user.click(
+            within(memberRow("alice@example.com")).getByRole("button", { name: "Resend invite" }),
+        );
+
+        await waitFor(() =>
+            expect(post).toHaveBeenCalledWith(
+                `/api/teams/${TEAM_ID}/members/alice%40example.com/resend-invite`,
+            ),
+        );
+        await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Invite email sent."));
+    });
+
+    // Given the backend rejects the resend request
+    // When the owner clicks resend invite
+    // Then an error toast is shown instead of a success toast
+    it("shows an error toast when the resend fails", async () => {
+        post.mockRejectedValue(
+            new FormError({ status: 404, title: "Not Found", detail: "No user with that email exists." }),
+        );
+        const { user } = renderPage();
+        await screen.findByText("alice@example.com");
+
+        await user.click(
+            within(memberRow("alice@example.com")).getByRole("button", { name: "Resend invite" }),
+        );
+
+        await waitFor(() =>
+            expect(toast.error).toHaveBeenCalledWith("No user with that email exists."),
+        );
+        expect(toast.success).not.toHaveBeenCalled();
     });
 });

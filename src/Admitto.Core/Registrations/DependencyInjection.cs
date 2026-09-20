@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations;
 using Amolenk.Admitto.Core.Registrations.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.PublicEventLinks;
+using Amolenk.Admitto.Core.Registrations.Application.ScannerLinks;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Development;
@@ -57,6 +58,9 @@ public static class RegistrationsModuleExtensions
 
             services.Configure<PublicEventLinksOptions>(
                 configuration.GetSection(PublicEventLinksOptions.SectionName));
+
+            services.Configure<ScannerLinksOptions>(
+                configuration.GetSection(ScannerLinksOptions.SectionName));
 
             // Infrastructure
             builder.AddModuleDatabaseServices<IRegistrationsWriteStore, RegistrationsDbContext>(

@@ -106,5 +106,9 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         configurationBuilder
             .Properties<ReconfirmationEmailLimit>()
             .HaveConversion<ReconfirmationEmailLimit.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<ScannerLinkSecret>()
+            .HaveConversion<ScannerLinkSecret.EfCoreValueConverter>();
     }
 }

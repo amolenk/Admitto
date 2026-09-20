@@ -32,6 +32,13 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.Con
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEvents.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.DirectPublicEventLinks.PublicApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.SharedScanner.ResolveSharedScannerSession.PublicApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.SharedScanner.SharedScannerCheckIn.PublicApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.SharedScanner.SharedScannerLookup.PublicApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ScannerLinks.CreateScannerLink.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ScannerLinks.GetScannerLink.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ScannerLinks.RegenerateScannerLink.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ScannerLinks.RevokeScannerLink.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateAdditionalDetailSchema.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.AddTicketType.AdminApi;
@@ -69,6 +76,10 @@ public static class RegistrationsModule
             .MapConfigureRegistrationPolicy()
             .MapConfigureReconfirmPolicy()
             .MapConfigureWaitlistPolicy()
+            .MapGetScannerLink()
+            .MapCreateScannerLink()
+            .MapRegenerateScannerLink()
+            .MapRevokeScannerLink()
             .MapUpdateAdditionalDetailSchema();
 
         eventGroup.MapGroup("/registrations")
@@ -139,6 +150,13 @@ public static class RegistrationsModule
             .WithTags("Public")
             .MapDirectPublicEventLinks()
             .MapGetQRCode();
+
+        group
+            .MapGroup("/scan/{secret}")
+            .WithTags("Public - Shared Scanner")
+            .MapResolveSharedScannerSession()
+            .MapSharedScannerCheckIn()
+            .MapSharedScannerLookup();
 
         return group;
     }

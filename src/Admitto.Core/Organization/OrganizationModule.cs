@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.Ass
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.ChangeTeamMembershipRole.AdminApi;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.GetTeamMembers.AdminApi;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.RemoveTeamMembership.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.ResendTeamMemberInvite.AdminApi;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEvents.GetEventCreationRequest.AdminApi;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEvents.RequestTicketedEventCreation.AdminApi;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeys.CreateApiKey.AdminApi;
@@ -42,7 +43,8 @@ public static class OrganizationModule
 
         team.MapGroup("/members")
             .MapChangeTeamMembershipRole()
-            .MapRemoveTeamMembership();
+            .MapRemoveTeamMembership()
+            .MapResendTeamMemberInvite();
 
         team.MapGroup("/api-keys")
             .MapCreateApiKey()

@@ -545,9 +545,27 @@ public sealed class RegistrationTests
         sut.CheckIn(checkedInAt);
 
         sut.CheckedInAt.ShouldBe(checkedInAt);
-        sut.GetDomainEvents().OfType<RegistrationCheckedInDomainEvent>()
-            .ShouldHaveSingleItem()
-            .CheckedInAt.ShouldBe(checkedInAt);
+        var domainEvent = sut.GetDomainEvents().OfType<RegistrationCheckedInDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.CheckedInAt.ShouldBe(checkedInAt);
+        domainEvent.Source.ShouldBe(CheckInSource.Dashboard);
+    }
+
+    // Given a registered attendee
+    // When the attendee is checked in through the shared scanner
+    // Then the check-in event carries the shared-scanner source
+    [TestMethod]
+    public void CheckIn_SharedScannerSource_RaisesEventWithSharedScannerSource()
+    {
+        var sut = NewRegistration();
+        ClearEvents(sut);
+        var checkedInAt = DateTimeOffset.UtcNow;
+
+        sut.CheckIn(checkedInAt, CheckInSource.SharedScanner);
+
+        var domainEvent = sut.GetDomainEvents().OfType<RegistrationCheckedInDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.Source.ShouldBe(CheckInSource.SharedScanner);
     }
 
     // Given an attendee who has already checked in

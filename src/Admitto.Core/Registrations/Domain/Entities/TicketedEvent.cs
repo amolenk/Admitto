@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+using ScannerLinkEntity = Amolenk.Admitto.Core.Registrations.Domain.Entities.ScannerLink;
 
 namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
 
@@ -54,10 +55,12 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public TicketedEventRegistrationPolicy? RegistrationPolicy { get; private set; }
     public TicketedEventReconfirmPolicy? ReconfirmPolicy { get; private set; }
     public TicketedEventWaitlistPolicy WaitlistPolicy { get; private set; } = TicketedEventWaitlistPolicy.Default();
-    public AdditionalDetailSchema AdditionalDetailSchema { get; private set; } = AdditionalDetailSchema.Empty;
+    public AdditionalDetailSchema AdditionalDetailSchema { get; private set; } =
+        AdditionalDetailSchema.Empty;
+
+    public ScannerLink? ScannerLink { get; private set; }
 
     public bool IsActive => Status == EventLifecycleStatus.Active;
-
     public static TicketedEvent Create(
         CreationRequestId creationRequestId,
         TicketedEventId id,
@@ -208,6 +211,50 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     /// Derived "is registration open" — requires a policy, the current time to fall
     /// within the window, and the event to be <see cref="EventLifecycleStatus.Active"/>.
     /// </summary>
+    /// <summary>
+    /// Creates the event's single shared scanner link. Fails if one already exists (regardless
+    /// of its current status); use <see cref="RegenerateScannerLink"/> to replace it instead.
+    /// </summary>
+    public void CreateScannerLink(ScannerLinkSecret secret, DateTimeOffset now)
+    {
+        EnsureActive();
+
+        if (ScannerLink is not null)
+            throw new BusinessRuleViolationException(Errors.ScannerLinkAlreadyExists);
+
+        ScannerLink = ScannerLinkEntity.Create(secret, now);
+    }
+
+    /// <summary>
+    /// Replaces the event's shared scanner link with a newly generated one, immediately
+    /// invalidating the previous secret regardless of its current status.
+    /// </summary>
+    public void RegenerateScannerLink(ScannerLinkSecret secret, DateTimeOffset now)
+    {
+        EnsureActive();
+
+        if (ScannerLink is null)
+            throw new BusinessRuleViolationException(Errors.ScannerLinkNotFound);
+
+        ScannerLink.Regenerate(secret, now);
+    }
+
+    /// <summary>
+    /// Permanently retires the event's shared scanner link.
+    /// </summary>
+    public void RevokeScannerLink(DateTimeOffset now)
+    {
+        EnsureActive();
+
+        if (ScannerLink is null)
+            throw new BusinessRuleViolationException(Errors.ScannerLinkNotFound);
+
+        if (ScannerLink.GetStatus(now, EndsAt) == ScannerLinkStatus.Revoked)
+            throw new BusinessRuleViolationException(Errors.ScannerLinkAlreadyRevoked);
+
+        ScannerLink.Revoke(now);
+    }
+
     public bool IsRegistrationOpen(DateTimeOffset now) =>
         IsActive
         && RegistrationPolicy is not null
@@ -275,6 +322,21 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         public static readonly Error EmailDomainNotAllowed = new(
             "registration.email_domain_not_allowed",
             "Your email domain is not allowed for this event.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error ScannerLinkAlreadyExists = new(
+            "ticketed_event.scanner_link_already_exists",
+            "A shared scanner link already exists for this event; regenerate it instead.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error ScannerLinkNotFound = new(
+            "ticketed_event.scanner_link_not_found",
+            "This event does not have a shared scanner link.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error ScannerLinkAlreadyRevoked = new(
+            "ticketed_event.scanner_link_already_revoked",
+            "The shared scanner link has already been revoked.",
             Type: ErrorType.Validation);
     }
 }
