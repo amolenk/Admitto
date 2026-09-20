@@ -9,7 +9,7 @@ import { PageLayout } from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CheckInSummaryDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated/types.gen";
-import { CheckInScanner } from "./scanner";
+import { CheckInScanner } from "@/components/check-in-scanner/scanner";
 import { ScannerLinkCard } from "./scanner-link-card";
 
 export default function CheckInPage() {

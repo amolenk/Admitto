@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckInScanner } from "@/(dashboard)/teams/[teamId]/events/[eventId]/check-in/scanner";
+import { CheckInScanner } from "@/components/check-in-scanner/scanner";
 import { createSharedScannerCheckInOperations, fetchSharedScannerSession, SharedScannerAccessDeniedError } from "./shared-scanner-operations";
 
 export default function SharedScannerPage() {
