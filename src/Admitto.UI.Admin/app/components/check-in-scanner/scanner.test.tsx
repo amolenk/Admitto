@@ -43,7 +43,7 @@ function SummaryHarness({ decoder }: { decoder: DecoderAdapter }) {
 
 describe("check-in scanner", () => {
     beforeEach(() => { post.mockResolvedValue(response("success")); get.mockResolvedValue([]); });
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
     // Given a fake decoder emits a credential
     // When the scanner receives the decoded value
@@ -90,10 +90,10 @@ describe("check-in scanner", () => {
         vi.useRealTimers();
     });
 
-    // Given the scanner has paused after a successful scan
-    // When two seconds elapse
-    // Then the result clears and a later camera callback is accepted
-    it("timer_twoSecondsElapse_resumesCameraScanning", async () => {
+    // Given the scanner displays a successful check-in
+    // When two seconds elapse and another credential is scanned
+    // Then the result remains visible until the new credential replaces it
+    it("submit_successfulCredential_remainsVisibleUntilAnotherCredentialIsScanned", async () => {
         vi.useFakeTimers();
         const fake = fakeDecoder();
         renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
@@ -101,12 +101,25 @@ describe("check-in scanner", () => {
         await act(async () => fake.scan("first"));
         expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
         await act(async () => { vi.advanceTimersByTime(2000); });
-        expect(screen.queryByText(/Jane Doe · General/)).not.toBeInTheDocument();
+        expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
         await act(async () => fake.scan("second"));
 
         expect(post).toHaveBeenCalledTimes(2);
         expect(post).toHaveBeenLastCalledWith(expect.stringContaining("/check-in"), { credential: "second" });
         vi.useRealTimers();
+    });
+
+    // Given the scanner displays a successful check-in
+    // When the operator dismisses the result
+    // Then the attendee badge is removed immediately
+    it("dismiss_successfulCredential_clearsTheBadge", async () => {
+        const fake = fakeDecoder();
+        const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
+
+        await act(async () => fake.scan("credential-1"));
+        await user.click(screen.getByRole("button", { name: "Dismiss" }));
+
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
     // Given the camera reports the same visible QR code more than once
