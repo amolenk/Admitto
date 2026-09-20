@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Trash2, Plus, Users } from "lucide-react";
+import { AlertCircle, Trash2, Plus, Users, Mail } from "lucide-react";
+import { toast } from "sonner";
 
 const roles: TeamMembershipRoleDto[] = ["owner", "organizer", "crew"];
 
@@ -95,6 +96,21 @@ export default function MembersPage() {
             setError(err instanceof FormError ? err.detail : err.message || "Failed to remove member.");
         },
     });
+
+    const resendInvite = useMutation({
+        mutationFn: async (email: string) => {
+            await apiClient.post(
+                `/api/teams/${params.teamId}/members/${encodeURIComponent(email)}/resend-invite`,
+            );
+        },
+        onSuccess: () => {
+            toast.success("Invite email sent.");
+        },
+        onError: (err: Error) => {
+            toast.error(err instanceof FormError ? err.detail : err.message || "Failed to resend invite.");
+        },
+    });
+    const pendingResendEmail = resendInvite.isPending ? resendInvite.variables : undefined;
 
     const isEmailValid = z.string().email().safeParse(newEmail).success;
 
@@ -178,6 +194,16 @@ export default function MembersPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                title="Resend invite"
+                                disabled={pendingResendEmail === member.email}
+                                onClick={() => resendInvite.mutate(member.email)}
+                            >
+                                <Mail className="h-3.5 w-3.5" />
+                            </Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">

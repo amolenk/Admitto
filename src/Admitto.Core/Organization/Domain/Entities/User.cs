@@ -123,6 +123,17 @@ public class User : Aggregate<UserId>
     }
 
     /// <summary>
+    /// Throws unless the user currently holds a membership in the given team.
+    /// </summary>
+    public void EnsureIsTeamMember(TeamId teamId)
+    {
+        if (_memberships.All(m => m.TeamId != teamId))
+        {
+            throw new BusinessRuleViolationException(Errors.UserNotTeamMember(Id, teamId));
+        }
+    }
+
+    /// <summary>
     /// Cancels any pending IdP deprovisioning, e.g. when the user regains a team membership.
     /// </summary>
     public void CancelDeprovisioning()

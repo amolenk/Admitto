@@ -475,6 +475,10 @@ The Email module is not involved in this flow: no Admitto email integration even
 
 In Aspire run mode, the local realm keeps preprovisioned username/password users, shows the standard username/password form first with a passkey alternative, and points Keycloak SMTP at MailDev. Normal password sign-in does not send email. To verify the path locally, trigger a Keycloak execute-actions email such as `webauthn-register-passwordless`; Keycloak sends the final email to MailDev.
 
+## 6.13 Manual invite resend
+
+`POST /admin/teams/{teamId}/members/{email}/resend-invite` lets a team owner re-trigger the account-action email from §6.12 for an existing team member (e.g. the original invite expired or was lost), without any invite-status tracking. The endpoint runs synchronously in the API process: `ResendTeamMemberInviteHandler` looks up the `User` by email, checks team membership via `User.EnsureIsTeamMember`, then calls `IExternalUserDirectory.InviteUserAsync` directly (the same find-or-create-then-email call used by §6.11's bootstrap flow), reconciling `ExternalUserId` if it changed. Because this call happens from the API rather than the Worker, `IExternalUserDirectory`/Keycloak admin client registration was moved from Worker-only to the shared `AddOrganizationModule` setup so both hosts have it available.
+
 ## Done-when
 
 - [x] The most important end-to-end flow is documented.
