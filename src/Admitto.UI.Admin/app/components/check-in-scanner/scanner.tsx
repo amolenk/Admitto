@@ -102,14 +102,14 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
 
     const outcomeStatus = useCallback((response: CheckInResponse, kind: Exclude<Status, null>["kind"]): Status => {
         if (kind === "duplicate") return { kind, response, message: `Already checked in${response.checkedInAt ? ` at ${formatInEventZone(response.checkedInAt, timeZone, "HH:mm")}` : ""}` };
-        if (kind === "cancelled") return { kind, response, message: operations.createRegistrationHref ? "Cancelled — Create Registration is required." : "Cancelled." };
+        if (kind === "cancelled") return { kind, response, message: operations.createRegistrationHref ? "This registration was cancelled. Create a new registration to check in this attendee." : "This registration was cancelled and cannot be checked in." };
         if (kind === "inactive") return { kind, response, message: "This event is not active." };
         return { kind: "invalid", response, message: "This credential is not valid for this event." };
     }, [operations.createRegistrationHref, timeZone]);
 
     const submit = useCallback(async (credential: string) => {
         const value = credential.trim();
-        if (!value || inFlight.current || (statusRef.current && statusRef.current.kind !== "success") || lastSequence.current === value) return;
+        if (!value || inFlight.current || lastSequence.current === value) return;
         lastSequence.current = value;
         setPendingCredential(value);
         inFlight.current = true;
@@ -167,7 +167,6 @@ export function CheckInScanner({ teamId, eventId, startsAt, timeZone, decoder: s
         const onKey = (event: KeyboardEvent) => {
             const target = event.target as HTMLElement | null;
             if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
-            if (statusRef.current && statusRef.current.kind !== "success") { wedge.current = ""; return; }
             if (event.key === "Enter") { const value = wedge.current; wedge.current = ""; void submit(value); }
             else if (event.key.length === 1) wedge.current += event.key;
         };

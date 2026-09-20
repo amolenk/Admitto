@@ -149,7 +149,7 @@ describe("check-in scanner", () => {
     // Then the outcome remains visible until the operator dismisses it
     it.each([
         ["alreadyCheckedIn", /Already checked in/],
-        ["cancelled", /Cancelled/],
+        ["cancelled", /cancelled/i],
         ["invalidForEvent", /not valid for this event/],
         ["eventNotActive", /not active/],
     ] as const)("submit_%s_outcomeRemainsUntilDismissed", async (outcome, message) => {
@@ -166,22 +166,26 @@ describe("check-in scanner", () => {
     });
 
     // Given a terminal non-success outcome is displayed
-    // When another camera value and keyboard-wedge value arrive
-    // Then neither replaces the outcome until it is dismissed
-    it("input_terminalOutcomeBlocksDecoderAndWedgeUntilDismissed", async () => {
-        post.mockResolvedValueOnce(response("alreadyCheckedIn")).mockResolvedValueOnce(response("success"));
+    // When a different camera value or keyboard-wedge value arrives
+    // Then the new scan replaces the outcome without requiring dismissal first
+    it("input_newScanReplacesTerminalOutcomeWithoutDismissal", async () => {
+        post
+            .mockResolvedValueOnce(response("alreadyCheckedIn"))
+            .mockResolvedValueOnce(response("cancelled"))
+            .mockResolvedValueOnce(response("success"));
         const fake = fakeDecoder();
-        const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
+        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
 
         await act(async () => fake.scan("duplicate"));
-        await act(async () => fake.scan("ignored-camera"));
-        await act(async () => { for (const key of ["i", "g", "n", "o", "r", "e", "d", "Enter"]) window.dispatchEvent(new KeyboardEvent("keydown", { key })); });
-        expect(post).toHaveBeenCalledTimes(1);
         expect(screen.getByText(/Already checked in/)).toBeInTheDocument();
 
-        await user.click(screen.getByRole("button", { name: "Dismiss" }));
-        await act(async () => fake.scan("accepted-after-dismiss"));
+        await act(async () => fake.scan("different-cancelled"));
         expect(post).toHaveBeenCalledTimes(2);
+        expect(screen.getByText(/cancelled/i)).toBeInTheDocument();
+
+        await act(async () => { for (const key of ["w", "e", "d", "g", "e", "Enter"]) window.dispatchEvent(new KeyboardEvent("keydown", { key })); });
+        expect(post).toHaveBeenCalledTimes(3);
+        expect(screen.getByText(/Jane Doe · General/)).toBeInTheDocument();
     });
 
     // Given a cancelled registration is scanned
@@ -303,8 +307,8 @@ describe("check-in scanner", () => {
 
         await act(async () => fake.scan("cancelled-shared-credential"));
 
-        expect(screen.getByText(/Cancelled/)).toBeInTheDocument();
-        expect(screen.queryByText(/Create Registration is required/)).not.toBeInTheDocument();
+        expect(screen.getByText(/cancelled/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Create a new registration/)).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Create registration" })).not.toBeInTheDocument();
         await user.click(screen.getByRole("button", { name: "Dismiss" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
