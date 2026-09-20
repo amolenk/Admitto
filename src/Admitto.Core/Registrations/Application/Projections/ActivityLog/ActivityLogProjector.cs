@@ -63,8 +63,8 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
     {
         var metadata = JsonSerializer.Serialize(new
         {
-            from = domainEvent.OldTickets.Select(t => t.Id.Value).ToArray(),
-            to = domainEvent.NewTickets.Select(t => t.Id.Value).ToArray()
+            from = domainEvent.OldTickets.Select(t => t.Name.Value).ToArray(),
+            to = domainEvent.NewTickets.Select(t => t.Name.Value).ToArray()
         });
 
         AddEntry(

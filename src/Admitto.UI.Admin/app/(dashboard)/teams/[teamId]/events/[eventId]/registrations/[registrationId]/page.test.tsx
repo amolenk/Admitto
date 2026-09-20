@@ -343,6 +343,29 @@ describe("AttendeeDetailPage", () => {
         expect(registeredIndex).toBeGreaterThan(reconfirmedIndex);
     });
 
+    // Given a registration whose tickets were changed
+    // When the page renders
+    // Then the timeline shows the old and new ticket type names verbatim, not mangled ids
+    it("shows the ticket type names for a tickets-changed entry", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({ activityType: "Registered", occurredAt: "2026-08-10T09:00:00Z" }),
+                    activityEntry({
+                        activityType: "TicketsChanged",
+                        occurredAt: "2026-08-11T09:00:00Z",
+                        metadata: JSON.stringify({ from: ["Early Bird"], to: ["Half-Price"] }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Tickets changed")).toBeInTheDocument();
+        expect(screen.getByText("Early Bird → Half-Price")).toBeInTheDocument();
+    });
+
     // Given a cancelled registration with a recorded reason
     // When the page renders
     // Then the timeline surfaces the cancellation with its human-readable reason, and the

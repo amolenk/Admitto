@@ -103,13 +103,6 @@ function formatRelative(iso: string): string {
     return `${days}d ago`;
 }
 
-function slugToLabel(slug: string): string {
-    return slug
-        .split("-")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-}
-
 function cancellationReasonLabel(reason?: string | null): string {
     if (reason === "AttendeeRequest") return "Attendee request";
     if (reason === "VisaLetterDenied") return "Visa letter denied";
@@ -160,8 +153,8 @@ function buildTimeline(
             title = "Tickets changed";
             try {
                 const meta = JSON.parse(a.metadata ?? "{}") as { from?: string[]; to?: string[] };
-                const from = (meta.from ?? []).map(slugToLabel).join(", ") || "—";
-                const to = (meta.to ?? []).map(slugToLabel).join(", ") || "—";
+                const from = (meta.from ?? []).join(", ") || "—";
+                const to = (meta.to ?? []).join(", ") || "—";
                 detail = `${from} → ${to}`;
             } catch {
                 detail = "Ticket selection was updated.";

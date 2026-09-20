@@ -115,9 +115,9 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
-    // Given a TicketsChanged domain event with old and new ticket types
-    // When the projector handles the event
-    // Then a TicketsChanged activity log entry is created with metadata listing the old and new ticket type ids
+    // Given a registration's selected tickets change from one type to another
+    // When the change is recorded
+    // Then an activity log entry is created with metadata listing the old and new ticket type names
     [TestMethod]
     public async ValueTask HandleAsync_TicketsChanged_CreatesTicketsChangedEntryWithMetadata()
     {
@@ -152,10 +152,10 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             entry.OccurredAt.ShouldBe(changedAt);
 
             using var doc = JsonDocument.Parse(entry.Metadata!);
-            var from = doc.RootElement.GetProperty("from").EnumerateArray().Select(e => e.GetGuid()).ToArray();
-            var to = doc.RootElement.GetProperty("to").EnumerateArray().Select(e => e.GetGuid()).ToArray();
-            from.ShouldBe([earlyBirdId.Value]);
-            to.ShouldBe([workshopId.Value]);
+            var from = doc.RootElement.GetProperty("from").EnumerateArray().Select(e => e.GetString()).ToArray();
+            var to = doc.RootElement.GetProperty("to").EnumerateArray().Select(e => e.GetString()).ToArray();
+            from.ShouldBe(["Early Bird"]);
+            to.ShouldBe(["Workshop"]);
         });
     }
 
