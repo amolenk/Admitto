@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CheckIn;
@@ -5,4 +6,5 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.
 internal sealed record CheckInCommand(
     Guid TeamId,
     Guid EventId,
-    string Credential) : Command<CheckInResponse>;
+    string Credential,
+    CheckInSource Source = CheckInSource.Dashboard) : Command<CheckInResponse>;

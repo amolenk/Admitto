@@ -244,6 +244,17 @@ describe("check-in scanner", () => {
         expect(get).not.toHaveBeenCalled();
     });
 
+    // Given an access-context operation surface that does not support lookup
+    // When the scanner renders
+    // Then the manual search control is hidden instead of shown non-functionally
+    it("operations_supportsLookupFalse_hidesManualSearchControl", () => {
+        const operations = fakeOperations({ supportsLookup: false });
+        const fake = fakeDecoder();
+        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} operations={operations} />);
+
+        expect(screen.queryByRole("textbox", { name: "Manual search" })).not.toBeInTheDocument();
+    });
+
     // Given an access-context operation surface without a create-registration link
     // When a cancelled registration is scanned
     // Then the cancelled outcome still displays but omits dashboard administration

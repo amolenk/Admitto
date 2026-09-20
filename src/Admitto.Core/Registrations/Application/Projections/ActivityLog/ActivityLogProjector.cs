@@ -82,12 +82,20 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
         RegistrationCheckedInDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
+        // Only the shared-scanner source is recorded; the dashboard source is the
+        // long-standing default and stays metadata-free to avoid changing existing
+        // activity-log rows for signed-in crew check-ins.
+        var metadata = domainEvent.Source == CheckInSource.SharedScanner
+            ? JsonSerializer.Serialize(new { source = nameof(CheckInSource.SharedScanner) })
+            : null;
+
         AddEntry(
             domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.RegistrationId,
             ActivityType.CheckedIn,
-            domainEvent.CheckedInAt);
+            domainEvent.CheckedInAt,
+            metadata);
 
         return ValueTask.CompletedTask;
     }

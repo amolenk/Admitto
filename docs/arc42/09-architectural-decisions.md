@@ -19,6 +19,7 @@ Detailed ADRs are stored in [`/docs/adr/`](../adr/).
 | 2026-08-16 | Azure Service Bus with push-based consumption | Accepted | [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md) |
 | 2026-08-27 | Hourly reconfirmation evaluation replacing per-event triggers | Superseded by ADR-017 | [ADR-016](../adr/adr-016-hourly-reconfirmation-evaluation.md) |
 | 2026-08-29 | Hourly reconfirmation evaluation and requested deadlines | Accepted and implemented | [ADR-017](../adr/adr-017-reconfirmation-batches-and-requested-deadlines.md) |
+| 2026-09-20 | Anonymous shared-scanner bearer-credential boundary | Accepted | [ADR-018](../adr/adr-018-shared-scanner-bearer-credential-boundary.md) |
 
 ## Done-when
 

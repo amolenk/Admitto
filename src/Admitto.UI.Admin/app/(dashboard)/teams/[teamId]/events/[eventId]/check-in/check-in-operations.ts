@@ -16,6 +16,8 @@ export type CheckInOperations = {
     onCheckedIn?: (response: CheckInResponse) => void;
     /** Optional: link shown on a cancelled outcome. Omit to hide dashboard administration from the scanner. */
     createRegistrationHref?: string;
+    /** Optional: hide manual name/email search when the access context doesn't support lookup yet. Defaults to true. */
+    supportsLookup?: boolean;
 };
 
 /** The current signed-in crew scanner's operation surface, unchanged from prior behavior. */

@@ -17,6 +17,12 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
 
             var user = httpContext.User;
 
+            // Anonymous public routes (for example, the shared scanner) have no signed-in
+            // or API-key identity. Attribute their writes to a generic system identity rather
+            // than inferring an individual identity that was never authenticated.
+            if (user.Identity?.IsAuthenticated != true)
+                return StaticUserContextAccessor.SystemUser;
+
             // API key requests have no human identity — build a system user scoped to the key's team.
             if (user.Identity?.AuthenticationType == ApiKeyAuthenticationHandler.SchemeName)
                 return BuildApiKeyUserContext(user);

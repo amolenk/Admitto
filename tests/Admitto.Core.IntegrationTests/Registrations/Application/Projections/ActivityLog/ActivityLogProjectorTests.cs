@@ -189,6 +189,39 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a RegistrationCheckedIn domain event from the shared scanner
+    // When the projector handles the event
+    // Then the CheckedIn activity log entry records the shared-scanner source
+    [TestMethod]
+    public async ValueTask HandleAsync_RegistrationCheckedInFromSharedScanner_CreatesCheckedInEntryWithSourceMetadata()
+    {
+        var registrationId = RegistrationId.New();
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var checkedInAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var domainEvent = new RegistrationCheckedInDomainEvent(
+            teamId,
+            eventId,
+            registrationId,
+            checkedInAt,
+            CheckInSource.SharedScanner);
+
+        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context);
+        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var entry = await db.ActivityLog.SingleAsync(
+                a => a.RegistrationId == registrationId.Value,
+                testContext.CancellationToken);
+            entry.ActivityType.ShouldBe(ActivityType.CheckedIn);
+            entry.OccurredAt.ShouldBe(checkedInAt);
+
+            using var doc = JsonDocument.Parse(entry.Metadata!);
+            doc.RootElement.GetProperty("source").GetString().ShouldBe("SharedScanner");
+        });
+    }
+
     // Given a registration
     // When multiple domain events for that registration are handled in sequence
     // Then an activity log entry accumulates for each event

@@ -572,6 +572,12 @@ Attendance is Registrations-owned state on `Registration`: nullable `CheckedInAt
 
 The check-in domain event is handled in-transaction by the Registrations activity projection and writes only a timestamp-only timeline entry. It is not an integration event, notification trigger, or audit record. Concurrent scans are reconciled at the application boundary: exactly one returns `Success`, while every competing request returns `AlreadyCheckedIn` carrying the persisted `CheckedInAt` timestamp. The complete online scanner flow and its server-side team/event scoping are described in [§6.6.3](06-runtime-view.md#663-admin-qr-check-in).
 
+`CheckInCommand.Source` (`CheckInSource`: `Dashboard` or `SharedScanner`) distinguishes only the access-context origin of a check-in, never an individual identity. The Dashboard source (the default) stays metadata-free on the activity-log row, matching prior behavior; the SharedScanner source adds `{"source":"SharedScanner"}` metadata. This is the one piece of context the shared scanner (§6.6.4) contributes — it is not a new general-purpose audit mechanism.
+
+### Shared scanner authorization
+
+The shared scanner (§6.6.4) is a narrowly scoped, anonymous authorization mechanism distinct from JWT/API-key authentication: `SharedScannerAccess.ResolveActiveEventAsync` (`Registrations/Application/ScannerLinks/SharedScannerAccess.cs`) is the single seam every shared-scanner use case calls to resolve a raw secret to its `TicketedEvent`, and it fails closed — with one neutral `shared_scanner.access_denied` error — for a malformed secret, no match, an inactive event, or a non-`Active` `ScannerLinkStatus` (expired, revoked, or superseded). Because anonymous requests never populate `HttpContext.User`, `HttpContextUserContextAccessor` now attributes any unauthenticated request's writes to `StaticUserContextAccessor.SystemUser` (previously only used for background/hosted-service contexts), so `AuditInterceptor` always has a `CreatedBy`/`LastChangedBy` identity to stamp.
+
 ## 8.15 Architecture enforcement (ArchUnitNET)
 
 All architectural rules below are machine-checked by `tests/Admitto.Core.ArchTests` using [ArchUnitNET](https://github.com/TNG/ArchUnitNET). The suite is the **first test step** after `dotnet build` — if it fails, fix the violation before touching other tests.

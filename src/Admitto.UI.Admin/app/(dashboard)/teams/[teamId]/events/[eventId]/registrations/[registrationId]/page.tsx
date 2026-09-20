@@ -117,6 +117,15 @@ function cancellationReasonLabel(reason?: string | null): string {
     return reason ?? "Unknown reason";
 }
 
+function isSharedScannerSource(metadata?: string | null): boolean {
+    if (!metadata) return false;
+    try {
+        return (JSON.parse(metadata) as { source?: string }).source === "SharedScanner";
+    } catch {
+        return false;
+    }
+}
+
 // ── Timeline item definition ──────────────────────────────────────────────────
 
 type TimelineKind = "registered" | "reconfirmed" | "cancelled" | "ticketschanged" | "checkedin" | "email";
@@ -159,7 +168,9 @@ function buildTimeline(
             }
         } else if (kind === "checkedin") {
             title = "Checked in";
-            detail = "Attendee was checked in at the door.";
+            detail = isSharedScannerSource(a.metadata)
+                ? "Attendee was checked in at the door via the shared scanner."
+                : "Attendee was checked in at the door.";
         }
         return { kind, ts: a.occurredAt, title, detail };
     });

@@ -237,6 +237,38 @@ sequenceDiagram
 
 The handler rejects a missing, wrong-event, or cancelled registration and refuses an inactive event. It does not perform start/end gating. Check-in is one-way: `CheckedInAt` is set once, and the reciprocal invariant prevents a checked-in registration from being cancelled and a cancelled registration from being checked in. The domain event only updates the activity timeline; it does not enqueue a notification or create an audit record. Simultaneous attempts for the same registration are reconciled to one `Success`; every competing request returns `AlreadyCheckedIn` with the persisted `CheckedInAt` timestamp, rather than exposing a public concurrency conflict or creating a second check-in.
 
+## 6.6.4 Shared scanner check-in
+
+A door assistant opens the event's shared scanner URL (`/scan/{secret}`) with no Admitto sign-in. The Admin UI's anonymous page calls a public BFF route, which calls the Admin API's public `GET /scan/{secret}` and `POST /scan/{secret}/check-in` endpoints — outside the `/admin` route group, so no JWT/API-key authentication applies. Every request instead resolves and validates the secret itself, in-handler, via `SharedScannerAccess.ResolveActiveEventAsync`: it loads the `TicketedEvent` whose owned `ScannerLink.Secret` matches, and rejects a malformed secret, no match, an inactive event, or a `ScannerLink` status other than `Active` (expired, revoked, or superseded by regeneration) — all with the same `shared_scanner.access_denied` (401) error, so the caller never learns which failure occurred. This check runs on every request, so an already-open scanner session loses access on its next operation after revocation, regeneration, or the event's lifecycle/end-time change.
+
+Once resolved, check-in reuses the same `CheckInCommand`/`CheckInHandler` as the signed-in scanner (§6.6.3) with the resolved team/event ids, so registration-level validation, one-way attendance, and concurrent-scan reconciliation are identical. The only difference is `CheckInCommand.Source = CheckInSource.SharedScanner`, which `RegistrationCheckedInDomainEvent` carries through to the activity projector: a shared-scanner check-in's activity-log row carries `{"source":"SharedScanner"}` metadata, while the default (signed-in) source remains metadata-free. No individual door-assistant identity is captured anywhere.
+
+Because the route is anonymous, the request carries no authenticated `HttpContext.User`. `HttpContextUserContextAccessor` attributes the write to `StaticUserContextAccessor.SystemUser` for any unauthenticated request (not just background jobs), so `AuditInterceptor` still has a `CreatedBy`/`LastChangedBy` identity to stamp without inferring who was actually scanning.
+
+```mermaid
+sequenceDiagram
+  participant Scanner as Shared scanner (anonymous)
+  participant Endpoint as Public check-in endpoint
+  participant Access as SharedScannerAccess
+  participant Handler as Check-in handler
+  participant Registration
+
+  Scanner->>Endpoint: submit raw RegistrationId + link secret
+  Endpoint->>Access: resolve+validate secret
+  alt invalid, expired, revoked, or event inactive
+    Access-->>Endpoint: 401 shared_scanner.access_denied
+    Endpoint-->>Scanner: neutral access-denied message
+  else valid
+    Access-->>Endpoint: resolved team/event
+    Endpoint->>Handler: Send(CheckInCommand, Source=SharedScanner)
+    Handler->>Registration: load + CheckIn()
+    Registration-->>Registration: raise check-in domain event (Source=SharedScanner)
+    Endpoint-->>Scanner: success
+  end
+```
+
+The shared scanner UI reuses the signed-in scanner component (`CheckInScanner`, §6.6.3) with a shared-scanner-specific `CheckInOperations` implementation that omits dashboard navigation, attendance-summary refresh, and (for now) manual name/email lookup — it has camera scanning, keyboard-wedge input, scan feedback, retry, and the early-arrival warning only.
+
 ## 6.7 Policy mutation flow
 
 Policy commands (`ConfigureRegistrationPolicyCommand`, `ConfigureReconfirmPolicyCommand`, `ConfigureWaitlistPolicyCommand`) load the `TicketedEvent` aggregate and call the matching policy mutator directly. Each mutator refuses when the event's status is not Active, so there is no separate lifecycle guard. Optimistic concurrency is supplied by `TicketedEvent.Version`.
