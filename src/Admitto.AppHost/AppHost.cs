@@ -390,6 +390,7 @@ if (!infraOnly)
         .WithEnvironment("AUTHENTICATION__BEARER__AUTHORITY", keycloakAuthorityRef)
         .WithEnvironment("AUTHENTICATION__BEARER__TOKENVALIDATIONPARAMETERS__VALIDAUDIENCE", authApiAudience)
         .WithEnvironment("OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO", azureMonitorSamplingRatio)
+        .WithEnvironment("REGISTRATIONS__SCANNERLINKS__BASEURL", uiPublicUrl)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__AUTHORITY", keycloakAuthorityRef)
         .WithEnvironment(
             "ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH",
