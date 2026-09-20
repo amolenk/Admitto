@@ -187,4 +187,108 @@ public sealed class SharedScannerTests(TestContext testContext) : EndToEndTestBa
 
         unknown.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
+
+    // Given an active event with a valid shared scanner link
+    // When an anonymous caller searches by name
+    // Then the API returns matching eligible attendees scoped to that event
+    [TestMethod]
+    public async Task Lookup_ValidLinkMatchingName_ReturnsEligibleCandidateScopedToEvent()
+    {
+        var fixture = SharedScannerFixture.Active();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.AnonymousApiClient.GetAsync(
+            fixture.LookupRoute("Alice"), testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(testContext.CancellationToken);
+        body.GetArrayLength().ShouldBe(1);
+        var candidate = body[0];
+        candidate.GetProperty("registrationId").GetGuid().ShouldBe(fixture.RegistrationId.Value);
+        candidate.GetProperty("state").GetString().ShouldBe("eligible");
+    }
+
+    // Given a cancelled registration for the shared scanner's event
+    // When an anonymous caller searches by name
+    // Then the API returns it with a Cancelled state
+    [TestMethod]
+    public async Task Lookup_CancelledRegistration_ReturnsCancelledState()
+    {
+        var fixture = SharedScannerFixture.Active();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.AnonymousApiClient.GetAsync(
+            fixture.LookupRoute("Cancelled"), testContext.CancellationToken);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(testContext.CancellationToken);
+        body.GetArrayLength().ShouldBe(1);
+        body[0].GetProperty("state").GetString().ShouldBe("cancelled");
+    }
+
+    // Given a registration already checked in through the shared scanner
+    // When an anonymous caller searches by name
+    // Then the API returns it with an already-checked-in state
+    [TestMethod]
+    public async Task Lookup_AlreadyCheckedInRegistration_ReturnsCheckedInState()
+    {
+        var fixture = SharedScannerFixture.Active();
+        await fixture.SetupAsync(Environment);
+        await Environment.AnonymousApiClient.PostAsJsonAsync(
+            fixture.CheckInRoute,
+            new { credential = fixture.RegistrationId.Value.ToString() },
+            testContext.CancellationToken);
+
+        var response = await Environment.AnonymousApiClient.GetAsync(
+            fixture.LookupRoute("Alice"), testContext.CancellationToken);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(testContext.CancellationToken);
+        body.GetArrayLength().ShouldBe(1);
+        body[0].GetProperty("state").GetString().ShouldBe("checkedIn");
+    }
+
+    // Given a registration belonging to a different event
+    // When an anonymous caller searches through this event's shared scanner link
+    // Then the API does not return the other event's attendee
+    [TestMethod]
+    public async Task Lookup_OtherEventRegistration_IsNotReturned()
+    {
+        var fixture = SharedScannerFixture.Active();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.AnonymousApiClient.GetAsync(
+            fixture.LookupRoute("Other"), testContext.CancellationToken);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(testContext.CancellationToken);
+        body.GetArrayLength().ShouldBe(0);
+    }
+
+    // Given an expired shared scanner link
+    // When its secret is used for lookup
+    // Then the API returns Unauthorized with a neutral message
+    [TestMethod]
+    public async Task Lookup_ExpiredLink_ReturnsUnauthorized()
+    {
+        var fixture = SharedScannerFixture.ExpiredLink();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.AnonymousApiClient.GetAsync(
+            fixture.LookupRoute("Alice"), testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    // Given a revoked shared scanner link
+    // When its secret is used for lookup
+    // Then the API returns Unauthorized with a neutral message
+    [TestMethod]
+    public async Task Lookup_RevokedLink_ReturnsUnauthorized()
+    {
+        var fixture = SharedScannerFixture.RevokedLink();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.AnonymousApiClient.GetAsync(
+            fixture.LookupRoute("Alice"), testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
 }

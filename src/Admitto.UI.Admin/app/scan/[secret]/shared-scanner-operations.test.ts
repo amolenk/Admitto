@@ -51,15 +51,44 @@ describe("shared scanner operations", () => {
         expect(reload).toHaveBeenCalled();
     });
 
-    // Given the shared scanner does not yet support manual lookup
-    // When lookup is called
-    // Then it resolves to no candidates and the operations surface declares lookup unsupported
-    it("lookup_notYetSupported_resolvesEmptyAndDeclaresUnsupported", async () => {
+    // Given a valid shared scanner link
+    // When lookup is called with a search query
+    // Then it returns the matching candidates from the shared-scanner lookup endpoint
+    it("lookup_validLink_returnsCandidates", async () => {
+        const candidate = {
+            registrationId: "r1",
+            name: "Alice Attendee",
+            email: "alice@example.com",
+            state: "eligible",
+            checkedInAt: null,
+        };
+        fetchMock.mockResolvedValue({
+            status: 200,
+            ok: true,
+            json: () => Promise.resolve([candidate]),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
         const operations = createSharedScannerCheckInOperations("secret");
+        const candidates = await operations.lookup("Alice");
 
-        const candidates = await operations.lookup("anything");
+        expect(candidates).toEqual([candidate]);
+        expect(fetchMock).toHaveBeenCalledWith("/api/scan/secret/lookup?query=Alice", undefined);
+    });
 
-        expect(candidates).toEqual([]);
-        expect(operations.supportsLookup).toBe(false);
+    // Given a scanner session whose link is later revoked, regenerated, or expired
+    // When lookup is attempted and the API returns Unauthorized
+    // Then the page reloads instead of surfacing a misleading retryable network error
+    it("lookup_unauthorizedMidSession_reloadsPageInsteadOfResolving", async () => {
+        fetchMock.mockResolvedValue({ status: 401, ok: false });
+        vi.stubGlobal("fetch", fetchMock);
+        const reload = vi.fn();
+        vi.stubGlobal("location", { ...window.location, reload });
+
+        const operations = createSharedScannerCheckInOperations("secret");
+        void operations.lookup("anything");
+        await Promise.resolve();
+
+        expect(reload).toHaveBeenCalled();
     });
 });

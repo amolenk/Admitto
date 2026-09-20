@@ -20,7 +20,7 @@ Because `AuditInterceptor` always needs a `CreatedBy`/`LastChangedBy` identity a
 - The failure message is deliberately generic; operators must check the admin scanner-link UI (#97) to learn *why* a given link stopped working.
 - Reusing `CheckInCommand`/`CheckInHandler` means registration-level rules (cancelled/wrong-event rejection, one-way attendance, concurrent-scan reconciliation) cannot drift between the signed-in and shared scanners.
 - Audit rows for any anonymous write (today, only shared-scanner check-ins) are attributed to the generic system identity; this is acceptable because the goal is operational context, not door-staff accountability.
-- Manual name/email lookup is intentionally not part of this credential boundary yet (tracked separately); the shared scanner UI hides that control rather than exposing a non-functional one.
+- Manual name/email lookup (#99) reuses this same boundary: `SharedScannerLookupHttpEndpoint` resolves the event through `SharedScannerAccess.ResolveActiveEventAsync` and dispatches the same `LookupCheckInCandidatesQuery`/`LookupCheckInCandidatesHandler` as the signed-in scanner, so lookup results, candidate states, and confirmation (via the same check-in path) cannot drift between the two scanners either.
 
 ## References
 - arc42 §6.6.4 — shared scanner check-in runtime flow.

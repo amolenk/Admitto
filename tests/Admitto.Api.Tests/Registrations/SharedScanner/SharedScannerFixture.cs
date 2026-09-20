@@ -45,6 +45,8 @@ internal sealed class SharedScannerFixture
     public string SessionRouteFor(string secret) => $"/scan/{secret}";
     public string CheckInRoute => $"/scan/{Secret}/check-in";
     public string CheckInRouteFor(string secret) => $"/scan/{secret}/check-in";
+    public string LookupRoute(string query) => $"/scan/{Secret}/lookup?query={Uri.EscapeDataString(query)}";
+    public string LookupRouteFor(string secret, string query) => $"/scan/{secret}/lookup?query={Uri.EscapeDataString(query)}";
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {

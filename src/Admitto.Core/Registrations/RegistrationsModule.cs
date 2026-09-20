@@ -34,6 +34,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.Get
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.DirectPublicEventLinks.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.SharedScanner.ResolveSharedScannerSession.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.SharedScanner.SharedScannerCheckIn.PublicApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.SharedScanner.SharedScannerLookup.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ScannerLinks.CreateScannerLink.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ScannerLinks.GetScannerLink.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ScannerLinks.RegenerateScannerLink.AdminApi;
@@ -154,7 +155,8 @@ public static class RegistrationsModule
             .MapGroup("/scan/{secret}")
             .WithTags("Public - Shared Scanner")
             .MapResolveSharedScannerSession()
-            .MapSharedScannerCheckIn();
+            .MapSharedScannerCheckIn()
+            .MapSharedScannerLookup();
 
         return group;
     }
