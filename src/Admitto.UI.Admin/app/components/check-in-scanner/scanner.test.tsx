@@ -255,6 +255,17 @@ describe("check-in scanner", () => {
         expect(screen.queryByRole("textbox", { name: "Manual search" })).not.toBeInTheDocument();
     });
 
+    // Given the scanner is rendered in a narrow viewport
+    // When the live reader and camera controls are mounted
+    // Then the reader is contained and both controls can reflow without leaving the card
+    it("layout_narrowViewport_containsReaderAndReflowsCameraControls", () => {
+        renderWithProviders(<CheckInScanner {...props} decoder={fakeDecoder().decoder} />);
+
+        expect(screen.getByTestId("check-in-reader")).toHaveClass("min-w-0", "overflow-hidden");
+        expect(screen.getByRole("button", { name: "Stop camera" })).toHaveClass("w-full", "sm:w-auto");
+        expect(screen.getByRole("button", { name: "Switch camera" })).toHaveClass("w-full", "sm:w-auto");
+    });
+
     // Given an access-context operation surface without a create-registration link
     // When a cancelled registration is scanned
     // Then the cancelled outcome still displays but omits dashboard administration

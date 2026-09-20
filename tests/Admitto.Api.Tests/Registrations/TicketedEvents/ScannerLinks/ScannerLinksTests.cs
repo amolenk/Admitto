@@ -24,6 +24,7 @@ public sealed class ScannerLinksTests(TestContext testContext) : EndToEndTestBas
         created.ShouldNotBeNull();
         created.Status.ShouldBe("Active");
         created.Url.ShouldNotBeNull();
+        created.Url!.ShouldStartWith("http://localhost:3000/scan/");
 
         var get = await Environment.ApiClient.GetAsync(fixture.Route, testContext.CancellationToken);
         var viewed = await get.Content.ReadFromJsonAsync<ScannerLinkDto>(testContext.CancellationToken);
