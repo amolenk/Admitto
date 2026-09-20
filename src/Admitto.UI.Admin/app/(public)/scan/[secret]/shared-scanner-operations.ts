@@ -1,5 +1,5 @@
 import type { CheckInLookupCandidateDto, CheckInResponse, SharedScannerSessionDto } from "@/lib/admitto-api/generated/types.gen";
-import type { CheckInOperations } from "../../(dashboard)/teams/[teamId]/events/[eventId]/check-in/check-in-operations";
+import type { CheckInOperations } from "@/components/check-in-scanner/check-in-operations";
 
 export class SharedScannerAccessDeniedError extends Error {}
 

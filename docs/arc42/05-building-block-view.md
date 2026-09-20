@@ -178,10 +178,11 @@ The Admin UI (`Admitto.UI.Admin`) is a Next.js 15 application that serves organi
 
 ### Architecture
 
-The application uses the Next.js App Router with two route groups:
+The application uses the Next.js App Router with three route groups:
 
 - **`(auth)`** — Unauthenticated pages (sign-in). Minimal layout, no session check.
 - **`(dashboard)`** — Protected pages. The layout performs a server-side session check and redirects to `/signin` if the user is not authenticated.
+- **`(public)`** — Unauthenticated pages accessed via a secret/token rather than a session (for example, the shared ticket scanner link). Minimal layout, no session check.
 
 ### Key patterns
 
@@ -202,6 +203,7 @@ app/
 ├── (auth)/             # Unauthenticated route group
 ├── (dashboard)/        # Protected route group (session check in layout)
 │   └── teams/          # Team and event management pages
+├── (public)/           # Unauthenticated, secret/token-scoped route group (e.g. shared scanner)
 ├── api/                # Next.js API routes (BFF proxy layer)
 ├── components/         # App-specific components
 │   └── ui/             # Shadcn/UI primitives
