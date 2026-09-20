@@ -57,6 +57,20 @@ describe("check-in scanner", () => {
         expect(screen.getByText("Ready for the next scan")).toBeInTheDocument();
     });
 
+    // Given a check-in outcome is displayed
+    // When the scanner layout is rendered
+    // Then the outcome appears before the camera reader
+    it("layout_scanOutcomeAppearsBeforeCameraReader", async () => {
+        const fake = fakeDecoder();
+        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
+
+        await act(async () => fake.scan("credential-1"));
+
+        const outcome = screen.getByRole("alert");
+        const reader = screen.getByTestId("check-in-reader");
+        expect(outcome.compareDocumentPosition(reader) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
     // Given the scanner page is open before the early-arrival window
     // When the 30-minute threshold passes
     // Then the warning appears without interrupting scanning
