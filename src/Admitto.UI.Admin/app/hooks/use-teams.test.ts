@@ -6,6 +6,7 @@ import { useTeamStore } from "@/stores/team-store";
 import { teamListItemDto } from "@/test-utils/builders";
 import { createQueryWrapper } from "@/test-utils/render";
 import { setRoute } from "@/test-utils/router";
+import { forgetRememberedTeam, rememberTeam } from "@/test-utils/selected-team-cookie";
 
 import { useTeams } from "./use-teams";
 
@@ -30,6 +31,7 @@ describe("useTeams", () => {
     beforeEach(() => {
         // The zustand store is a module singleton, so the selection survives between tests.
         useTeamStore.setState({ selectedTeamId: null });
+        forgetRememberedTeam();
         get.mockResolvedValue([alpha, beta]);
     });
 
@@ -65,6 +67,43 @@ describe("useTeams", () => {
         const { result } = renderUseTeams();
 
         await waitFor(() => expect(result.current.selectedTeam).toEqual(alpha));
+    });
+
+    // Given the route has no team, but the browser remembers a team from a previous visit
+    // When the team list loads
+    // Then the remembered team is selected rather than simply the first in the list
+    it("selects the team remembered from a previous visit when the route has no team", async () => {
+        rememberTeam(beta.teamId);
+        setRoute({ pathname: "/" });
+
+        const { result } = renderUseTeams();
+
+        await waitFor(() => expect(result.current.selectedTeam).toEqual(beta));
+    });
+
+    // Given the remembered team is no longer visible to the user (removed from the team,
+    // or a leftover cookie from a different account in the same browser)
+    // When the team list loads
+    // Then it falls back to the first team rather than getting stuck unselected
+    it("falls back to the first team when the remembered team is no longer valid", async () => {
+        rememberTeam("99999999-0000-0000-0000-000000000000");
+        setRoute({ pathname: "/" });
+
+        const { result } = renderUseTeams();
+
+        await waitFor(() => expect(result.current.selectedTeam).toEqual(alpha));
+    });
+
+    // Given both the URL and the cookie name a team
+    // When the team list loads
+    // Then the URL wins, so deep links always land on the linked team
+    it("prefers the URL's team over the remembered one", async () => {
+        rememberTeam(alpha.teamId);
+        setRoute({ pathname: `/teams/${beta.teamId}/events` });
+
+        const { result } = renderUseTeams();
+
+        await waitFor(() => expect(result.current.selectedTeam).toEqual(beta));
     });
 
     // Given the user has already switched teams
