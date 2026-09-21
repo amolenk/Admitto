@@ -27,15 +27,15 @@ interface HeroStatProps {
 
 function HeroStat({ label, value, sub, pct, muted }: HeroStatProps) {
     return (
-        <div className="p-5">
-            <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
+        <div className="min-w-0 p-3 sm:p-5">
+            <div className="truncate text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                 {label}
             </div>
-            <div className="flex items-baseline gap-2 mt-1.5">
-                <span className={`font-mono tabular-nums text-[28px] font-semibold ${muted ? "text-muted-foreground" : ""}`}>
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 mt-1.5">
+                <span className={`font-mono tabular-nums text-[22px] sm:text-[28px] font-semibold ${muted ? "text-muted-foreground" : ""}`}>
                     {value}
                 </span>
-                <span className="text-xs text-muted-foreground">{sub}</span>
+                <span className="truncate text-xs text-muted-foreground">{sub}</span>
             </div>
             {pct != null && (
                 <div className="mt-3">
@@ -172,7 +172,7 @@ export function EventHeroCard({ event, openStatus, ticketTypes, registrations }:
                     </div>
                 </div>
             </div>
-            <div className={`grid ${reconfirmedCount >= 1 ? "grid-cols-3" : "grid-cols-2"} divide-x border-t`}>
+            <div className={`grid ${reconfirmedCount >= 1 ? "grid-cols-3" : "grid-cols-2"} divide-x border-t overflow-hidden`}>
                 <HeroStat
                     label="Status"
                     value={regStat.value}
