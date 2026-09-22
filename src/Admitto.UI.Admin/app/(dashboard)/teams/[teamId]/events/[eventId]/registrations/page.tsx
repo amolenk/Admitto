@@ -118,8 +118,8 @@ export default function RegistrationsPage() {
     const [search, setSearch] = useState("");
     const [ticketFilter, setTicketFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<DisplayStatus | "all">("all");
-    const [sortKey, setSortKey] = useState<SortKey>("attendee");
-    const [sortDir, setSortDir] = useState<SortDir>("asc");
+    const [sortKey, setSortKey] = useState<SortKey>("registered");
+    const [sortDir, setSortDir] = useState<SortDir>("desc");
     const [page, setPage] = useState(1);
     const [addOpen, setAddOpen] = useState(false);
     const queryClient = useQueryClient();
