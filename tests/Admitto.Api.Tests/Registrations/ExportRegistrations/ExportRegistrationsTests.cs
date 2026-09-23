@@ -28,7 +28,7 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
 
         var csv = await response.Content.ReadAsStringAsync(testContext.CancellationToken);
         var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        lines[0].ShouldBe("FirstName,LastName,Email,Tickets,Status,RegisteredAt");
+        lines[0].ShouldBe("FirstName,LastName,Email,Tickets,Status,RegisteredAt,ReconfirmedAt,CancelledAt,CheckedInAt");
         lines.ShouldContain(l => l.Contains("Alice") && l.Contains("Smith") && l.Contains("alice@example.com"));
         lines.ShouldContain(l => l.Contains("Bob") && l.Contains("Jones") && l.Contains("bob@example.com"));
     }
@@ -52,6 +52,30 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         csv.ShouldContain("Cancelled");
     }
 
+    // Given a registration that has been reconfirmed and checked in
+    // When the registrations are exported
+    // Then the CSV row includes non-empty ReconfirmedAt and CheckedInAt timestamps
+    [TestMethod]
+    public async Task ExportRegistrations_WithReconfirmedAndCheckedInRegistration_IncludesTimestamps()
+    {
+        var fixture = ExportRegistrationsFixture.HappyFlow();
+        fixture.AddRegistration("alice@example.com", "Alice", "Smith", reconfirmed: true, checkedIn: true);
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.ApiClient.GetAsync(fixture.Route, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var csv = await response.Content.ReadAsStringAsync(testContext.CancellationToken);
+        var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        lines[0].ShouldBe("FirstName,LastName,Email,Tickets,Status,RegisteredAt,ReconfirmedAt,CancelledAt,CheckedInAt");
+
+        var aliceLine = lines.Single(l => l.Contains("alice@example.com"));
+        var fields = aliceLine.Split(',');
+        fields[6].ShouldNotBeNullOrEmpty(); // ReconfirmedAt
+        fields[7].ShouldBeEmpty(); // CancelledAt
+        fields[8].ShouldNotBeNullOrEmpty(); // CheckedInAt
+    }
+
     // Given an event configured with an additional registration detail field
     // When the registrations are exported
     // Then the CSV includes an extra column with that detail's value
@@ -72,7 +96,8 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var csv = await response.Content.ReadAsStringAsync(testContext.CancellationToken);
         var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        lines[0].ShouldBe("FirstName,LastName,Email,Tickets,Status,RegisteredAt,Company");
+        lines[0].ShouldBe(
+            "FirstName,LastName,Email,Tickets,Status,RegisteredAt,ReconfirmedAt,CancelledAt,CheckedInAt,Company");
         lines.ShouldContain(l => l.Contains("Alice") && l.Contains("Acme"));
     }
 
@@ -91,7 +116,7 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         var csv = await response.Content.ReadAsStringAsync(testContext.CancellationToken);
         var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         lines.Length.ShouldBe(1);
-        lines[0].ShouldBe("FirstName,LastName,Email,Tickets,Status,RegisteredAt");
+        lines[0].ShouldBe("FirstName,LastName,Email,Tickets,Status,RegisteredAt,ReconfirmedAt,CancelledAt,CheckedInAt");
     }
 
     // Given no team exists for a given id

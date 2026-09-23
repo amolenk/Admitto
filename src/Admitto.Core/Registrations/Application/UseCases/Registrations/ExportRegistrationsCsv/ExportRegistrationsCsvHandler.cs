@@ -47,7 +47,11 @@ internal sealed class ExportRegistrationsCsvHandler(
     {
         var sb = new StringBuilder();
 
-        var headerParts = new List<string> { "FirstName", "LastName", "Email", "Tickets", "Status", "RegisteredAt" };
+        var headerParts = new List<string>
+        {
+            "FirstName", "LastName", "Email", "Tickets", "Status",
+            "RegisteredAt", "ReconfirmedAt", "CancelledAt", "CheckedInAt"
+        };
         headerParts.AddRange(schemaFields.Select(f => CsvEscape(f.Name)));
         sb.AppendLine(string.Join(",", headerParts));
 
@@ -60,7 +64,10 @@ internal sealed class ExportRegistrationsCsvHandler(
                 CsvEscape(reg.Email),
                 CsvEscape(string.Join("; ", reg.Tickets.Select(t => t.Name))),
                 CsvEscape(reg.Status.ToString()),
-                CsvEscape(reg.CreatedAt.ToString("o"))
+                CsvEscape(reg.CreatedAt.ToString("o")),
+                CsvEscape(reg.ReconfirmedAt?.ToString("o") ?? string.Empty),
+                CsvEscape(reg.CancelledAt?.ToString("o") ?? string.Empty),
+                CsvEscape(reg.CheckedInAt?.ToString("o") ?? string.Empty)
             };
 
             foreach (var field in schemaFields)

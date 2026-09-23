@@ -28,9 +28,12 @@ internal sealed class ExportRegistrationsFixture
         string firstName,
         string lastName,
         bool cancelled = false,
+        bool reconfirmed = false,
+        bool checkedIn = false,
         IReadOnlyDictionary<string, string>? additionalDetails = null)
     {
-        _registrationSeeds.Add(new RegistrationSeed(email, firstName, lastName, cancelled, additionalDetails));
+        _registrationSeeds.Add(new RegistrationSeed(
+            email, firstName, lastName, cancelled, reconfirmed, checkedIn, additionalDetails));
         return this;
     }
 
@@ -79,6 +82,10 @@ internal sealed class ExportRegistrationsFixture
                 LastName.From(seed.LastName),
                 [snapshot],
                 AdditionalDetails.From(seed.AdditionalDetails));
+            if (seed.Reconfirmed)
+                reg.Reconfirm(DateTimeOffset.UtcNow);
+            if (seed.CheckedIn)
+                reg.CheckIn(DateTimeOffset.UtcNow);
             if (seed.Cancelled)
                 reg.Cancel(CancellationReason.AttendeeRequest);
             return reg;
@@ -99,5 +106,7 @@ internal sealed class ExportRegistrationsFixture
         string FirstName,
         string LastName,
         bool Cancelled,
+        bool Reconfirmed,
+        bool CheckedIn,
         IReadOnlyDictionary<string, string>? AdditionalDetails);
 }
