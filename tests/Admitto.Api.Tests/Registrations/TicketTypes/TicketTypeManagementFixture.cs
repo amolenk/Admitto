@@ -55,7 +55,7 @@ internal sealed class TicketTypeManagementFixture
 
         if (_seedSoldOutTicketType)
         {
-            catalog.Claim([ExistingTicketTypeId], enforce: true);
+            catalog.Claim([ExistingTicketTypeId], ClaimMode.Public);
         }
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

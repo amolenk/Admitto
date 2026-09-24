@@ -55,6 +55,10 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
                 .HasJsonPropertyName("reserved_capacity")
                 .IsRequired();
 
+            b.Property(tt => tt.ReservedUsedCapacity)
+                .HasJsonPropertyName("reserved_used_capacity")
+                .IsRequired();
+
             b.Property(tt => tt.SelfServiceEnabled)
                 .HasJsonPropertyName("self_service_enabled")
                 .IsRequired();

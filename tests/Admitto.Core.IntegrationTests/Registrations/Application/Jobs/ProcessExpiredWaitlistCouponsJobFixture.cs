@@ -61,7 +61,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             var catalog = TicketCatalog.Create(EventId, TeamId);
             catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: 1,
                 waitlistEnabled: true, claimWindowHours: 8);
-            catalog.Claim([TicketTypeId], enforce: true);   // fill to capacity → WaitlistMode activates
+            catalog.Claim([TicketTypeId], ClaimMode.Public);   // fill to capacity → WaitlistMode activates
             dbContext.TicketCatalogs.Add(catalog);
 
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);

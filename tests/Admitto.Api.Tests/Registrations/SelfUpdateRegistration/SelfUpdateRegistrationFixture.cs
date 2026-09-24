@@ -67,7 +67,7 @@ internal sealed class SelfUpdateRegistrationFixture
         catalog.AddTicketType(GeneralAdmissionId, TicketTypeName.From("General Admission"), [], 100);
         catalog.AddTicketType(WorkshopId, TicketTypeName.From("Workshop"), [], workshopCapacity);
         for (var i = 0; i < workshopUsed; i++)
-            catalog.Claim([WorkshopId], enforce: true);
+            catalog.Claim([WorkshopId], ClaimMode.Public);
 
         var registration = Registration.Create(
             team.Id,

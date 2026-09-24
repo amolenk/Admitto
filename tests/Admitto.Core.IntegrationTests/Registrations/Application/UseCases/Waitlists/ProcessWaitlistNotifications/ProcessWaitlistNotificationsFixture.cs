@@ -59,7 +59,7 @@ internal sealed class ProcessWaitlistNotificationsFixture
 
             // Fill to capacity and trigger WaitlistMode
             for (var i = 0; i < maxCapacity; i++)
-                catalog.Claim([TicketTypeId], enforce: true);
+                catalog.Claim([TicketTypeId], ClaimMode.Public);
 
             dbContext.TicketCatalogs.Add(catalog);
 

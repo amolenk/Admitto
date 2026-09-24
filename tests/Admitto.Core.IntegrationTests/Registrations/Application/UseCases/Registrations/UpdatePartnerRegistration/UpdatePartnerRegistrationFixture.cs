@@ -13,6 +13,7 @@ internal sealed class UpdatePartnerRegistrationFixture
     private Coupon? _coupon;
     private global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist? _waitlist;
     private bool _preCancel;
+    private TicketTypeSnapshot? _reservedTicket;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
@@ -65,6 +66,29 @@ internal sealed class UpdatePartnerRegistrationFixture
         return f;
     }
 
+    public static UpdatePartnerRegistrationFixture WithReservedCapacityTicket()
+    {
+        var f = new UpdatePartnerRegistrationFixture();
+        f._ticketedEvent = f.MakeActiveEventWithSchema();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var vipId = TicketTypeId.New();
+        var earlyBirdId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["vip"] = vipId;
+        f._ticketTypeIdsBySlug["early-bird"] = earlyBirdId;
+
+        catalog.AddTicketType(vipId, TicketTypeName.From("VIP"), [], maxCapacity: 10, reservedCapacity: 3);
+        catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], maxCapacity: 100);
+
+        // The registration's only ticket was claimed under the admin/reserved pool.
+        var reservedTickets = catalog.Claim([vipId], ClaimMode.Reserved);
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+        f._reservedTicket = reservedTickets[0];
+
+        return f;
+    }
+
     public static UpdatePartnerRegistrationFixture WithWaitlistCoupon(bool overlappingTickets = false)
     {
         var f = new UpdatePartnerRegistrationFixture();
@@ -79,8 +103,8 @@ internal sealed class UpdatePartnerRegistrationFixture
         var workshopSlot = overlappingTickets ? "morning" : "afternoon";
         catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [TimeSlot.From("morning")], 100);
         catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From(workshopSlot)], 1, waitlistEnabled: true);
-        catalog.Claim([earlyBirdId], enforce: false);
-        catalog.Claim([workshopId], enforce: true);
+        catalog.Claim([earlyBirdId], ClaimMode.Reserved);
+        catalog.Claim([workshopId], ClaimMode.Public);
         catalog.ClearDomainEvents();
         f._catalog = catalog;
 
@@ -114,13 +138,16 @@ internal sealed class UpdatePartnerRegistrationFixture
             if (_waitlist is not null) dbContext.Waitlists.Add(_waitlist);
 
             var earlyBirdId = _ticketTypeIdsBySlug.TryGetValue("early-bird", out var id) ? id : TicketTypeId.New();
+            var initialTickets = _reservedTicket is { } reservedTicket
+                ? [reservedTicket]
+                : new List<TicketTypeSnapshot> { new(earlyBirdId, TicketTypeName.From("Early Bird"), []) };
             var registration = Registration.Create(
                 TeamId,
                 EventId,
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])],
+                initialTickets,
                 AdditionalDetails.From(new Dictionary<string, string> { ["dietary"] = "old" }));
             RegistrationId = registration.Id;
             if (_preCancel) registration.Cancel(CancellationReason.AttendeeRequest);
@@ -162,7 +189,7 @@ internal sealed class UpdatePartnerRegistrationFixture
             var id = TicketTypeId.New();
             _ticketTypeIdsBySlug[slug] = id;
             catalog.AddTicketType(id, TicketTypeName.From(name), [], max, selfServiceEnabled);
-            for (var i = 0; i < used; i++) catalog.Claim([id], enforce: false);
+            for (var i = 0; i < used; i++) catalog.Claim([id], ClaimMode.Reserved);
         }
         catalog.ClearDomainEvents();
         return catalog;

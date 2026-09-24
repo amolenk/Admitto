@@ -32,7 +32,6 @@ internal sealed class ReleaseTicketsHandler(IRegistrationsWriteStore writeStore)
         if (catalog.EventStatus != EventLifecycleStatus.Active)
             return;
 
-        var ticketIds = registration.Tickets.Select(t => t.Id).ToList();
-        catalog.Release(ticketIds);
+        catalog.Release(registration.Tickets);
     }
 }

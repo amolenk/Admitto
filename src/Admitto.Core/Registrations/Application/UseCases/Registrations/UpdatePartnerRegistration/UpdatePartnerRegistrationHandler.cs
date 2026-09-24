@@ -72,20 +72,31 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         var currentIds = registration.Tickets.Select(t => t.Id).ToHashSet();
         var newIds = newTicketTypeIds.ToHashSet();
-        var toRelease = currentIds.Except(newIds).ToList();
+        var toRelease = registration.Tickets.Where(t => !newIds.Contains(t.Id)).ToList();
         var toClaim = newTicketTypeIds.Where(id => !currentIds.Contains(id)).ToList();
 
         var couponBackedClaim = couponTicketTypeId is { } offeredTicketTypeId
             && toClaim.Remove(offeredTicketTypeId);
 
-        catalog.Claim(toClaim, enforce: true);
-        if (couponBackedClaim)
-            catalog.Claim([couponTicketTypeId!.Value], enforce: false);
+        var claimedTickets = catalog.Claim(toClaim, ClaimMode.Public);
+        var couponClaimedTickets = couponBackedClaim
+            ? catalog.Claim([couponTicketTypeId!.Value], ClaimMode.PublicUncapped)
+            : [];
         catalog.Release(toRelease);
 
+        // Newly claimed tickets keep the ClaimMode they were claimed under; tickets that were
+        // already on the registration keep their originally recorded mode so a later release
+        // still credits the correct pool.
+        var existingTicketsById = registration.Tickets.ToDictionary(t => t.Id);
+        var claimedTicketsById = claimedTickets.Concat(couponClaimedTickets).ToDictionary(t => t.Id);
         var newTickets = newTicketTypeIds
             .Select(id =>
             {
+                if (claimedTicketsById.TryGetValue(id, out var claimed))
+                    return claimed;
+                if (existingTicketsById.TryGetValue(id, out var existing))
+                    return existing;
+
                 var ticketType = catalog.GetTicketType(id);
                 var timeSlots = ticketType?.TimeSlots ?? [];
                 var name = ticketType?.Name ?? TicketTypeName.From(id.Value.ToString());

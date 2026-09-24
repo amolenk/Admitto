@@ -55,7 +55,10 @@ internal sealed class RegisterAttendeeWithCouponHandler(
         var catalog = await writeStore.TicketCatalogs
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
-        var tickets = catalog.Claim(ticketTypeIds, enforce: false);
+        // A waitlist coupon redeems a slot already freed from the public pool (see the waitlist
+        // notification flow); any other coupon source is a general reserved-capacity grant.
+        var claimMode = coupon.Source == CouponSource.Waitlist ? ClaimMode.PublicUncapped : ClaimMode.Reserved;
+        var tickets = catalog.Claim(ticketTypeIds, claimMode);
 
         Registration registration;
         if (existingRegistration is null)

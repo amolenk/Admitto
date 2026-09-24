@@ -58,7 +58,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
         catalog.EnsureEventActive();
         EnsureRequestedTicketStatesMatch(catalog, registerTicketTypeIds, waitlistTicketTypeIds);
         ValidateWaitlistRequests(catalog, waitlistTicketTypeIds);
-        var tickets = catalog.Claim(registerTicketTypeIds, enforce: true);
+        var tickets = catalog.Claim(registerTicketTypeIds, ClaimMode.Public);
 
         Registration? registration = null;
         if (registerTicketTypeIds.Count > 0 && existingRegistration is null)
