@@ -12,4 +12,5 @@ internal sealed record UpdateTicketTypeCommand(
     bool? WaitlistEnabled = null,
     int? ClaimWindowHours = null,
     int? MaxReconfirmationEmails = null,
-    bool UpdateMaxReconfirmationEmails = false) : Command;
+    bool UpdateMaxReconfirmationEmails = false,
+    int ReservedCapacity = 0) : Command;

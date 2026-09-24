@@ -30,6 +30,23 @@ public sealed class AddTicketTypeValidator : AbstractValidator<AddTicketTypeHttp
                 .WithMessage("WaitlistEnabled requires a bounded capacity (MaxCapacity must be set).");
         });
 
+        RuleFor(x => x.ReservedCapacity)
+            .GreaterThanOrEqualTo(0);
+
+        When(x => x.ReservedCapacity > 0, () =>
+        {
+            RuleFor(x => x.MaxCapacity)
+                .NotNull()
+                .WithMessage("ReservedCapacity requires a bounded capacity (MaxCapacity must be set).");
+        });
+
+        When(x => x.MaxCapacity is not null, () =>
+        {
+            RuleFor(x => x.ReservedCapacity)
+                .LessThanOrEqualTo(x => x.MaxCapacity!.Value)
+                .WithMessage("ReservedCapacity cannot exceed MaxCapacity.");
+        });
+
         RuleFor(x => x.ClaimWindowHours)
             .GreaterThanOrEqualTo(1)
             .WithMessage("ClaimWindowHours must be at least 1.");

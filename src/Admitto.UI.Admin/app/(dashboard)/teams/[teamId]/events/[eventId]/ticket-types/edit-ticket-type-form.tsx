@@ -29,15 +29,25 @@ import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
 
-const editSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    selfServiceEnabled: z.boolean(),
-    limitCapacity: z.boolean(),
-    maxCapacity: z.number().int().min(1).optional(),
-    waitlistEnabled: z.boolean(),
-    claimWindowHours: z.number().int().min(1).optional(),
-    maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
-});
+const editSchema = z
+    .object({
+        name: z.string().min(1, "Name is required"),
+        selfServiceEnabled: z.boolean(),
+        limitCapacity: z.boolean(),
+        maxCapacity: z.number().int().min(1).optional(),
+        reservedCapacity: z.number().int().min(0).optional(),
+        waitlistEnabled: z.boolean(),
+        claimWindowHours: z.number().int().min(1).optional(),
+        maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
+    })
+    .refine(
+        (values) =>
+            !values.limitCapacity ||
+            values.reservedCapacity === undefined ||
+            values.maxCapacity === undefined ||
+            values.reservedCapacity <= values.maxCapacity,
+        { message: "Reserved capacity cannot exceed max capacity", path: ["reservedCapacity"] }
+    );
 
 type EditValues = z.infer<typeof editSchema>;
 
@@ -61,6 +71,7 @@ export function EditTicketTypeForm({
         selfServiceEnabled: ticketType.selfServiceEnabled,
         limitCapacity: hasCapacity,
         maxCapacity: hasCapacity ? Number(ticketType.maxCapacity) : undefined,
+        reservedCapacity: hasCapacity ? Number(ticketType.reservedCapacity) : undefined,
         waitlistEnabled: ticketType.waitlistEnabled,
         claimWindowHours: Number(ticketType.claimWindowHours) || 8,
         maxReconfirmationEmails: ticketType.maxReconfirmationEmails != null
@@ -93,6 +104,7 @@ export function EditTicketTypeForm({
                 name: values.name,
                 selfServiceEnabled: values.selfServiceEnabled,
                 maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
+                reservedCapacity: values.limitCapacity ? (values.reservedCapacity ?? 0) : 0,
                 waitlistEnabled: values.limitCapacity ? values.waitlistEnabled : false,
                 claimWindowHours: values.limitCapacity && values.waitlistEnabled ? (values.claimWindowHours ?? 8) : undefined,
                 maxReconfirmationEmails: values.maxReconfirmationEmails ?? null,
@@ -206,6 +218,32 @@ export function EditTicketTypeForm({
                                                     }
                                                 />
                                             </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                            {limitCapacity && (
+                                <FormField
+                                    control={form.control}
+                                    name="reservedCapacity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Reserved capacity (optional)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    placeholder="e.g. 20"
+                                                    value={field.value ?? ""}
+                                                    onChange={(e) =>
+                                                        field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Slots held back from self-service and reserved for admin/coupon registrations.
+                                            </FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}

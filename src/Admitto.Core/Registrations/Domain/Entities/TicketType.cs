@@ -20,7 +20,8 @@ public class TicketType : Entity<TicketTypeId>
         bool selfServiceEnabled = true,
         bool waitlistEnabled = false,
         int claimWindowHours = 8,
-        ReconfirmationEmailLimit? maxReconfirmationEmails = null)
+        ReconfirmationEmailLimit? maxReconfirmationEmails = null,
+        int reservedCapacity = 0)
         : base(id)
     {
         Name = name;
@@ -30,6 +31,7 @@ public class TicketType : Entity<TicketTypeId>
         SelfServiceEnabled = selfServiceEnabled;
         WaitlistEnabled = waitlistEnabled;
         ClaimWindowHours = claimWindowHours;
+        ReservedCapacity = reservedCapacity;
         UpdateMaxReconfirmationEmails(maxReconfirmationEmails);
     }
 
@@ -42,7 +44,20 @@ public class TicketType : Entity<TicketTypeId>
     public bool WaitlistMode { get; private set; }
     public int ClaimWindowHours { get; private set; } = 8;
     public ReconfirmationEmailLimit? MaxReconfirmationEmails { get; private set; }
-    public bool IsSoldOut => MaxCapacity is not null && UsedCapacity >= MaxCapacity.Value;
+
+    /// <summary>
+    /// Portion of <see cref="MaxCapacity"/> not available for self-service claims,
+    /// held back for admin/coupon registrations. A sales restriction, not a separate
+    /// pool: admin/coupon claims remain uncapped and simply consume this buffer once
+    /// the public threshold (<see cref="MaxCapacity"/> - <see cref="ReservedCapacity"/>) is reached.
+    /// </summary>
+    public int ReservedCapacity { get; private set; }
+
+    /// <summary>
+    /// Whether the ticket type is sold out for self-service/public purposes, i.e. used capacity
+    /// has reached the public threshold (MaxCapacity - ReservedCapacity). Does not gate admin/coupon claims.
+    /// </summary>
+    public bool IsSoldOut => MaxCapacity is not null && UsedCapacity >= MaxCapacity.Value - ReservedCapacity;
 
     public void UpdateName(TicketTypeName name)
     {
@@ -52,6 +67,11 @@ public class TicketType : Entity<TicketTypeId>
     public void UpdateCapacity(int? maxCapacity)
     {
         MaxCapacity = maxCapacity;
+    }
+
+    public void UpdateReservedCapacity(int reservedCapacity)
+    {
+        ReservedCapacity = reservedCapacity;
     }
 
     public void UpdateSelfServiceEnabled(bool enabled)

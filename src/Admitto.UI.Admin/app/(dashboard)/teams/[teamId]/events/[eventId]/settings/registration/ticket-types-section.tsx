@@ -14,23 +14,53 @@ import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
 
 
-const addSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    selfServiceEnabled: z.boolean(),
-    limitCapacity: z.boolean(),
-    maxCapacity: z.number().int().min(1).optional(),
-});
+const addSchema = z
+    .object({
+        name: z.string().min(1, "Name is required"),
+        selfServiceEnabled: z.boolean(),
+        limitCapacity: z.boolean(),
+        maxCapacity: z.number().int().min(1).optional(),
+        reservedCapacity: z.number().int().min(0).optional(),
+    })
+    .refine(
+        (values) =>
+            !values.limitCapacity ||
+            values.reservedCapacity === undefined ||
+            values.maxCapacity === undefined ||
+            values.reservedCapacity <= values.maxCapacity,
+        { message: "Reserved capacity cannot exceed max capacity", path: ["reservedCapacity"] }
+    );
 
 type AddValues = z.infer<typeof addSchema>;
 
-const editSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    selfServiceEnabled: z.boolean(),
-    limitCapacity: z.boolean(),
-    maxCapacity: z.number().int().min(1).optional(),
-});
+const editSchema = z
+    .object({
+        name: z.string().min(1, "Name is required"),
+        selfServiceEnabled: z.boolean(),
+        limitCapacity: z.boolean(),
+        maxCapacity: z.number().int().min(1).optional(),
+        reservedCapacity: z.number().int().min(0).optional(),
+    })
+    .refine(
+        (values) =>
+            !values.limitCapacity ||
+            values.reservedCapacity === undefined ||
+            values.maxCapacity === undefined ||
+            values.reservedCapacity <= values.maxCapacity,
+        { message: "Reserved capacity cannot exceed max capacity", path: ["reservedCapacity"] }
+    );
 
 type EditValues = z.infer<typeof editSchema>;
+
+/** Live "X / Y used" figure for a ticket type's reserved capacity, derived from usedCapacity. */
+function reservedUsedOf(tt: TicketTypeDto): string {
+    const cap = Number(tt.maxCapacity) || 0;
+    const used = Number(tt.usedCapacity);
+    const reserved = Number(tt.reservedCapacity) || 0;
+    const publicThreshold = cap > 0 ? Math.max(0, cap - reserved) : 0;
+    const reservedUsed = Math.min(reserved, Math.max(0, used - publicThreshold));
+    return `${reservedUsed}/${reserved} used`;
+}
 
 export function TicketTypesSection({
     teamId,
@@ -89,6 +119,9 @@ export function TicketTypesSection({
                                 <p className="text-xs text-muted-foreground">
                                     capacity {tt.maxCapacity == null ? "unlimited" : String(tt.maxCapacity)} ·
                                     used {String(tt.usedCapacity)}
+                                    {Number(tt.reservedCapacity) > 0 && (
+                                        <> · reserved {reservedUsedOf(tt)}</>
+                                    )}
                                 </p>
                             </div>
                             <Button
@@ -139,6 +172,7 @@ function AddTicketTypeForm({
         selfServiceEnabled: true,
         limitCapacity: false,
         maxCapacity: undefined,
+        reservedCapacity: undefined,
     });
 
     const limitCapacity = form.watch("limitCapacity");
@@ -148,6 +182,7 @@ function AddTicketTypeForm({
             name: values.name,
             selfServiceEnabled: values.selfServiceEnabled,
             maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
+            reservedCapacity: values.limitCapacity ? (values.reservedCapacity ?? 0) : 0,
             timeSlots: null,
         });
         onAdded();
@@ -229,6 +264,28 @@ function AddTicketTypeForm({
                         )}
                     />
                 )}
+                {limitCapacity && (
+                    <FormField
+                        control={form.control}
+                        name="reservedCapacity"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Reserved capacity</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        value={field.value ?? ""}
+                                        onChange={(e) =>
+                                            field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                        }
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
                 <div className="flex gap-2">
                     <Button type="submit" disabled={form.formState.isSubmitting}>
                         Add
@@ -241,7 +298,6 @@ function AddTicketTypeForm({
         </Form>
     );
 }
-
 function EditTicketTypeForm({
     teamId,
     eventId,
@@ -261,6 +317,7 @@ function EditTicketTypeForm({
         selfServiceEnabled: ticketType.selfServiceEnabled,
         limitCapacity: hasCapacity,
         maxCapacity: hasCapacity ? Number(ticketType.maxCapacity) : undefined,
+        reservedCapacity: hasCapacity ? Number(ticketType.reservedCapacity) : undefined,
     });
 
     const limitCapacity = form.watch("limitCapacity");
@@ -272,6 +329,7 @@ function EditTicketTypeForm({
                 name: values.name,
                 selfServiceEnabled: values.selfServiceEnabled,
                 maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
+                reservedCapacity: values.limitCapacity ? (values.reservedCapacity ?? 0) : 0,
             }
         );
         onSaved();
@@ -337,6 +395,28 @@ function EditTicketTypeForm({
                                     <Input
                                         type="number"
                                         min={1}
+                                        value={field.value ?? ""}
+                                        onChange={(e) =>
+                                            field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                        }
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+                {limitCapacity && (
+                    <FormField
+                        control={form.control}
+                        name="reservedCapacity"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Reserved capacity</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min={0}
                                         value={field.value ?? ""}
                                         onChange={(e) =>
                                             field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://localhost:35887/"
+      "url": "http://localhost:39917/"
     }
   ],
   "paths": {
@@ -7724,6 +7724,15 @@
               "string"
             ],
             "format": "int32"
+          },
+          "reservedCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -9764,7 +9773,8 @@
           "waitlistEnabled",
           "waitlistMode",
           "claimWindowHours",
-          "maxReconfirmationEmails"
+          "maxReconfirmationEmails",
+          "reservedCapacity"
         ],
         "type": "object",
         "properties": {
@@ -9819,6 +9829,14 @@
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reservedCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
               "integer",
               "string"
             ],
@@ -10030,6 +10048,14 @@
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reservedCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
               "integer",
               "string"
             ],

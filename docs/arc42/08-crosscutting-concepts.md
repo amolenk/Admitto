@@ -562,6 +562,16 @@ TicketCatalog
 
 Because `TicketedEvent.Archive()` commits the projection onto `TicketCatalog` in the same transaction as the source-of-truth status change, an in-flight registration that loaded `TicketCatalog` at a prior version fails at `SaveChanges` — the write-amplifier mechanism described in §8.9.
 
+### Reserved capacity as a sales restriction, not a separate pool
+
+`TicketType.ReservedCapacity` (`Domain/Entities/TicketType.cs`) holds back a portion of `MaxCapacity` from self-service claims, for admin/coupon registrations (e.g. an "AI Workshop" ticket type that reserves 20 of 200 slots for direct invitations). It is a sales restriction on the self-service/public path, not a separate capacity pool with its own bookkeeping:
+
+- `TicketType.IsSoldOut` is defined as `UsedCapacity >= MaxCapacity - ReservedCapacity` — the *public* threshold. This one definition is the sole gate consulted by `ClaimWithEnforcement` (self-service), `GetPublicTicketTypesHandler`'s status mapping, and waitlist activation, so redefining it in place is sufficient; there is no separate "truly full" concept.
+- `TicketType.ClaimUncapped()` (admin/coupon path) is untouched and remains fully uncapped by design, consistent with `RegisterAttendeeWithCouponHandler`'s coupon-bypasses-capacity behavior (§6). Admin registrations always succeed regardless of `MaxCapacity`/`ReservedCapacity`, simply counting against total `UsedCapacity`.
+- There is no separate "reserved slots used" counter. It is derived: `reservedUsed = clamp(UsedCapacity - (MaxCapacity - ReservedCapacity), 0, ReservedCapacity)`. Once self-service claims fill up to the public threshold, further admin/coupon claims are — by definition — consuming the reserved buffer (or exceeding it).
+- `TicketCatalog.AddTicketType`/`UpdateTicketType` validate `ReservedCapacity >= 0`, `ReservedCapacity <= MaxCapacity`, and require `MaxCapacity` to be bounded (non-null) whenever `ReservedCapacity > 0` — mirroring the existing `WaitlistRequiresBoundedCapacity` pattern.
+- `WaitlistCapacityFreedDomainEvent` is raised against the same public threshold: raising `MaxCapacity` or lowering `ReservedCapacity` can each free public slots and are both accounted for in the freed-slots calculation in `TicketCatalog.UpdateTicketType`.
+
 ### Why not a separate lifecycle-guard aggregate?
 
 Previous designs used a dedicated `TicketedEventLifecycleGuard` aggregate to mirror event status from the Organization module into Registrations. That guard is gone: with `TicketedEvent` now owned by Registrations, the aggregate enforces its own invariants and the only out-of-aggregate projection is the single `EventStatus` field on `TicketCatalog`, which exists solely to make the status + capacity check atomic. See [ADR-008](../adr/adr-008-ticketed-event-ownership-in-registrations.md).

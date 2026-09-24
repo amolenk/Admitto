@@ -10,11 +10,11 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
 [TestClass]
 public sealed class TicketTypeTests
 {
-    private static TicketType CreateTicketType(int? maxCapacity = 10, int usedCapacity = 0)
+    private static TicketType CreateTicketType(int? maxCapacity = 10, int usedCapacity = 0, int reservedCapacity = 0)
     {
         var id = TicketTypeId.New();
         var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity);
+        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity, reservedCapacity: reservedCapacity);
         var tt = catalog.GetTicketType(id)!;
         for (var i = 0; i < usedCapacity; i++)
             tt.ClaimUncapped();
@@ -105,6 +105,28 @@ public sealed class TicketTypeTests
     public void IsSoldOut_WhenCapacityIsNull_ReturnsFalse()
     {
         var sut = CreateTicketType(maxCapacity: null, usedCapacity: 10);
+
+        sut.IsSoldOut.ShouldBeFalse();
+    }
+
+    // Given a ticket type with reserved capacity and used capacity at the public threshold
+    // When checking whether it is sold out
+    // Then it returns true even though total capacity has not been reached
+    [TestMethod]
+    public void IsSoldOut_WhenUsedCapacityReachesPublicThreshold_ReturnsTrue()
+    {
+        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 8, reservedCapacity: 2);
+
+        sut.IsSoldOut.ShouldBeTrue();
+    }
+
+    // Given a ticket type with reserved capacity and used capacity below the public threshold
+    // When checking whether it is sold out
+    // Then it returns false
+    [TestMethod]
+    public void IsSoldOut_WhenUsedCapacityBelowPublicThreshold_ReturnsFalse()
+    {
+        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 7, reservedCapacity: 2);
 
         sut.IsSoldOut.ShouldBeFalse();
     }

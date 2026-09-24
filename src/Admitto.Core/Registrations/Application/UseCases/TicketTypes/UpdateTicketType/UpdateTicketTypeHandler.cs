@@ -28,6 +28,6 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
 
         catalog.UpdateTicketType(ticketTypeId, name, command.MaxCapacity, command.SelfServiceEnabled,
             command.WaitlistEnabled, command.ClaimWindowHours, reconfirmationEmailLimit,
-            command.UpdateMaxReconfirmationEmails);
+            command.UpdateMaxReconfirmationEmails, command.ReservedCapacity);
     }
 }

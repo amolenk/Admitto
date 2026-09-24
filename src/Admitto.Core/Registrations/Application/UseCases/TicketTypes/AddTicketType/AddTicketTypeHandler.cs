@@ -29,7 +29,7 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
             : ReconfirmationEmailLimit.From(command.MaxReconfirmationEmails.Value);
 
         catalog.AddTicketType(id, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled,
-            command.WaitlistEnabled, command.ClaimWindowHours, reconfirmationEmailLimit);
+            command.WaitlistEnabled, command.ClaimWindowHours, reconfirmationEmailLimit, command.ReservedCapacity);
 
         return id.Value;
     }

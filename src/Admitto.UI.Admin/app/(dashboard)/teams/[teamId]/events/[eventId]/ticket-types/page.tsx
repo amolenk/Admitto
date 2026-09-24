@@ -34,6 +34,10 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
 
     const cap = Number(t.maxCapacity) || 0;
     const used = Number(t.usedCapacity);
+    const reserved = Number(t.reservedCapacity) || 0;
+    const publicThreshold = cap > 0 ? Math.max(0, cap - reserved) : 0;
+    const isPubliclySoldOut = cap > 0 && used >= publicThreshold;
+    const reservedUsed = reserved > 0 ? Math.min(reserved, Math.max(0, used - publicThreshold)) : 0;
     const remaining = cap > 0 ? cap - used : 0;
     const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
 
@@ -45,7 +49,7 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                         <h3 className="font-display text-lg font-semibold truncate">{t.name}</h3>
                         <div className="flex items-center justify-between gap-2 mt-1">
                             <div>
-                                {cap > 0 && used >= cap ? (
+                                {cap > 0 && isPubliclySoldOut ? (
                                     <Badge variant="secondary">Sold out</Badge>
                                 ) : (
                                     <Badge variant="outline" className="text-success border-success/30 bg-success/10">
@@ -110,6 +114,13 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                             )}
                         </div>
                     </div>
+
+                    {reserved > 0 && (
+                        <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>Reserved for admin/coupons</span>
+                            <span className="font-mono tabular-nums">{reservedUsed} / {reserved} used</span>
+                        </div>
+                    )}
 
                     {t.timeSlots && t.timeSlots.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">

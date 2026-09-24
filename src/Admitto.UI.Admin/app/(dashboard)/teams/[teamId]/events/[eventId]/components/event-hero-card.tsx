@@ -94,6 +94,16 @@ export function EventHeroCard({ event, openStatus, ticketTypes, registrations }:
         ?.reduce((sum, t) => sum + (Number(t.maxCapacity) || 0), 0) ?? 0;
     const totalUsed = ticketTypes
         ?.reduce((sum, t) => sum + Number(t.usedCapacity), 0) ?? 0;
+    const totalReserved = ticketTypes
+        ?.reduce((sum, t) => sum + (Number(t.reservedCapacity) || 0), 0) ?? 0;
+    const totalReservedUsed = ticketTypes
+        ?.reduce((sum, t) => {
+            const cap = Number(t.maxCapacity) || 0;
+            const used = Number(t.usedCapacity);
+            const reserved = Number(t.reservedCapacity) || 0;
+            const publicThreshold = cap > 0 ? Math.max(0, cap - reserved) : 0;
+            return sum + Math.min(reserved, Math.max(0, used - publicThreshold));
+        }, 0) ?? 0;
     const hasUnlimited = ticketTypes?.some(t => !Number(t.maxCapacity)) ?? false;
     const hasCapacity = totalCapacity > 0;
     const capacityPct = hasCapacity ? Math.round((totalUsed / totalCapacity) * 100) : 0;
@@ -182,7 +192,7 @@ export function EventHeroCard({ event, openStatus, ticketTypes, registrations }:
                 <HeroStat
                     label="Registered"
                     value={totalUsed}
-                    sub={hasCapacity ? `of ${totalCapacity}${hasUnlimited ? "+" : ""}` : "total"}
+                    sub={hasCapacity ? `of ${totalCapacity}${hasUnlimited ? "+" : ""}${totalReserved > 0 ? ` (${totalReservedUsed}/${totalReserved} reserved used)` : ""}` : "total"}
                     pct={hasCapacity ? capacityPct : undefined}
                 />
                 {reconfirmedCount >= 1 && (
