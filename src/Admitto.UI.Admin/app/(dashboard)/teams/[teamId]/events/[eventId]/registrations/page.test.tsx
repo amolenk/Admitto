@@ -458,30 +458,30 @@ describe("RegistrationsPage", () => {
         expect(screen.getByText("bob@example.com")).toBeInTheDocument();
     });
 
-    // Given attendees whose surnames sort differently than insertion order
+    // Given registrations created on different dates
     // When the page loads with no sort applied yet
-    // Then rows are ordered by attendee name ascending by default
-    it("defaults to attendee name ascending sort", async () => {
+    // Then rows are ordered by registration date descending by default
+    it("defaults to registration date descending sort", async () => {
         renderPage();
         await screen.findByText("ada@example.com");
 
         const rows = dataRows();
-        expect(within(rows[0]!).getByText("Ada Anderson")).toBeInTheDocument();
-        expect(within(rows[1]!).getByText("Bob Zephyr")).toBeInTheDocument();
+        expect(within(rows[0]!).getByText("Bob Zephyr")).toBeInTheDocument();
+        expect(within(rows[1]!).getByText("Ada Anderson")).toBeInTheDocument();
     });
 
-    // Given the default ascending sort on the attendee column
-    // When the column header is clicked
-    // Then the sort direction toggles
-    it("toggles sort direction when a column header is clicked", async () => {
+    // Given the default registration-date sort
+    // When the Attendee column header is clicked
+    // Then rows sort by attendee name ascending
+    it("sorts by attendee name ascending when its column header is clicked", async () => {
         const { user } = renderPage();
         await screen.findByText("ada@example.com");
 
         await user.click(screen.getByRole("button", { name: /Attendee/ }));
 
         const rows = dataRows();
-        expect(within(rows[0]!).getByText("Bob Zephyr")).toBeInTheDocument();
-        expect(within(rows[1]!).getByText("Ada Anderson")).toBeInTheDocument();
+        expect(within(rows[0]!).getByText("Ada Anderson")).toBeInTheDocument();
+        expect(within(rows[1]!).getByText("Bob Zephyr")).toBeInTheDocument();
     });
 
     // Given the "Add registration" control
