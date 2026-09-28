@@ -142,8 +142,8 @@ public class Waitlist : Aggregate<TicketTypeId>
 
         _coupons.Add(new WaitlistCoupon(coupon.Id, now));
 
-        // AddDomainEvent(new WaitlistCouponIssuedDomainEvent(
-        //     TeamId, EventId, Id, entry.Email, couponCode, ticketTypeName, expiresAt));
+        AddDomainEvent(new WaitlistCouponIssuedDomainEvent(
+            TeamId, EventId, ticketType.Id, entry.Email, coupon.Code, ticketType.Name.Value, expiresAt));
 
         return coupon;
     }

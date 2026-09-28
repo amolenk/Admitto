@@ -1,7 +1,16 @@
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Application.Messaging;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
+using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
+using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
 
@@ -135,5 +144,67 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
             coupon.ExpiresAt.ShouldBe(expectedExpiry, tolerance: TimeSpan.FromSeconds(1));
         });
+    }
+
+    // Given a waitlist with one active entry and one freed slot
+    // When waitlist notifications are processed
+    // Then the promoted attendee's waitlist offer email is prepared with the correct coupon and expiry
+    [TestMethod]
+    public async ValueTask ProcessWaitlistNotifications_WithOneEntry_PreparesWaitlistOfferEmailForPromotedAttendee()
+    {
+        // Arrange
+        var fixture = ProcessWaitlistNotificationsFixture.WithOneEntryOneSlot();
+        await fixture.SetupAsync(Environment, activeEntries: 1);
+
+        var sut = new ProcessWaitlistNotificationsHandler(
+            Environment.RegistrationsDatabase.Context, TimeProvider.System);
+
+        // Act — run the automatic promotion
+        await sut.HandleAsync(
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            testContext.CancellationToken);
+
+        // Assert — the promotion raised a WaitlistCouponIssuedDomainEvent with the coupon details
+        var waitlist = await Environment.RegistrationsDatabase.Context.Waitlists
+            .FirstAsync(w => w.Id == fixture.TicketTypeId, testContext.CancellationToken);
+        var domainEvent = waitlist.GetDomainEvents()
+            .OfType<WaitlistCouponIssuedDomainEvent>()
+            .ShouldHaveSingleItem();
+
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+        var coupon = await Environment.RegistrationsDatabase.Context.Coupons
+            .SingleAsync(testContext.CancellationToken);
+
+        domainEvent.RecipientEmail.Value.ShouldBe("attendee1@example.com");
+        domainEvent.CouponCode.ShouldBe(coupon.Code);
+        domainEvent.TicketTypeName.ShouldBe("Conference Pass");
+        domainEvent.ExpiresAt.ShouldBe(coupon.ExpiresAt);
+
+        // Act — publish the domain event as the real integration event publisher would
+        var outbox = Substitute.For<IOutbox>();
+        IIntegrationEvent? capturedIntegrationEvent = null;
+        outbox.When(o => o.Enqueue(Arg.Any<IIntegrationEvent>()))
+            .Do(ci => capturedIntegrationEvent = ci.Arg<IIntegrationEvent>());
+        var publisher = new RegistrationsIntegrationEventPublisher(outbox);
+
+        await publisher.HandleAsync(domainEvent, testContext.CancellationToken);
+
+        var integrationEvent = capturedIntegrationEvent.ShouldBeOfType<WaitlistCouponIssuedIntegrationEvent>();
+
+        // Act — hand the integration event to the existing email adapter
+        var composer = Substitute.For<ITransactionalEmailComposer>();
+        composer.ReturnRenderedEmail(BuiltInEmailTemplateNames.WaitlistNotification);
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        var emailHandler = new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler);
+
+        await emailHandler.HandleAsync(integrationEvent, testContext.CancellationToken);
+
+        // Assert — an email delivery was prepared with the correct recipient, ticket type, coupon code, and expiry
+        var delivery = deliveryHandler.ReceivedDelivery();
+        delivery.RecipientAddress.ShouldBe("attendee1@example.com");
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistNotification);
+        integrationEvent.TicketTypeName.ShouldBe("Conference Pass");
+        integrationEvent.CouponCode.ShouldBe(coupon.Code.Value.ToString());
+        integrationEvent.ExpiresAt.ShouldBe(coupon.ExpiresAt);
     }
 }

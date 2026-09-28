@@ -271,6 +271,38 @@ public sealed class WaitlistTests
         sut.Coupons.ShouldHaveSingleItem().Id.ShouldBe(result.Id);
     }
 
+    // Given a waitlist with one active entry
+    // When the next coupon is issued for that entry
+    // Then a WaitlistCouponIssued domain event is raised with the recipient, coupon code, ticket type name, and expiry
+    [TestMethod]
+    public void IssueNextCoupon_WhenActiveEntryExists_RaisesWaitlistCouponIssuedDomainEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
+        sut.ClearDomainEvents();
+        var ticketType = CreateTicketType();
+        var now = DateTimeOffset.UtcNow;
+
+        // Act
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), ticketType, now);
+
+        // Assert
+        result.ShouldNotBeNull();
+        sut.GetDomainEvents()
+            .OfType<WaitlistCouponIssuedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(
+                e => e.TeamId.ShouldBe(DefaultTeamId),
+                e => e.TicketedEventId.ShouldBe(DefaultEventId),
+                e => e.TicketTypeId.ShouldBe(DefaultTicketTypeId),
+                e => e.RecipientEmail.ShouldBe(email),
+                e => e.CouponCode.ShouldBe(result.Code),
+                e => e.TicketTypeName.ShouldBe(ticketType.Name.Value),
+                e => e.ExpiresAt.ShouldBe(result.ExpiresAt));
+    }
+
     // Given a waitlist with two active entries added at different times
     // When the next coupon is issued
     // Then it goes to the entry with the earliest position
