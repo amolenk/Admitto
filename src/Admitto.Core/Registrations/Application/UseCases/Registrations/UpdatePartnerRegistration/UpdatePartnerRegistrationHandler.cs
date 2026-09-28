@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -23,7 +24,10 @@ internal sealed class UpdatePartnerRegistrationHandler(
         var registrationId = RegistrationId.From(command.RegistrationId);
         var firstName = FirstName.From(command.FirstName);
         var lastName = LastName.From(command.LastName);
-        var newTicketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
+        var registerTicketTypeIds = command.RegisterTicketTypeIds.Select(TicketTypeId.From).ToList();
+        var waitlistTicketTypeIds = command.WaitlistTicketTypeIds.Select(TicketTypeId.From).ToList();
+
+        RegisterAttendeeSelfServiceHandler.EnsureNoDuplicateRequestedActions(registerTicketTypeIds, waitlistTicketTypeIds);
 
         var registration = await writeStore.Registrations.GetAsync(
             r => r.Id == registrationId && r.EventId == eventId && r.TeamId == teamId,
@@ -47,7 +51,28 @@ internal sealed class UpdatePartnerRegistrationHandler(
         var catalog = await writeStore.TicketCatalogs
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
-        catalog.ValidateSelection(newTicketTypeIds);
+        catalog.ValidateSelection(registerTicketTypeIds);
+
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == eventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+
+        var currentConfirmedIds = registration.Tickets.Select(t => t.Id).ToHashSet();
+        var currentWaitlistIds = waitlists
+            .Where(w => w.Entries.Any(e => e.Email == registration.Email && e.Status == WaitlistEntryStatus.Active))
+            .Select(w => w.Id)
+            .ToHashSet();
+
+        var registerSet = registerTicketTypeIds.ToHashSet();
+        var waitlistSet = waitlistTicketTypeIds.ToHashSet();
+
+        var toConfirm = registerSet.Except(currentConfirmedIds).ToList();
+        var toReleaseConfirmed = currentConfirmedIds.Except(registerSet).ToList();
+        var toWaitlistJoin = waitlistSet.Except(currentWaitlistIds).ToList();
+        var toWaitlistLeave = currentWaitlistIds.Except(waitlistSet).ToList();
+
+        RegisterAttendeeSelfServiceHandler.EnsureRequestedTicketStatesMatch(catalog, toConfirm, toWaitlistJoin);
+        RegisterAttendeeSelfServiceHandler.ValidateWaitlistRequests(catalog, toWaitlistJoin);
 
         Coupon? waitlistCoupon = null;
         TicketTypeId? couponTicketTypeId = null;
@@ -64,32 +89,29 @@ internal sealed class UpdatePartnerRegistrationHandler(
                 throw new BusinessRuleViolationException(Errors.WaitlistCouponRequired);
 
             couponTicketTypeId = waitlistCoupon.AllowedTicketTypeIds[0];
-            if (!newTicketTypeIds.Contains(couponTicketTypeId.Value))
+            if (!registerTicketTypeIds.Contains(couponTicketTypeId.Value))
                 throw new BusinessRuleViolationException(Errors.WaitlistCouponTicketMissing(couponTicketTypeId.Value));
 
             EnsureWaitlistCouponCanBeRedeemed(waitlistCoupon, registration.Email, couponTicketTypeId.Value, now);
         }
 
-        var currentIds = registration.Tickets.Select(t => t.Id).ToHashSet();
-        var newIds = newTicketTypeIds.ToHashSet();
-        var toRelease = registration.Tickets.Where(t => !newIds.Contains(t.Id)).ToList();
-        var toClaim = newTicketTypeIds.Where(id => !currentIds.Contains(id)).ToList();
-
         var couponBackedClaim = couponTicketTypeId is { } offeredTicketTypeId
-            && toClaim.Remove(offeredTicketTypeId);
+            && toConfirm.Remove(offeredTicketTypeId);
 
-        var claimedTickets = catalog.Claim(toClaim, ClaimMode.Public);
+        var claimedTickets = catalog.Claim(toConfirm, ClaimMode.Public);
         var couponClaimedTickets = couponBackedClaim
             ? catalog.Claim([couponTicketTypeId!.Value], ClaimMode.PublicUncapped)
             : [];
-        catalog.Release(toRelease);
+
+        var releasedSnapshots = registration.Tickets.Where(t => toReleaseConfirmed.Contains(t.Id)).ToList();
+        catalog.Release(releasedSnapshots);
 
         // Newly claimed tickets keep the ClaimMode they were claimed under; tickets that were
         // already on the registration keep their originally recorded mode so a later release
         // still credits the correct pool.
         var existingTicketsById = registration.Tickets.ToDictionary(t => t.Id);
         var claimedTicketsById = claimedTickets.Concat(couponClaimedTickets).ToDictionary(t => t.Id);
-        var newTickets = newTicketTypeIds
+        var newTickets = registerTicketTypeIds
             .Select(id =>
             {
                 if (claimedTicketsById.TryGetValue(id, out var claimed))
@@ -106,15 +128,39 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         registration.ReplaceAttendeeEditableState(firstName, lastName, additionalDetails, newTickets, now);
 
+        var waitlistsById = waitlists.ToDictionary(w => w.Id);
+
+        foreach (var ticketTypeId in toWaitlistLeave)
+        {
+            if (waitlistsById.TryGetValue(ticketTypeId, out var waitlist))
+                waitlist.RemoveEntry(registration.Email);
+        }
+
+        foreach (var ticketTypeId in toWaitlistJoin)
+        {
+            if (!waitlistsById.TryGetValue(ticketTypeId, out var waitlist))
+            {
+                waitlist = Waitlist.Create(eventId, ticketTypeId, teamId);
+                await writeStore.Waitlists.AddAsync(waitlist, cancellationToken);
+                waitlistsById[ticketTypeId] = waitlist;
+            }
+
+            waitlist.AddEntry(registration.Email, now);
+        }
+
         if (waitlistCoupon is null || couponTicketTypeId is null)
             return;
 
         waitlistCoupon.Redeem(registration.Email, [couponTicketTypeId.Value], now);
 
-        var waitlist = await writeStore.Waitlists.GetAsync(
-            w => w.EventId == eventId && w.TeamId == teamId && w.Id == couponTicketTypeId.Value,
-            cancellationToken);
-        waitlist.RedeemCoupon(waitlistCoupon.Id);
+        if (!waitlistsById.TryGetValue(couponTicketTypeId.Value, out var redeemedWaitlist))
+        {
+            redeemedWaitlist = await writeStore.Waitlists.GetAsync(
+                w => w.EventId == eventId && w.TeamId == teamId && w.Id == couponTicketTypeId.Value,
+                cancellationToken);
+        }
+
+        redeemedWaitlist.RedeemCoupon(waitlistCoupon.Id);
     }
 
     private static void EnsureWaitlistCouponCanBeRedeemed(

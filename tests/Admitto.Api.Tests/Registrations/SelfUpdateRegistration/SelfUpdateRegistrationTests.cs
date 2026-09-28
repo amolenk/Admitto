@@ -52,7 +52,8 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
             Content = JsonContent.Create(new
             {
                 LastName = "Anderson",
-                TicketTypeIds = new[] { SelfUpdateRegistrationFixture.WorkshopId.Value },
+                RegisterTicketTypeIds = new[] { SelfUpdateRegistrationFixture.WorkshopId.Value },
+                WaitlistTicketTypeIds = Array.Empty<Guid>(),
                 AdditionalDetails = new Dictionary<string, string> { ["dietary"] = "vegan" }
             })
         };
@@ -163,7 +164,8 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
     {
         FirstName = "Alice",
         LastName = "Anderson",
-        TicketTypeIds = new[] { SelfUpdateRegistrationFixture.WorkshopId.Value },
+        RegisterTicketTypeIds = new[] { SelfUpdateRegistrationFixture.WorkshopId.Value },
+        WaitlistTicketTypeIds = Array.Empty<Guid>(),
         AdditionalDetails = new Dictionary<string, string> { ["dietary"] = "vegan" }
     };
 }

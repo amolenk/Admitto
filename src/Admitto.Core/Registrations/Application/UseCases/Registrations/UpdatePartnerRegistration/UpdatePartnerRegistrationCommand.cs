@@ -8,6 +8,7 @@ internal sealed record UpdatePartnerRegistrationCommand(
     Guid RegistrationId,
     string FirstName,
     string LastName,
-    IReadOnlyList<Guid> TicketTypeIds,
+    IReadOnlyList<Guid> RegisterTicketTypeIds,
+    IReadOnlyList<Guid> WaitlistTicketTypeIds,
     IReadOnlyDictionary<string, string>? AdditionalDetails = null,
     Guid? WaitlistCouponCode = null) : Command;

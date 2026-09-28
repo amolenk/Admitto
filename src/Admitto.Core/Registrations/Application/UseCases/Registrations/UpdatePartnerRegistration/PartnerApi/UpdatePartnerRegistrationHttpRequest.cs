@@ -3,6 +3,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.
 public sealed record UpdatePartnerRegistrationHttpRequest(
     string FirstName,
     string LastName,
-    Guid[]? TicketTypeIds,
+    Guid[]? RegisterTicketTypeIds,
+    Guid[]? WaitlistTicketTypeIds,
     Dictionary<string, string>? AdditionalDetails = null,
     Guid? WaitlistCouponCode = null);

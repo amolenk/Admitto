@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -10,7 +11,10 @@ public static class UpdatePartnerRegistrationHttpEndpoint
     public static RouteGroupBuilder MapUpdatePartnerRegistration(this RouteGroupBuilder group)
     {
         group.MapPut("/registrations/{registrationId:guid}", UpdatePartnerRegistration)
-            .WithName(nameof(UpdatePartnerRegistration));
+            .WithName(nameof(UpdatePartnerRegistration))
+            .Produces<RegisterAttendeeSelfServiceTicketStateConflictProblemDetails>(
+                StatusCodes.Status409Conflict,
+                "application/problem+json");
 
         return group;
     }
@@ -34,7 +38,8 @@ public static class UpdatePartnerRegistrationHttpEndpoint
             registrationId,
             request.FirstName,
             request.LastName,
-            request.TicketTypeIds ?? [],
+            request.RegisterTicketTypeIds ?? [],
+            request.WaitlistTicketTypeIds ?? [],
             request.AdditionalDetails,
             request.WaitlistCouponCode);
 

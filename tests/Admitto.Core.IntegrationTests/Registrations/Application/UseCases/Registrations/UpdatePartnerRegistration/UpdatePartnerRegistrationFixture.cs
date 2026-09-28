@@ -128,6 +128,74 @@ internal sealed class UpdatePartnerRegistrationFixture
         return f;
     }
 
+    /// <summary>
+    /// Catalog with a registerable "early-bird" type (the registration's existing confirmed
+    /// ticket) and a waitlist-enabled "workshop" type that is genuinely sold out (WaitlistMode
+    /// active). Optionally seeds an active waitlist entry for the registration's email.
+    /// </summary>
+    public static UpdatePartnerRegistrationFixture WithWaitlistModeWorkshop(bool seedWaitlistEntry = false)
+    {
+        var f = new UpdatePartnerRegistrationFixture();
+        f._ticketedEvent = f.MakeActiveEventWithSchema();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var earlyBirdId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["early-bird"] = earlyBirdId;
+        f._ticketTypeIdsBySlug["workshop"] = workshopId;
+
+        catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], 100);
+        catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [], 1, waitlistEnabled: true);
+        catalog.Claim([workshopId], ClaimMode.Public); // fills the last slot -> activates WaitlistMode
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+
+        if (seedWaitlistEntry)
+        {
+            var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+                f.EventId, workshopId, f.TeamId);
+            waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+            waitlist.ClearDomainEvents();
+            f._waitlist = waitlist;
+        }
+
+        return f;
+    }
+
+    /// <summary>
+    /// Catalog with a registerable "early-bird" type (the registration's existing confirmed
+    /// ticket) and a waitlist-enabled "workshop" type that currently has available public
+    /// capacity (WaitlistMode inactive). Optionally seeds an active waitlist entry for the
+    /// registration's email, representing a stale waitlist membership.
+    /// </summary>
+    public static UpdatePartnerRegistrationFixture WithAvailableWaitlistEnabledWorkshop(bool seedWaitlistEntry = false)
+    {
+        var f = new UpdatePartnerRegistrationFixture();
+        f._ticketedEvent = f.MakeActiveEventWithSchema();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var earlyBirdId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["early-bird"] = earlyBirdId;
+        f._ticketTypeIdsBySlug["workshop"] = workshopId;
+
+        catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], 100);
+        catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [], 5, waitlistEnabled: true);
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+
+        if (seedWaitlistEntry)
+        {
+            var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+                f.EventId, workshopId, f.TeamId);
+            waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+            waitlist.ClearDomainEvents();
+            f._waitlist = waitlist;
+        }
+
+        return f;
+    }
+
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>

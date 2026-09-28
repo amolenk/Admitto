@@ -103,7 +103,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
             waitlistTicketTypeIds.Select(id => id.Value).ToArray());
     }
 
-    private static void EnsureNoDuplicateRequestedActions(
+    internal static void EnsureNoDuplicateRequestedActions(
         IReadOnlyList<TicketTypeId> registerTicketTypeIds,
         IReadOnlyList<TicketTypeId> waitlistTicketTypeIds)
     {
@@ -118,7 +118,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
             throw new BusinessRuleViolationException(TicketCatalog.Errors.DuplicateTicketTypes(duplicateIds));
     }
 
-    private static void ValidateWaitlistRequests(
+    internal static void ValidateWaitlistRequests(
         TicketCatalog catalog,
         IReadOnlyList<TicketTypeId> waitlistTicketTypeIds)
     {
@@ -139,7 +139,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
         }
     }
 
-    private static void EnsureRequestedTicketStatesMatch(
+    internal static void EnsureRequestedTicketStatesMatch(
         TicketCatalog catalog,
         IReadOnlyList<TicketTypeId> registerTicketTypeIds,
         IReadOnlyList<TicketTypeId> waitlistTicketTypeIds)
