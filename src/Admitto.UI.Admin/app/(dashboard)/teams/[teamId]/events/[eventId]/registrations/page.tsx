@@ -123,7 +123,10 @@ export default function RegistrationsPage() {
     }, [searchParams]);
 
     const registrations = registrationsQuery.data;
-    const ticketTypes = ticketTypesQuery.data ?? [];
+    const ticketTypes = useMemo(
+        () => [...(ticketTypesQuery.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+        [ticketTypesQuery.data],
+    );
 
     const filtered = useMemo(() => {
         const needle = search.trim().toLowerCase();

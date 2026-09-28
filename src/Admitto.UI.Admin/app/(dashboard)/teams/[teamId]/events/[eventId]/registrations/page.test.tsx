@@ -375,6 +375,24 @@ describe("RegistrationsPage", () => {
         expect(screen.getByText("No results")).toBeInTheDocument();
     });
 
+    // Given ticket types returned by the API in non-alphabetical order
+    // When the ticket-type filter dropdown is opened
+    // Then its options are listed alphabetically (ascending)
+    it("lists ticket-type filter options alphabetically", async () => {
+        mockData({ ticketTypes: [workshop, generalAdmission, vip] });
+        const { user } = renderPage();
+        await screen.findByText("ada@example.com");
+
+        await user.click(screen.getByRole("button", { name: "Ticket type" }));
+        const options = await screen.findAllByRole("menuitemcheckbox");
+
+        expect(options.map((o) => o.textContent)).toEqual([
+            "General Admission",
+            "VIP",
+            "Workshop",
+        ]);
+    });
+
     // Given registrations with each of the four displayed statuses
     // When the Status filter is set to a specific status
     // Then only rows with that displayed status remain
