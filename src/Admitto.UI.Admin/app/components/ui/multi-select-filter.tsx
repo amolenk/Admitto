@@ -57,7 +57,7 @@ export function MultiSelectFilter<T extends string>({
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="outline"
-                    size="sm"
+                    size="default"
                     aria-label={ariaLabel}
                     className={cn("w-[200px] justify-between font-normal", className)}
                 >
