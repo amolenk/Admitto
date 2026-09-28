@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReleaseTickets;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
@@ -49,10 +50,58 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
+    // Given a registration holding a ticket originally claimed under the admin/reserved pool
+    // When the attendee's tickets are changed to add another ticket while keeping the reserved one
+    // Then the kept ticket's claim mode is preserved, so releasing it later credits the reserved buffer back
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_KeepsExistingReservedTicket_PreservesClaimModeOnRelease()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithReservedCapacityTicket();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("vip").Value, fixture.GetTicketTypeId("early-bird").Value],
+            ChangeMode.Admin);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        // Cancel the registration and release its tickets — this is where a dropped ClaimMode
+        // would surface: the kept "vip" ticket must still be recognized as a Reserved claim.
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstOrDefaultAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.Tickets.Count.ShouldBe(2);
+            var vipTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("vip"));
+            vipTicket.Mode.ShouldBe(ClaimMode.Reserved);
+            var earlyBirdTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("early-bird"));
+            earlyBirdTicket.Mode.ShouldBe(ClaimMode.Reserved);
+        });
+
+        var releaseHandler = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
+        await releaseHandler.HandleAsync(
+            new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value, fixture.TeamId.Value),
+            testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs
+                .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            var vip = catalog.GetTicketType(fixture.GetTicketTypeId("vip"))!;
+            vip.UsedCapacity.ShouldBe(0);
+            vip.ReservedUsedCapacity.ShouldBe(0);
+        });
+    }
+
     // Given a workshop ticket type that is sold out
     // When an admin changes the attendee's tickets to the sold-out workshop
     // Then the change succeeds without enforcing capacity
-    // Sold-out workshop does NOT block admin change (enforce: false)
+    // Sold-out workshop does NOT block admin change (ClaimMode.Reserved)
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_SoldOut_AdminBypassesCapacityEnforcement()
     {

@@ -21,6 +21,7 @@ type Range = "14d" | "all";
 interface SalesTrendCardProps {
     registrations: RegistrationListItemDto[] | undefined;
     isLoading: boolean;
+    eventEndsAt?: string;
 }
 
 interface DayBucket {
@@ -30,15 +31,22 @@ interface DayBucket {
     cancellations: number;
 }
 
-export function buildBuckets(registrations: RegistrationListItemDto[], range: Range): DayBucket[] {
+export function buildBuckets(
+    registrations: RegistrationListItemDto[],
+    range: Range,
+    eventEndsAt?: string,
+): DayBucket[] {
     const today = startOfDay(new Date());
     const msPerDay = 1000 * 60 * 60 * 24;
 
+    const eventEndDay = eventEndsAt ? startOfDay(parseISO(eventEndsAt)) : null;
+    const endDay = eventEndDay && eventEndDay < today ? eventEndDay : today;
+
     let startDay: Date;
     if (range === "14d") {
-        startDay = subDays(today, 13);
+        startDay = subDays(endDay, 13);
     } else if (registrations.length === 0) {
-        startDay = subDays(today, 13);
+        startDay = subDays(endDay, 13);
     } else {
         startDay = registrations.reduce((earliest, r) => {
             const d = startOfDay(parseISO(r.createdAt));
@@ -46,7 +54,7 @@ export function buildBuckets(registrations: RegistrationListItemDto[], range: Ra
         }, startOfDay(parseISO(registrations[0].createdAt)));
     }
 
-    const numDays = Math.max(1, Math.round((today.getTime() - startDay.getTime()) / msPerDay) + 1);
+    const numDays = Math.max(1, Math.round((endDay.getTime() - startDay.getTime()) / msPerDay) + 1);
     const buckets: DayBucket[] = Array.from({ length: numDays }, (_, i) => {
         const day = new Date(startDay.getTime() + i * msPerDay);
         return {
@@ -78,7 +86,7 @@ export function buildBuckets(registrations: RegistrationListItemDto[], range: Ra
     return buckets;
 }
 
-export function SalesTrendCard({ registrations, isLoading }: SalesTrendCardProps) {
+export function SalesTrendCard({ registrations, isLoading, eventEndsAt }: SalesTrendCardProps) {
     const [range, setRange] = useState<Range>("14d");
 
     if (isLoading) {
@@ -91,7 +99,7 @@ export function SalesTrendCard({ registrations, isLoading }: SalesTrendCardProps
     }
 
     const allRegs = registrations ?? [];
-    const buckets = buildBuckets(allRegs, range);
+    const buckets = buildBuckets(allRegs, range, eventEndsAt);
     const total = buckets.reduce((sum, b) => sum + b.registrations, 0);
     const totalCancellations = buckets.reduce((sum, b) => sum + b.cancellations, 0);
     const hasCancellations = totalCancellations > 0;
@@ -234,7 +242,11 @@ export function SalesTrendCard({ registrations, isLoading }: SalesTrendCardProps
                     </div>
                     <div className="flex justify-between text-[10.5px] text-muted-foreground mt-1 px-0.5 font-mono tabular-nums">
                         <span>{buckets[0].label}</span>
-                        <span>Today</span>
+                        <span>
+                            {buckets[buckets.length - 1].date === format(startOfDay(new Date()), "yyyy-MM-dd")
+                                ? "Today"
+                                : buckets[buckets.length - 1].label}
+                        </span>
                     </div>
                 </>
             )}

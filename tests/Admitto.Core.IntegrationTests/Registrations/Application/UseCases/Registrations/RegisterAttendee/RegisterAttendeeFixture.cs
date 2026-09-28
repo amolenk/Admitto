@@ -384,7 +384,7 @@ internal sealed class RegisterAttendeeFixture
         catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"), [TimeSlot.From("morning")], 20);
         catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"), [TimeSlot.From("morning")], 1, waitlistEnabled: true);
         if (waitlistMode)
-            catalog.Claim([workshopBId], enforce: true);
+            catalog.Claim([workshopBId], ClaimMode.Public);
 
         catalog.ClearDomainEvents();
         f._catalog = catalog;
@@ -407,7 +407,7 @@ internal sealed class RegisterAttendeeFixture
         catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"), [], 20);
         catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"), [], 1, waitlistEnabled: true);
         catalog.AddTicketType(workshopCId, TicketTypeName.From("Workshop C"), [], 20, waitlistEnabled: true);
-        catalog.Claim([workshopBId], enforce: true);
+        catalog.Claim([workshopBId], ClaimMode.Public);
 
         catalog.ClearDomainEvents();
         f._catalog = catalog;
@@ -427,8 +427,8 @@ internal sealed class RegisterAttendeeFixture
 
         catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"), [TimeSlot.From("morning")], 1, waitlistEnabled: true);
         catalog.AddTicketType(workshopCId, TicketTypeName.From("Workshop C"), [TimeSlot.From("morning")], 1, waitlistEnabled: true);
-        catalog.Claim([workshopBId], enforce: true);
-        catalog.Claim([workshopCId], enforce: true);
+        catalog.Claim([workshopBId], ClaimMode.Public);
+        catalog.Claim([workshopCId], ClaimMode.Public);
 
         catalog.ClearDomainEvents();
         f._catalog = catalog;
@@ -586,7 +586,7 @@ internal sealed class RegisterAttendeeFixture
             _ticketTypeIdsBySlug[slug] = id;
             catalog.AddTicketType(id, TicketTypeName.From(name), [], max, selfServiceEnabled);
             for (var i = 0; i < used; i++)
-                catalog.Claim([id], enforce: false);
+                catalog.Claim([id], ClaimMode.Reserved);
         }
         return catalog;
     }
@@ -603,8 +603,8 @@ internal sealed class RegisterAttendeeFixture
         _ticketTypeIdsBySlug[slug] = id;
         catalog.AddTicketType(id, TicketTypeName.From(name), [], max, waitlistEnabled: true);
         for (var i = 0; i < preFill; i++)
-            catalog.Claim([id], enforce: false);
-        catalog.Claim([id], enforce: true); // fills last slot → activates WaitlistMode
+            catalog.Claim([id], ClaimMode.Reserved);
+        catalog.Claim([id], ClaimMode.Public); // fills last slot → activates WaitlistMode
         catalog.ClearDomainEvents();
         return catalog;
     }

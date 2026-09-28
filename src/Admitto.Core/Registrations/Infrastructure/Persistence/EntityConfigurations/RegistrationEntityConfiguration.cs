@@ -106,6 +106,10 @@ public class RgregistrationEntityConfiguration : IEntityTypeConfiguration<Regist
             b.PrimitiveCollection(t => t.TimeSlots)
                 .HasJsonPropertyName("time_slots")
                 .ElementType(et => et.HasConversion<TimeSlot.EfCoreValueConverter>());
+            b.Property(t => t.Mode)
+                .HasJsonPropertyName("mode")
+                .HasConversion<string>()
+                .IsRequired();
         });
 
         var detailsProperty = builder.Property(e => e.AdditionalDetails)

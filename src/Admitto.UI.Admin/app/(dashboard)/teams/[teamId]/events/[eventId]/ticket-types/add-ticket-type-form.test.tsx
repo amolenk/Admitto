@@ -59,6 +59,7 @@ describe("AddTicketTypeForm", () => {
             name: "General Admission",
             selfServiceEnabled: true,
             maxCapacity: null,
+            reservedCapacity: 0,
             waitlistEnabled: false,
             claimWindowHours: undefined,
             maxReconfirmationEmails: null,

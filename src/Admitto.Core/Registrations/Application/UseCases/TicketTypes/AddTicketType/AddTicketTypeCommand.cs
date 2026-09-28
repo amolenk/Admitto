@@ -11,4 +11,5 @@ internal sealed record AddTicketTypeCommand(
     bool SelfServiceEnabled = true,
     bool WaitlistEnabled = false,
     int ClaimWindowHours = 8,
-    int? MaxReconfirmationEmails = null) : Command<Guid>;
+    int? MaxReconfirmationEmails = null,
+    int ReservedCapacity = 0) : Command<Guid>;

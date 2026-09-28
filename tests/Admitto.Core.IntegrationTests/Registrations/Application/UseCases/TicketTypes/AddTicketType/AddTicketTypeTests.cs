@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.AddTicketType;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -133,6 +134,71 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             catalog.ShouldNotBeNull();
             catalog.TicketTypes[0].MaxReconfirmationEmails!.Value.Value.ShouldBe(3);
         });
+    }
+
+    // Given an active ticketed event
+    // When a ticket type is added with a reserved capacity
+    // Then the reserved capacity is persisted on the created ticket type
+    [TestMethod]
+    public async ValueTask AddTicketType_WithReservedCapacity_PersistsValue()
+    {
+        // Arrange
+        var fixture = AddTicketTypeFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new AddTicketTypeCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            "AI Workshop",
+            [],
+            100,
+            ReservedCapacity: 20);
+        var sut = new AddTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs
+                .FirstOrDefaultAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
+
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].ReservedCapacity.ShouldBe(20);
+        });
+    }
+
+    // Given an active ticketed event
+    // When a ticket type is added with reserved capacity exceeding max capacity
+    // Then a reserved-capacity-exceeds-capacity error is returned
+    [TestMethod]
+    public async ValueTask AddTicketType_ReservedCapacityExceedsMaxCapacity_ThrowsError()
+    {
+        // Arrange
+        var fixture = AddTicketTypeFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new AddTicketTypeCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            "AI Workshop",
+            [],
+            10,
+            ReservedCapacity: 11);
+        var sut = new AddTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        // Assert — the ticket type id is generated inside the handler and unknown to the
+        // test, so compare against the static Code/Type/Message shape of the typed error
+        // rather than a raw string literal.
+        var expected = TicketCatalog.Errors.ReservedCapacityExceedsCapacity(TicketTypeId.New());
+        result.Error.Code.ShouldBe(expected.Code);
+        result.Error.Type.ShouldBe(expected.Type);
+        result.Error.Message.ShouldBe(expected.Message);
     }
 
     // Given an archived ticketed event

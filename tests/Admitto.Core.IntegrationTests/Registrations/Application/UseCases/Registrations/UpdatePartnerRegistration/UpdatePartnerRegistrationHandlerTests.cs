@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReleaseTickets;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -52,6 +53,54 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             catalog.ShouldNotBeNull();
             catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.UsedCapacity.ShouldBe(49);
             catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(11);
+        });
+    }
+
+    // Given a registration holding a ticket originally claimed under the admin/reserved pool
+    // When the attendee updates their tickets via the partner API, keeping the reserved ticket
+    // Then the kept ticket's claim mode is preserved, so releasing it later credits the reserved buffer back
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_KeepsExistingReservedTicket_PreservesClaimModeOnRelease()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithReservedCapacityTicket();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [fixture.GetTicketTypeId("vip").Value, fixture.GetTicketTypeId("early-bird").Value],
+            new Dictionary<string, string> { ["dietary"] = "vegan" });
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstOrDefaultAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.Tickets.Count.ShouldBe(2);
+            var vipTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("vip"));
+            vipTicket.Mode.ShouldBe(ClaimMode.Reserved);
+            var earlyBirdTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("early-bird"));
+            earlyBirdTicket.Mode.ShouldBe(ClaimMode.Public);
+        });
+
+        var releaseHandler = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
+        await releaseHandler.HandleAsync(
+            new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value, fixture.TeamId.Value),
+            testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs
+                .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            var vip = catalog.GetTicketType(fixture.GetTicketTypeId("vip"))!;
+            vip.UsedCapacity.ShouldBe(0);
+            vip.ReservedUsedCapacity.ShouldBe(0);
         });
     }
 

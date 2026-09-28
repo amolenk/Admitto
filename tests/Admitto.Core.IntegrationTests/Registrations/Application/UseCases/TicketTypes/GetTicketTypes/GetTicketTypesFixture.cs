@@ -7,11 +7,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class GetTicketTypesFixture
 {
     private bool _seedCatalog;
+    private (int maxCapacity, int reservedCapacity, int reservedUsed)? _reservedCapacityScenario;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
     public TicketTypeId GeneralAdmissionId { get; } = TicketTypeId.New();
     public TicketTypeId VipPassId { get; } = TicketTypeId.New();
+    public TicketTypeId WorkshopId { get; } = TicketTypeId.New();
 
     private GetTicketTypesFixture()
     {
@@ -22,10 +24,36 @@ internal sealed class GetTicketTypesFixture
         _seedCatalog = true
     };
 
+    public static GetTicketTypesFixture WithReservedCapacityPartlyUsed(
+        int maxCapacity, int reservedCapacity, int reservedUsed) => new()
+    {
+        _reservedCapacityScenario = (maxCapacity, reservedCapacity, reservedUsed)
+    };
+
     public static GetTicketTypesFixture NoCatalog() => new();
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
+        if (_reservedCapacityScenario is { } scenario)
+        {
+            await environment.RegistrationsDatabase.SeedAsync(dbContext =>
+            {
+                var catalog = TicketCatalog.Create(EventId, TeamId);
+                catalog.AddTicketType(
+                    WorkshopId,
+                    TicketTypeName.From("Workshop"),
+                    [],
+                    scenario.maxCapacity,
+                    reservedCapacity: scenario.reservedCapacity);
+
+                for (var i = 0; i < scenario.reservedUsed; i++)
+                    catalog.Claim([WorkshopId], ClaimMode.Reserved);
+
+                dbContext.TicketCatalogs.Add(catalog);
+            });
+            return;
+        }
+
         if (!_seedCatalog)
             return;
 

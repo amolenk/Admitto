@@ -18,13 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import {
     Table,
     TableBody,
@@ -116,8 +110,8 @@ export default function RegistrationsPage() {
     });
 
     const [search, setSearch] = useState("");
-    const [ticketFilter, setTicketFilter] = useState<string>("all");
-    const [statusFilter, setStatusFilter] = useState<DisplayStatus | "all">("all");
+    const [ticketFilter, setTicketFilter] = useState<string[]>([]);
+    const [statusFilter, setStatusFilter] = useState<DisplayStatus[]>([]);
     const [sortKey, setSortKey] = useState<SortKey>("registered");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
     const [page, setPage] = useState(1);
@@ -129,7 +123,10 @@ export default function RegistrationsPage() {
     }, [searchParams]);
 
     const registrations = registrationsQuery.data;
-    const ticketTypes = ticketTypesQuery.data ?? [];
+    const ticketTypes = useMemo(
+        () => [...(ticketTypesQuery.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+        [ticketTypesQuery.data],
+    );
 
     const filtered = useMemo(() => {
         const needle = search.trim().toLowerCase();
@@ -142,10 +139,10 @@ export default function RegistrationsPage() {
                 ].join(" ").toLowerCase();
                 if (!haystack.includes(needle)) return false;
             }
-            if (ticketFilter !== "all" && !r.tickets.some((t) => t.id === ticketFilter)) {
+            if (ticketFilter.length > 0 && !r.tickets.some((t) => ticketFilter.includes(t.id))) {
                 return false;
             }
-            if (statusFilter !== "all" && displayStatus(r) !== statusFilter) {
+            if (statusFilter.length > 0 && !statusFilter.includes(displayStatus(r))) {
                 return false;
             }
             return true;
@@ -245,43 +242,31 @@ export default function RegistrationsPage() {
                         }}
                         className="w-full sm:max-w-xs"
                     />
-                    <Select
-                        value={ticketFilter}
-                        onValueChange={(v) => {
-                            setTicketFilter(v);
+                    <MultiSelectFilter
+                        ariaLabel="Ticket type"
+                        allLabel="All ticket types"
+                        options={ticketTypes.map((t) => ({ value: t.id, label: t.name }))}
+                        selected={ticketFilter}
+                        onChange={(values) => {
+                            setTicketFilter(values);
                             setPage(1);
                         }}
-                    >
-                        <SelectTrigger className="w-[200px]" aria-label="Ticket type">
-                            <SelectValue placeholder="All ticket types" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All ticket types</SelectItem>
-                            {ticketTypes.map((t) => (
-                                <SelectItem key={t.id} value={t.id}>
-                                    {t.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select
-                        value={statusFilter}
-                        onValueChange={(v) => {
-                            setStatusFilter(v as DisplayStatus | "all");
+                    />
+                    <MultiSelectFilter
+                        ariaLabel="Status"
+                        allLabel="All statuses"
+                        options={[
+                            { value: "registered", label: "Registered" },
+                            { value: "reconfirmed", label: "Reconfirmed" },
+                            { value: "checkedIn", label: "Checked in" },
+                            { value: "cancelled", label: "Cancelled" },
+                        ]}
+                        selected={statusFilter}
+                        onChange={(values) => {
+                            setStatusFilter(values);
                             setPage(1);
                         }}
-                    >
-                        <SelectTrigger className="w-[200px]" aria-label="Status">
-                            <SelectValue placeholder="All statuses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All statuses</SelectItem>
-                            <SelectItem value="registered">Registered</SelectItem>
-                            <SelectItem value="reconfirmed">Reconfirmed</SelectItem>
-                            <SelectItem value="checkedIn">Checked in</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    />
                 </div>
 
                 {isLoading ? (

@@ -58,6 +58,95 @@ public sealed class TicketCatalogTests
         sut.TicketTypes[0].MaxCapacity.ShouldBeNull();
     }
 
+    // When a ticket type is added with a reserved capacity within bounds
+    // Then it is added with the given reserved capacity
+    [TestMethod]
+    public void AddTicketType_WithReservedCapacity_SetsReservedCapacity()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+
+        // Act
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 100, reservedCapacity: 20);
+
+        // Assert
+        sut.TicketTypes[0].ReservedCapacity.ShouldBe(20);
+    }
+
+    // When a ticket type is added with reserved capacity but no maximum capacity
+    // Then it throws ReservedCapacityRequiresBoundedCapacity
+    [TestMethod]
+    public void AddTicketType_ReservedCapacityWithoutMaxCapacity_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: null, reservedCapacity: 5));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.ReservedCapacityRequiresBoundedCapacity(id));
+    }
+
+    // When a ticket type is added with reserved capacity greater than its maximum capacity
+    // Then it throws ReservedCapacityExceedsCapacity
+    [TestMethod]
+    public void AddTicketType_ReservedCapacityExceedsMaxCapacity_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, reservedCapacity: 11));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.ReservedCapacityExceedsCapacity(id));
+    }
+
+    // When a ticket type is added with a negative reserved capacity
+    // Then it throws ReservedCapacityNegative
+    [TestMethod]
+    public void AddTicketType_NegativeReservedCapacity_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, reservedCapacity: -1));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.ReservedCapacityNegative(id));
+    }
+
+    // Given reserved capacity that equals the entire maximum capacity of a waitlist-enabled type
+    // When the ticket type is added
+    // Then it is immediately publicly sold out, activating waitlist mode and raising the event
+    [TestMethod]
+    public void AddTicketType_ReservedCapacityEqualsMaxCapacityWithWaitlistEnabled_ActivatesWaitlistModeImmediately()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+
+        // Act — all 5 slots reserved, none left for the public
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 5, waitlistEnabled: true,
+            reservedCapacity: 5);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.WaitlistMode.ShouldBeTrue();
+        sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .TicketTypeId.ShouldBe(id);
+    }
+
     // Given a catalog that already has a ticket type named "VIP"
     // When another ticket type is added with the same name
     // Then it throws DuplicateTicketTypeName
@@ -92,6 +181,116 @@ public sealed class TicketCatalogTests
 
         // Assert
         sut.TicketTypes[0].MaxCapacity.ShouldBe(200);
+    }
+
+    // Given an existing ticket type
+    // When its reserved capacity is updated
+    // Then the new reserved capacity is applied
+    [TestMethod]
+    public void UpdateTicketType_ReservedCapacity_Updates()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], maxCapacity: 100, reservedCapacity: 10);
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: 100, reservedCapacity: 30);
+
+        // Assert
+        sut.TicketTypes[0].ReservedCapacity.ShouldBe(30);
+    }
+
+    // Given a ticket type whose public slots are all used but total capacity still has room
+    // When reserved capacity is increased via an update to cover the remaining room
+    // Then waitlist mode activates immediately and a WaitlistModeActivated event is raised
+    [TestMethod]
+    public void UpdateTicketType_IncreaseReservedCapacityFillsPublicThreshold_ActivatesWaitlistMode()
+    {
+        // Arrange — 8 of 10 used, waitlist enabled, 2 public slots still free
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, waitlistEnabled: true);
+        for (var i = 0; i < 8; i++)
+            sut.Claim([id], ClaimMode.Public);
+
+        // Act — reserve the 2 remaining public slots
+        sut.UpdateTicketType(id, name: null, maxCapacity: 10, reservedCapacity: 2);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.WaitlistMode.ShouldBeTrue();
+        sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .TicketTypeId.ShouldBe(id);
+    }
+
+    // Given a ticket type that is publicly sold out and in waitlist mode because of reserved capacity
+    // When reserved capacity is decreased via an update
+    // Then a WaitlistCapacityFreed event is raised reporting the newly freed public slots
+    [TestMethod]
+    public void UpdateTicketType_DecreaseReservedCapacityWhileInWaitlistMode_RaisesWaitlistCapacityFreedEvent()
+    {
+        // Arrange — 8 of 10 used, 2 reserved → publicly sold out, waitlist mode on
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, waitlistEnabled: true,
+            reservedCapacity: 2);
+        for (var i = 0; i < 8; i++)
+            sut.Claim([id], ClaimMode.Public);
+        sut.ClearDomainEvents();
+
+        // Act — free up the 2 reserved slots
+        sut.UpdateTicketType(id, name: null, maxCapacity: 10, reservedCapacity: 0);
+
+        // Assert
+        var evt = sut.GetDomainEvents().OfType<WaitlistCapacityFreedDomainEvent>()
+            .ShouldHaveSingleItem();
+        evt.TicketTypeId.ShouldBe(id);
+        evt.FreedSlots.ShouldBe(2);
+    }
+
+    // Given a ticket type with reserved capacity where an admin claims tickets before any public sales
+    // When public claims subsequently fill the remaining public pool
+    // Then the full public pool remains sellable — the early reserved claim does not shrink it
+    [TestMethod]
+    public void Claim_ReservedInterleavedBeforePublicClaims_DoesNotReducePublicAvailability()
+    {
+        // Arrange — 200 max, 20 reserved, admin claims 10 seats before public sales open
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 200, reservedCapacity: 20);
+        for (var i = 0; i < 10; i++)
+            sut.Claim([id], ClaimMode.Reserved);
+
+        // Act — sell the full remaining public pool (180 seats)
+        for (var i = 0; i < 180; i++)
+            sut.Claim([id], ClaimMode.Public);
+
+        // Assert — sold out only now, not before the 180th public claim
+        sut.GetTicketType(id)!.IsSoldOut.ShouldBeTrue();
+        sut.GetTicketType(id)!.UsedCapacity.ShouldBe(190);
+    }
+
+    // Given a claim made under the general reserved pool
+    // When that ticket is later released using its recorded claim mode
+    // Then the reserved buffer is credited back, not just the total used capacity
+    [TestMethod]
+    public void Release_ReservedClaimSnapshot_CreditsReservedBufferBack()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, reservedCapacity: 2);
+        var tickets = sut.Claim([id], ClaimMode.Reserved);
+
+        // Act
+        sut.Release(tickets);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.UsedCapacity.ShouldBe(0);
+        tt.ReservedUsedCapacity.ShouldBe(0);
     }
 
     // Given an existing ticket type
@@ -142,7 +341,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
         // Act
-        sut.Claim([id], enforce: true);
+        sut.Claim([id], ClaimMode.Public);
 
         // Assert
         sut.TicketTypes[0].UsedCapacity.ShouldBe(1);
@@ -158,10 +357,10 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1);
-        sut.Claim([id], enforce: true);
+        sut.Claim([id], ClaimMode.Public);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: true));
+        var result = ErrorResult.Capture(() => sut.Claim([id], ClaimMode.Public));
 
         // Assert
         result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeAtCapacity(id));
@@ -179,7 +378,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("Speaker"), [], null, selfServiceEnabled: true);
 
         // Act
-        sut.Claim([id], enforce: true);
+        sut.Claim([id], ClaimMode.Public);
 
         // Assert
         sut.TicketTypes[0].UsedCapacity.ShouldBe(1);
@@ -195,10 +394,10 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 1);
-        sut.Claim([id], enforce: false); // at capacity
+        sut.Claim([id], ClaimMode.Reserved); // at capacity
 
         // Act
-        sut.Claim([id], enforce: false); // should still work
+        sut.Claim([id], ClaimMode.Reserved); // should still work
 
         // Assert
         sut.TicketTypes[0].UsedCapacity.ShouldBe(2);
@@ -218,7 +417,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(idB, TicketTypeName.From("B"), [], 10);
 
         // Act
-        sut.Claim([idA, idB], enforce: true);
+        sut.Claim([idA, idB], ClaimMode.Public);
 
         // Assert
         sut.TicketTypes.Single(t => t.Id == idA).UsedCapacity.ShouldBe(1);
@@ -238,7 +437,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(knownId, TicketTypeName.From("Known"), [], 10);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim([unknownId], enforce: true));
+        var result = ErrorResult.Capture(() => sut.Claim([unknownId], ClaimMode.Public));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.UnknownTicketTypes([unknownId.Value]));
@@ -338,7 +537,7 @@ public sealed class TicketCatalogTests
         sut.MarkEventArchived();
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: false));
+        var result = ErrorResult.Capture(() => sut.Claim([id], ClaimMode.Reserved));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
@@ -372,11 +571,11 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
-        sut.Claim([id], enforce: true);
+        var tickets = sut.Claim([id], ClaimMode.Public);
         sut.GetTicketType(id)!.UsedCapacity.ShouldBe(1);
 
         // Act
-        sut.Release([id]);
+        sut.Release(tickets);
 
         // Assert
         sut.GetTicketType(id)!.UsedCapacity.ShouldBe(0);
@@ -393,10 +592,11 @@ public sealed class TicketCatalogTests
         var knownId = TicketTypeId.New();
         var unknownId = TicketTypeId.New();
         sut.AddTicketType(knownId, TicketTypeName.From("Known"), [], 10);
-        sut.Claim([knownId], enforce: true);
+        var tickets = sut.Claim([knownId], ClaimMode.Public);
+        var unknownTicket = new TicketTypeSnapshot(unknownId, TicketTypeName.From("Unknown"), []);
 
         // Act — releasing an unknown ID should not throw
-        sut.Release([unknownId, knownId]);
+        sut.Release([unknownTicket, .. tickets]);
 
         // Assert — known was released; unknown was skipped without error
         sut.GetTicketType(knownId)!.UsedCapacity.ShouldBe(0);
@@ -414,10 +614,10 @@ public sealed class TicketCatalogTests
         var idB = TicketTypeId.New();
         sut.AddTicketType(idA, TicketTypeName.From("A"), [], 10);
         sut.AddTicketType(idB, TicketTypeName.From("B"), [], 10);
-        sut.Claim([idA, idB], enforce: true);
+        var tickets = sut.Claim([idA, idB], ClaimMode.Public);
 
         // Act
-        sut.Release([idA, idB]);
+        sut.Release(tickets);
 
         // Assert
         sut.GetTicketType(idA)!.UsedCapacity.ShouldBe(0);
@@ -436,7 +636,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim([id, id], enforce: false));
+        var result = ErrorResult.Capture(() => sut.Claim([id, id], ClaimMode.Reserved));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypes([id.Value]));
@@ -458,7 +658,7 @@ public sealed class TicketCatalogTests
             [TimeSlot.From("morning")], 10);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim([idA, idB], enforce: false));
+        var result = ErrorResult.Capture(() => sut.Claim([idA, idB], ClaimMode.Reserved));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.OverlappingTimeSlots(["morning"]));
@@ -476,7 +676,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
         // Act — empty claim should not throw
-        sut.Claim([], enforce: true);
+        sut.Claim([], ClaimMode.Public);
 
         // Assert — capacity unchanged
         sut.GetTicketType(id)!.UsedCapacity.ShouldBe(0);
@@ -494,7 +694,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: true));
+        var result = ErrorResult.Capture(() => sut.Claim([id], ClaimMode.Public));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypesNotSelfService([id.Value]));
@@ -512,7 +712,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
 
         // Act
-        sut.Claim([id], enforce: false);
+        sut.Claim([id], ClaimMode.Reserved);
 
         // Assert
         sut.GetTicketType(id)!.UsedCapacity.ShouldBe(1);
@@ -530,10 +730,10 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
-        sut.Claim([id], enforce: true);
+        sut.Claim([id], ClaimMode.Public);
 
         // Act — claim the last slot
-        sut.Claim([id], enforce: true);
+        sut.Claim([id], ClaimMode.Public);
 
         // Assert
         var tt = sut.GetTicketType(id)!;
@@ -555,7 +755,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: false);
 
         // Act — claim the only slot
-        sut.Claim([id], enforce: true);
+        sut.Claim([id], ClaimMode.Public);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
@@ -574,7 +774,7 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
 
         // Act
-        sut.Claim([id], enforce: false);
+        sut.Claim([id], ClaimMode.Reserved);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
@@ -591,8 +791,8 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2);
-        sut.Claim([id], enforce: false);
-        sut.Claim([id], enforce: false);
+        sut.Claim([id], ClaimMode.Reserved);
+        sut.Claim([id], ClaimMode.Reserved);
 
         // Act
         sut.UpdateTicketType(id, name: null, maxCapacity: 2, waitlistEnabled: true);
@@ -616,7 +816,7 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2);
-        sut.Claim([id], enforce: false);
+        sut.Claim([id], ClaimMode.Reserved);
 
         // Act
         sut.UpdateTicketType(id, name: null, maxCapacity: 2, waitlistEnabled: true);
@@ -636,7 +836,7 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
-        sut.Claim([id], enforce: true); // fills capacity → WaitlistMode activates
+        sut.Claim([id], ClaimMode.Public); // fills capacity → WaitlistMode activates
 
         // Act
         sut.UpdateTicketType(id, name: null, maxCapacity: 1, waitlistEnabled: false);
@@ -684,7 +884,7 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
-        sut.Claim([id], enforce: true); // fills to capacity → WaitlistMode on
+        sut.Claim([id], ClaimMode.Public); // fills to capacity → WaitlistMode on
         sut.ClearDomainEvents();
 
         // Act — add 3 more slots
@@ -714,6 +914,25 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.WaitlistRequiresBoundedCapacity(id));
     }
 
+    // Given a ticket type in waitlist mode where used capacity is below total capacity but still at the public threshold
+    // When waitlist mode is re-evaluated with no active entries and no issued coupons
+    // Then waitlist mode remains active because the public threshold is still met
+    [TestMethod]
+    public void ReEvaluateWaitlistMode_BelowTotalCapacityButAtPublicThreshold_KeepsWaitlistMode()
+    {
+        // Arrange — 1 of 2 used, 1 reserved → public threshold is 1, so still publicly sold out
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true, reservedCapacity: 1);
+        sut.Claim([id], ClaimMode.Public); // 1 of 2 used → publicly sold out (threshold 1) → WaitlistMode on
+
+        // Act — no active entries, no issued coupons
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
+
+        // Assert — a naive UsedCapacity < MaxCapacity check would wrongly clear WaitlistMode here
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
     // Given a ticket type in waitlist mode with a slot now freed
     // When waitlist mode is re-evaluated with no active entries and no issued coupons
     // Then waitlist mode is cleared
@@ -724,9 +943,9 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
-        sut.Claim([id], enforce: true);
-        sut.Claim([id], enforce: true); // WaitlistMode on
-        sut.Release([id]); // one slot freed
+        sut.Claim([id], ClaimMode.Public);
+        var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.Release(tickets); // one slot freed
 
         // Act — no active entries, no issued coupons
         sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
@@ -745,7 +964,7 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
-        sut.Claim([id], enforce: true); // WaitlistMode on
+        sut.Claim([id], ClaimMode.Public); // WaitlistMode on
 
         // Act
         sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
@@ -764,9 +983,9 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
-        sut.Claim([id], enforce: true);
-        sut.Claim([id], enforce: true); // WaitlistMode on
-        sut.Release([id]); // one slot freed
+        sut.Claim([id], ClaimMode.Public);
+        var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.Release(tickets); // one slot freed
 
         // Act — entries still active
         sut.ReEvaluateWaitlistMode(id, activeEntryCount: 1, issuedCouponCount: 0);
@@ -785,9 +1004,9 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
-        sut.Claim([id], enforce: true);
-        sut.Claim([id], enforce: true); // WaitlistMode on
-        sut.Release([id]); // one slot freed
+        sut.Claim([id], ClaimMode.Public);
+        var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.Release(tickets); // one slot freed
 
         // Act — coupon still in flight
         sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 1);
@@ -806,9 +1025,9 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
-        sut.Claim([id], enforce: true);
-        sut.Claim([id], enforce: true); // WaitlistMode on
-        sut.Release([id]); // UsedCapacity < MaxCapacity now
+        sut.Claim([id], ClaimMode.Public);
+        var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.Release(tickets); // UsedCapacity < MaxCapacity now
 
         // Act
         sut.TryDeactivateWaitlistMode(id);
@@ -827,9 +1046,28 @@ public sealed class TicketCatalogTests
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
-        sut.Claim([id], enforce: true); // WaitlistMode on, UsedCapacity == MaxCapacity
+        sut.Claim([id], ClaimMode.Public); // WaitlistMode on, UsedCapacity == MaxCapacity
 
         // Act
+        sut.TryDeactivateWaitlistMode(id);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
+    // Given a ticket type in waitlist mode where used capacity is below total capacity but still at the public threshold
+    // When waitlist mode deactivation is attempted
+    // Then waitlist mode remains active because the public threshold is still met
+    [TestMethod]
+    public void TryDeactivateWaitlistMode_BelowTotalCapacityButAtPublicThreshold_DoesNotClearWaitlistMode()
+    {
+        // Arrange — 1 of 2 used, 1 reserved → public threshold is 1, so still publicly sold out
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true, reservedCapacity: 1);
+        sut.Claim([id], ClaimMode.Public); // 1 of 2 used → publicly sold out (threshold 1) → WaitlistMode on
+
+        // Act — a naive UsedCapacity < MaxCapacity check would wrongly clear WaitlistMode here
         sut.TryDeactivateWaitlistMode(id);
 
         // Assert

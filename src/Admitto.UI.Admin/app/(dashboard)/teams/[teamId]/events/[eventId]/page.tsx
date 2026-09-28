@@ -92,6 +92,7 @@ export default function EventDashboardPage() {
                 <SalesTrendCard
                     registrations={registrations.data}
                     isLoading={registrations.isLoading}
+                    eventEndsAt={event.data.endsAt}
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <TicketBreakdownCard

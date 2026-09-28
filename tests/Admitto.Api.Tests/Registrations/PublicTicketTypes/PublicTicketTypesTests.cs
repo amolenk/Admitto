@@ -49,7 +49,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         await fixture.SetupAsync(Environment, catalog =>
         {
             catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], null, selfServiceEnabled: true);
-            catalog.GetTicketType(generalId)!.ClaimUncapped();
+            catalog.GetTicketType(generalId)!.Claim(ClaimMode.Public);
         });
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
@@ -72,7 +72,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         await fixture.SetupAsync(Environment, catalog =>
         {
             catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 1, selfServiceEnabled: true, waitlistEnabled: true);
-            catalog.Claim([generalId], enforce: true);
+            catalog.Claim([generalId], ClaimMode.Public);
         });
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
@@ -95,7 +95,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         await fixture.SetupAsync(Environment, catalog =>
         {
             catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 1, selfServiceEnabled: true);
-            catalog.Claim([generalId], enforce: true);
+            catalog.Claim([generalId], ClaimMode.Public);
         });
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);

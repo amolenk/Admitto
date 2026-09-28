@@ -33,6 +33,30 @@ public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegra
         vipPass.Name.ShouldBe("VIP Pass");
     }
 
+    // Given a ticket type with a reserved capacity buffer and some admin/coupon claims against it
+    // When the ticket types are queried
+    // Then the reserved-used count is included alongside the reserved capacity
+    [TestMethod]
+    public async ValueTask GetTicketTypes_ReservedCapacityPartlyUsed_ReturnsReservedUsedCapacity()
+    {
+        // Arrange
+        var fixture = GetTicketTypesFixture.WithReservedCapacityPartlyUsed(
+            maxCapacity: 20, reservedCapacity: 18, reservedUsed: 3);
+        await fixture.SetupAsync(Environment);
+
+        var query = new GetTicketTypesQuery(fixture.EventId, fixture.TeamId);
+        var sut = new GetTicketTypesHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        var result = await sut.HandleAsync(query, testContext.CancellationToken);
+
+        // Assert
+        var workshop = result.ShouldHaveSingleItem();
+        workshop.ReservedCapacity.ShouldBe(18);
+        workshop.ReservedUsedCapacity.ShouldBe(3);
+        workshop.UsedCapacity.ShouldBe(3);
+    }
+
     // Given an event with no ticket catalog
     // When the ticket types are queried
     // Then an empty list is returned

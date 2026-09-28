@@ -62,7 +62,7 @@ internal sealed class SelfRegisterFixture
             waitlistEnabled: waitlistMode);
         if (waitlistMode)
         {
-            catalog.Claim([TicketTypeId], enforce: true);
+            catalog.Claim([TicketTypeId], ClaimMode.Public);
             catalog.ClearDomainEvents();
         }
 

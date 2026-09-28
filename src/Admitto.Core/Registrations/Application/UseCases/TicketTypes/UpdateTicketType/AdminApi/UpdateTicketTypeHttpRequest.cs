@@ -11,6 +11,7 @@ public sealed class UpdateTicketTypeHttpRequest
     public bool? SelfServiceEnabled { get; init; }
     public bool? WaitlistEnabled { get; init; }
     public int? ClaimWindowHours { get; init; }
+    public int ReservedCapacity { get; init; }
 
     public int? MaxReconfirmationEmails
     {
@@ -35,5 +36,6 @@ public sealed class UpdateTicketTypeHttpRequest
         WaitlistEnabled,
         ClaimWindowHours,
         MaxReconfirmationEmails,
-        MaxReconfirmationEmailsSpecified);
+        MaxReconfirmationEmailsSpecified,
+        ReservedCapacity);
 }

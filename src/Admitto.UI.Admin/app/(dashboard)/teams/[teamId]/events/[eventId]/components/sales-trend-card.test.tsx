@@ -60,4 +60,37 @@ describe("buildBuckets", () => {
 
         expect(buckets.every((bucket) => bucket.cancellations === 0)).toBe(true);
     });
+
+    // Given an event that ended before today
+    // When sales buckets are built with the event's end date
+    // Then the last bucket is the event end date, not today
+    it("caps the date range at the event's end date when it is in the past", () => {
+        const registrations = [
+            registrationListItemDto({
+                status: "registered",
+                createdAt: "2027-06-03T10:00:00.000Z",
+            }),
+        ];
+
+        const buckets = buildBuckets(registrations, "14d", "2027-06-10T10:00:00.000Z");
+
+        expect(buckets[buckets.length - 1].date).toBe("2027-06-10");
+        expect(buckets.some((bucket) => bucket.date === "2027-06-14")).toBe(false);
+    });
+
+    // Given an event that ends in the future
+    // When sales buckets are built with the event's end date
+    // Then the last bucket remains today, since the event has not ended yet
+    it("does not extend the date range when the event ends in the future", () => {
+        const registrations = [
+            registrationListItemDto({
+                status: "registered",
+                createdAt: "2027-06-03T10:00:00.000Z",
+            }),
+        ];
+
+        const buckets = buildBuckets(registrations, "14d", "2027-06-20T10:00:00.000Z");
+
+        expect(buckets[buckets.length - 1].date).toBe("2027-06-14");
+    });
 });

@@ -17,6 +17,23 @@ public sealed class UpdateTicketTypeValidator : AbstractValidator<UpdateTicketTy
                 .GreaterThan(0);
         });
 
+        RuleFor(x => x.ReservedCapacity)
+            .GreaterThanOrEqualTo(0);
+
+        When(x => x.ReservedCapacity > 0, () =>
+        {
+            RuleFor(x => x.MaxCapacity)
+                .NotNull()
+                .WithMessage("ReservedCapacity requires a bounded capacity (MaxCapacity must be set).");
+        });
+
+        When(x => x.MaxCapacity is not null, () =>
+        {
+            RuleFor(x => x.ReservedCapacity)
+                .LessThanOrEqualTo(x => x.MaxCapacity!.Value)
+                .WithMessage("ReservedCapacity cannot exceed MaxCapacity.");
+        });
+
         When(x => x.ClaimWindowHours is not null, () =>
         {
             RuleFor(x => x.ClaimWindowHours!.Value)

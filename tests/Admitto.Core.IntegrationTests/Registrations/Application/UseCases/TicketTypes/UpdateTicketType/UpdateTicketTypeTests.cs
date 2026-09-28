@@ -105,6 +105,39 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         });
     }
 
+    // Given an active event with a ticket type
+    // When the ticket type's reserved capacity is updated
+    // Then the new reserved capacity is persisted
+    [TestMethod]
+    public async ValueTask UpdateTicketType_UpdateReservedCapacity_PersistsNewValue()
+    {
+        // Arrange
+        var fixture = UpdateTicketTypeFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdateTicketTypeCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.TicketTypeId.Value,
+            null,
+            200,
+            ReservedCapacity: 25);
+        var sut = new UpdateTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs
+                .FirstOrDefaultAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
+
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes.ShouldHaveSingleItem().ReservedCapacity.ShouldBe(25);
+        });
+    }
+
     // Given an archived event with a ticket type
     // When the ticket type's capacity is updated
     // Then it fails with an event-not-active error

@@ -51,7 +51,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         bool selfServiceEnabled = true,
         bool waitlistEnabled = false,
         int claimWindowHours = 8,
-        ReconfirmationEmailLimit? maxReconfirmationEmails = null)
+        ReconfirmationEmailLimit? maxReconfirmationEmails = null,
+        int reservedCapacity = 0)
     {
         EnsureEventActive();
 
@@ -61,12 +62,30 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (waitlistEnabled && maxCapacity is null)
             throw new BusinessRuleViolationException(Errors.WaitlistRequiresBoundedCapacity(id));
 
-        _ticketTypes.Add(new TicketType(id, name, timeSlots, maxCapacity, selfServiceEnabled, waitlistEnabled, claimWindowHours, maxReconfirmationEmails));
+        if (reservedCapacity < 0)
+            throw new BusinessRuleViolationException(Errors.ReservedCapacityNegative(id));
+
+        if (reservedCapacity > 0 && maxCapacity is null)
+            throw new BusinessRuleViolationException(Errors.ReservedCapacityRequiresBoundedCapacity(id));
+
+        if (maxCapacity is not null && reservedCapacity > maxCapacity.Value)
+            throw new BusinessRuleViolationException(Errors.ReservedCapacityExceedsCapacity(id));
+
+        _ticketTypes.Add(new TicketType(id, name, timeSlots, maxCapacity, selfServiceEnabled, waitlistEnabled, claimWindowHours, maxReconfirmationEmails, reservedCapacity));
         AddDomainEvent(new TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent(
             TeamId,
             Id,
             Version,
             _ticketTypes.Count(t => t.SelfServiceEnabled)));
+
+        // A newly added waitlist-enabled type can be immediately publicly sold out
+        // when ReservedCapacity consumes the entire MaxCapacity.
+        var added = _ticketTypes[^1];
+        if (waitlistEnabled && added.IsSoldOut)
+        {
+            added.ActivateWaitlistMode();
+            AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));
+        }
     }
 
     public void UpdateTicketType(
@@ -77,9 +96,19 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         bool? waitlistEnabled = null,
         int? claimWindowHours = null,
         ReconfirmationEmailLimit? maxReconfirmationEmails = null,
-        bool updateMaxReconfirmationEmails = false)
+        bool updateMaxReconfirmationEmails = false,
+        int reservedCapacity = 0)
     {
         EnsureEventActive();
+
+        if (reservedCapacity < 0)
+            throw new BusinessRuleViolationException(Errors.ReservedCapacityNegative(id));
+
+        if (reservedCapacity > 0 && maxCapacity is null)
+            throw new BusinessRuleViolationException(Errors.ReservedCapacityRequiresBoundedCapacity(id));
+
+        if (maxCapacity is not null && reservedCapacity > maxCapacity.Value)
+            throw new BusinessRuleViolationException(Errors.ReservedCapacityExceedsCapacity(id));
 
         var previousSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
 
@@ -108,6 +137,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             ticketType.DisableWaitlist();
             AddDomainEvent(new WaitlistForcedDisabledDomainEvent(TeamId, Id, id));
             ticketType.UpdateCapacity(maxCapacity);
+            ticketType.UpdateReservedCapacity(reservedCapacity);
             var forcedBranchSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
             if (forcedBranchSelfServiceCount != previousSelfServiceCount)
             {
@@ -130,9 +160,11 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             ticketType.EnableWaitlist();
         }
 
-        // Update capacity and handle freed slots or retroactive activation
+        // Update capacity/reserved capacity and handle freed slots or retroactive activation
         var previousMaxCapacity = ticketType.MaxCapacity;
+        var previousReservedCapacity = ticketType.ReservedCapacity;
         ticketType.UpdateCapacity(maxCapacity);
+        ticketType.UpdateReservedCapacity(reservedCapacity);
 
         // Retroactive WaitlistMode activation: enabled on a sold-out type
         if (ticketType.WaitlistEnabled && !ticketType.WaitlistMode && ticketType.IsSoldOut)
@@ -140,11 +172,13 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             ticketType.ActivateWaitlistMode();
             AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));
         }
-        // Capacity increase while WaitlistMode active → notify waiting attendees
+        // Public capacity increase while WaitlistMode active → notify waiting attendees.
+        // "Available" is measured against the public threshold (MaxCapacity - ReservedCapacity),
+        // so raising MaxCapacity or lowering ReservedCapacity can both free public slots.
         else if (ticketType.WaitlistMode && ticketType.MaxCapacity.HasValue)
         {
-            var oldAvailable = Math.Max(0, (previousMaxCapacity ?? 0) - ticketType.UsedCapacity);
-            var newAvailable = Math.Max(0, ticketType.MaxCapacity.Value - ticketType.UsedCapacity);
+            var oldAvailable = ticketType.PublicAvailableCapacity(previousMaxCapacity, previousReservedCapacity);
+            var newAvailable = ticketType.PublicAvailableCapacity(ticketType.MaxCapacity, ticketType.ReservedCapacity);
             var freedSlots = newAvailable - oldAvailable;
             if (freedSlots > 0)
                 AddDomainEvent(new WaitlistCapacityFreedDomainEvent(TeamId, Id, id, freedSlots));
@@ -172,17 +206,16 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
         if (ticketType is null || !ticketType.WaitlistMode) return;
 
-        if (ticketType.MaxCapacity.HasValue
-            && ticketType.UsedCapacity < ticketType.MaxCapacity.Value
-            && activeEntryCount == 0
-            && issuedCouponCount == 0)
+        if (activeEntryCount == 0
+            && issuedCouponCount == 0
+            && !ticketType.IsSoldOut)
         {
             ticketType.DeactivateWaitlistMode();
         }
     }
 
     /// <summary>
-    /// Clears WaitlistMode only when capacity is available (UsedCapacity &lt; MaxCapacity).
+    /// Clears WaitlistMode only when publicly available capacity exists (not IsSoldOut).
     /// Called when the Waitlist aggregate signals it is exhausted (no active entries, no issued coupons).
     /// </summary>
     public void TryDeactivateWaitlistMode(TicketTypeId ticketTypeId)
@@ -192,8 +225,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
         if (ticketType is null || !ticketType.WaitlistMode) return;
 
-        if (ticketType.MaxCapacity.HasValue
-            && ticketType.UsedCapacity < ticketType.MaxCapacity.Value)
+        if (!ticketType.IsSoldOut)
         {
             ticketType.DeactivateWaitlistMode();
         }
@@ -254,11 +286,13 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// <summary>
     /// Claims tickets for the given IDs. Validates the selection (duplicates,
     /// unknown IDs, self-service availability, overlapping time slots) before claiming capacity.
-    /// If enforce is true, capacity is enforced and self-service flag is checked (self-service path).
-    /// If enforce is false, UsedCapacity is incremented without enforcement (admin/coupon path).
-    /// Returns snapshots of the claimed ticket types.
+    /// <see cref="ClaimMode.Public"/> enforces capacity and requires self-service to be enabled.
+    /// <see cref="ClaimMode.PublicUncapped"/> and <see cref="ClaimMode.Reserved"/> are uncapped
+    /// (admin/coupon paths) — see <see cref="ClaimMode"/> for which pool each consumes.
+    /// Returns snapshots of the claimed ticket types, tagged with the mode used so a later
+    /// <see cref="Release"/> credits the correct pool back.
     /// </summary>
-    public IReadOnlyList<TicketTypeSnapshot> Claim(IReadOnlyList<TicketTypeId> ids, bool enforce)
+    public IReadOnlyList<TicketTypeSnapshot> Claim(IReadOnlyList<TicketTypeId> ids, ClaimMode mode)
     {
         EnsureEventActive();
 
@@ -274,7 +308,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (unknownIds.Length > 0)
             throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownIds));
 
-        if (enforce)
+        if (mode == ClaimMode.Public)
         {
             var nonSelfService = ids.Where(id => !ticketTypeMap[id].SelfServiceEnabled).Select(id => id.Value).ToArray();
             if (nonSelfService.Length > 0)
@@ -292,13 +326,10 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         foreach (var id in ids)
         {
             var ticketType = ticketTypeMap[id];
-            if (enforce)
-                ticketType.ClaimWithEnforcement();
-            else
-                ticketType.ClaimUncapped();
+            ticketType.Claim(mode);
 
-            // Activate WaitlistMode when the last slot is claimed on a WaitlistEnabled type
-            if (enforce && ticketType.WaitlistEnabled && !ticketType.WaitlistMode && ticketType.IsSoldOut)
+            // Activate WaitlistMode when the last public slot is claimed on a WaitlistEnabled type
+            if (mode == ClaimMode.Public && ticketType.WaitlistEnabled && !ticketType.WaitlistMode && ticketType.IsSoldOut)
             {
                 ticketType.ActivateWaitlistMode();
                 AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));
@@ -308,20 +339,21 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         return ids.Select(id =>
         {
             var ticketType = ticketTypeMap[id];
-            return new TicketTypeSnapshot(id, ticketType.Name, ticketType.TimeSlots);
+            return new TicketTypeSnapshot(id, ticketType.Name, ticketType.TimeSlots, mode);
         }).ToList();
     }
 
     /// <summary>
-    /// Releases capacity for the given ticket type IDs. Unknown IDs are silently skipped.
-    /// UsedCapacity is clamped at zero.
+    /// Releases capacity for the given ticket snapshots. Unknown IDs are silently skipped.
+    /// Each snapshot's <see cref="TicketTypeSnapshot.Mode"/> determines which counter is
+    /// credited back (see <see cref="TicketType.ReleaseCapacity"/>). UsedCapacity is clamped at zero.
     /// </summary>
-    public void Release(IReadOnlyList<TicketTypeId> ids)
+    public void Release(IReadOnlyList<TicketTypeSnapshot> tickets)
     {
-        foreach (var id in ids)
+        foreach (var ticket in tickets)
         {
-            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == id);
-            ticketType?.ReleaseCapacity();
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticket.Id);
+            ticketType?.ReleaseCapacity(ticket.Mode);
         }
     }
 
@@ -375,6 +407,21 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         public static Error WaitlistRequiresBoundedCapacity(TicketTypeId id) =>
             new("ticket_catalog.waitlist_requires_bounded_capacity",
                 "WaitlistEnabled requires a bounded capacity (MaxCapacity must be set).",
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
+
+        public static Error ReservedCapacityRequiresBoundedCapacity(TicketTypeId id) =>
+            new("ticket_catalog.reserved_capacity_requires_bounded_capacity",
+                "ReservedCapacity requires a bounded capacity (MaxCapacity must be set).",
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
+
+        public static Error ReservedCapacityNegative(TicketTypeId id) =>
+            new("ticket_catalog.reserved_capacity_negative",
+                "ReservedCapacity cannot be negative.",
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
+
+        public static Error ReservedCapacityExceedsCapacity(TicketTypeId id) =>
+            new("ticket_catalog.reserved_capacity_exceeds_capacity",
+                "ReservedCapacity cannot exceed MaxCapacity.",
                 Details: new Dictionary<string, object?> { ["id"] = id.Value });
 
         public static readonly Error EventNotActive = new(

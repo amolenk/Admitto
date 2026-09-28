@@ -30,7 +30,9 @@ internal sealed class GetTicketTypesHandler(IRegistrationsWriteStore writeStore)
                 tt.WaitlistEnabled,
                 tt.WaitlistMode,
                 tt.ClaimWindowHours,
-                tt.MaxReconfirmationEmails?.Value))
+                tt.MaxReconfirmationEmails?.Value,
+                tt.ReservedCapacity,
+                tt.ReservedUsedCapacity))
             .ToList();
     }
 }

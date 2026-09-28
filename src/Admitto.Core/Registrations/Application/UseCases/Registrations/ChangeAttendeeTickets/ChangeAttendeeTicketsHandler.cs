@@ -77,7 +77,7 @@ internal sealed class ChangeAttendeeTicketsHandler(
         var currentIds = registration.Tickets.Select(t => t.Id.Value).ToHashSet();
         var newIdsSet = command.TicketTypeIds.ToHashSet();
 
-        var toRelease = currentIds.Except(newIdsSet).Select(TicketTypeId.From).ToList();
+        var toRelease = registration.Tickets.Where(t => !newIdsSet.Contains(t.Id.Value)).ToList();
         var toClaim = newTicketTypeIds.Where(id => !currentIds.Contains(id.Value)).ToList();
 
         // 7. Release freed capacity.
@@ -87,14 +87,25 @@ internal sealed class ChangeAttendeeTicketsHandler(
         var couponBackedClaim = couponTicketTypeId is { } offeredTicketTypeId
             && toClaim.Remove(offeredTicketTypeId);
 
-        catalog.Claim(toClaim, enforce: command.Mode == ChangeMode.SelfService);
-        if (couponBackedClaim)
-            catalog.Claim([couponTicketTypeId!.Value], enforce: false);
+        var claimMode = command.Mode == ChangeMode.SelfService ? ClaimMode.Public : ClaimMode.Reserved;
+        var claimedTickets = catalog.Claim(toClaim, claimMode);
+        var couponClaimedTickets = couponBackedClaim
+            ? catalog.Claim([couponTicketTypeId!.Value], ClaimMode.PublicUncapped)
+            : [];
 
-        // 9. Build new ticket snapshots.
+        // 9. Build new ticket snapshots. Newly claimed tickets keep the ClaimMode they were
+        // claimed under (see step 8); tickets that were already on the registration keep their
+        // originally recorded mode so a later release still credits the correct pool.
+        var existingTicketsById = registration.Tickets.ToDictionary(t => t.Id);
+        var claimedTicketsById = claimedTickets.Concat(couponClaimedTickets).ToDictionary(t => t.Id);
         var newTickets = newTicketTypeIds
             .Select(id =>
             {
+                if (claimedTicketsById.TryGetValue(id, out var claimed))
+                    return claimed;
+                if (existingTicketsById.TryGetValue(id, out var existing))
+                    return existing;
+
                 var ticketType = catalog.GetTicketType(id);
                 var timeSlots = ticketType?.TimeSlots ?? [];
                 var name = ticketType?.Name ?? TicketTypeName.From(id.Value.ToString());
