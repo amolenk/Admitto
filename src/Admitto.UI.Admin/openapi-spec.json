@@ -9774,7 +9774,8 @@
           "waitlistMode",
           "claimWindowHours",
           "maxReconfirmationEmails",
-          "reservedCapacity"
+          "reservedCapacity",
+          "reservedUsedCapacity"
         ],
         "type": "object",
         "properties": {
@@ -9835,6 +9836,14 @@
             "format": "int32"
           },
           "reservedCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reservedUsedCapacity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",

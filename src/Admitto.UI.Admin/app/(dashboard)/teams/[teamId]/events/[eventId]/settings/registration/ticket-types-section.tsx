@@ -52,13 +52,10 @@ const editSchema = z
 
 type EditValues = z.infer<typeof editSchema>;
 
-/** Live "X / Y used" figure for a ticket type's reserved capacity, derived from usedCapacity. */
+/** Live "X / Y used" figure for a ticket type's reserved capacity. */
 function reservedUsedOf(tt: TicketTypeDto): string {
-    const cap = Number(tt.maxCapacity) || 0;
-    const used = Number(tt.usedCapacity);
     const reserved = Number(tt.reservedCapacity) || 0;
-    const publicThreshold = cap > 0 ? Math.max(0, cap - reserved) : 0;
-    const reservedUsed = Math.min(reserved, Math.max(0, used - publicThreshold));
+    const reservedUsed = Number(tt.reservedUsedCapacity) || 0;
     return `${reservedUsed}/${reserved} used`;
 }
 

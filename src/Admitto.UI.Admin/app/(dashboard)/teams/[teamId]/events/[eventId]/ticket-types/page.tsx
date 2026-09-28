@@ -35,9 +35,10 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
     const cap = Number(t.maxCapacity) || 0;
     const used = Number(t.usedCapacity);
     const reserved = Number(t.reservedCapacity) || 0;
-    const publicThreshold = cap > 0 ? Math.max(0, cap - reserved) : 0;
-    const isPubliclySoldOut = cap > 0 && used >= publicThreshold;
-    const reservedUsed = reserved > 0 ? Math.min(reserved, Math.max(0, used - publicThreshold)) : 0;
+    const reservedUsed = Number(t.reservedUsedCapacity) || 0;
+    const heldBack = Math.max(0, reserved - reservedUsed);
+    const publicAvailable = cap > 0 ? Math.max(0, cap - used - heldBack) : 0;
+    const isPubliclySoldOut = cap > 0 && publicAvailable <= 0;
     const remaining = cap > 0 ? cap - used : 0;
     const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
 

@@ -11,4 +11,5 @@ internal sealed record TicketTypeDto(
     bool WaitlistMode,
     int ClaimWindowHours,
     int? MaxReconfirmationEmails,
-    int ReservedCapacity);
+    int ReservedCapacity,
+    int ReservedUsedCapacity);

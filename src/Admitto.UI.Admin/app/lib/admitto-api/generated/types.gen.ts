@@ -548,6 +548,7 @@ export type TicketTypeDto = {
     claimWindowHours: number | string;
     maxReconfirmationEmails: null | number | string;
     reservedCapacity: number | string;
+    reservedUsedCapacity: number | string;
 };
 
 export type UpdateAdditionalDetailSchemaHttpRequest = {

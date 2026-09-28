@@ -87,4 +87,27 @@ describe("TicketTypesPage", () => {
 
         expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
     });
+
+    // Given a ticket type with a reserved capacity buffer only partly consumed by admin claims
+    // When the ticket type card renders
+    // Then it shows the actual reserved-used count and does not report public sold-out
+    it("shows the actual reserved-used count and stays available while reserved buffer remains", async () => {
+        const reservedWorkshop = ticketTypeDto({
+            id: "55555555-5555-5555-5555-555555555555",
+            name: "AI Workshop",
+            maxCapacity: 20,
+            usedCapacity: 3,
+            reservedCapacity: 18,
+            reservedUsedCapacity: 3,
+        });
+        mockData([reservedWorkshop]);
+
+        renderPage();
+
+        await screen.findByRole("heading", { name: "AI Workshop" });
+        const card = cardFor("AI Workshop");
+        expect(within(card).getByText("Available")).toBeInTheDocument();
+        expect(within(card).queryByText("Sold out")).not.toBeInTheDocument();
+        expect(within(card).getByText("3 / 18 used")).toBeInTheDocument();
+    });
 });
