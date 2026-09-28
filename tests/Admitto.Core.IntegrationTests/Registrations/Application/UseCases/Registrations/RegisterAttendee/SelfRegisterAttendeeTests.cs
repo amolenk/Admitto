@@ -483,9 +483,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
     // Given a ticket type only available via waitlist
     // When an attendee submits only a waitlist request with no tickets to register for
-    // Then a waitlist entry is created and no registration is created
+    // Then a Waitlisted registration and a waitlist entry are both created
     [TestMethod]
-    public async ValueTask SelfRegisterAttendee_WaitlistOnly_CreatesWaitlistEntryWithoutRegistration()
+    public async ValueTask SelfRegisterAttendee_WaitlistOnly_CreatesWaitlistedRegistrationAndWaitlistEntry()
     {
         var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
         await fixture.SetupAsync(Environment);
@@ -499,13 +499,18 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        result.RegistrationId.ShouldBeNull();
+        result.RegistrationId.ShouldNotBeNull();
         result.RegisteredTicketTypeIds.ShouldBeEmpty();
         result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-b").Value]);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
-            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Id.Value.ShouldBe(result.RegistrationId!.Value);
+            registration.Email.Value.ShouldBe("dave@example.com");
+            registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
+            registration.Tickets.ShouldBeEmpty();
+
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.Entries.ShouldHaveSingleItem().Email.Value.ShouldBe("dave@example.com");
         });
@@ -609,7 +614,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
     // Given two waitlist-only ticket types with overlapping time slots
     // When an attendee joins the waitlist for both
-    // Then separate waitlist entries are created for each ticket type
+    // Then a single Waitlisted registration is created and separate waitlist entries are created for each ticket type
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_WaitlistTicketsOverlapEachOther_CreatesBothWaitlistEntries()
     {
@@ -626,7 +631,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
-            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
             var waitlists = await dbContext.Waitlists.ToListAsync(testContext.CancellationToken);
             waitlists.Count.ShouldBe(2);
             waitlists.ShouldAllBe(w => w.Entries.Count == 1);

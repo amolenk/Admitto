@@ -49,9 +49,9 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
                 r => r.EventId == eventId && r.TeamId == teamId && r.Email == email,
                 cancellationToken);
 
-        if (registerTicketTypeIds.Count > 0 && existingRegistration?.Status == RegistrationStatus.Registered)
+        if (registerTicketTypeIds.Count > 0 && existingRegistration?.Status
+                is RegistrationStatus.Registered or RegistrationStatus.Waitlisted)
             throw new BusinessRuleViolationException(AlreadyExistsError.Create<Registration>());
-
         var catalog = await writeStore.TicketCatalogs
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
@@ -61,7 +61,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
         var tickets = catalog.Claim(registerTicketTypeIds, ClaimMode.Public);
 
         Registration? registration = null;
-        if (registerTicketTypeIds.Count > 0 && existingRegistration is null)
+        if (existingRegistration is null)
         {
             registration = Registration.Create(
                 ticketedEvent.TeamId,
@@ -74,7 +74,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
                 now);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
-        else if (registerTicketTypeIds.Count > 0 && existingRegistration is not null)
+        else if (registerTicketTypeIds.Count > 0)
         {
             registration = existingRegistration;
             registration.Reset(firstName, lastName, tickets, additionalDetails, now);

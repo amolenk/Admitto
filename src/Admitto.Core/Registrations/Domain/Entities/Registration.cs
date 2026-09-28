@@ -33,11 +33,11 @@ public class Registration : Aggregate<RegistrationId>
         Email = email;
         FirstName = firstName;
         LastName = lastName;
-        Status = RegistrationStatus.Registered;
         HasReconfirmed = false;
         ReconfirmedAt = null;
         CheckedInAt = null;
         _tickets = tickets.ToList();
+        Status = DeriveStatus(_tickets);
         AdditionalDetails = additionalDetails;
         SearchText = BuildSearchText(email, firstName, lastName);
 
@@ -108,18 +108,20 @@ public class Registration : Aggregate<RegistrationId>
         if (Status != RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.CannotResetActive);
 
+        var newTickets = tickets.ToList();
+
         CreatedAt = registeredAt;
         RegistrationCycleId = RegistrationCycleId.New();
         FirstName = firstName;
         LastName = lastName;
-        Status = RegistrationStatus.Registered;
         HasReconfirmed = false;
         ReconfirmedAt = null;
         CancellationReason = null;
         CancelledAt = null;
         CheckedInAt = null;
         _tickets.Clear();
-        _tickets.AddRange(tickets);
+        _tickets.AddRange(newTickets);
+        Status = DeriveStatus(_tickets);
         AdditionalDetails = additionalDetails;
         SearchText = BuildSearchText(Email, FirstName, LastName);
 
@@ -130,7 +132,7 @@ public class Registration : Aggregate<RegistrationId>
             Email,
             FirstName,
             LastName,
-            tickets,
+            newTickets,
             registeredAt));
     }
 
@@ -142,6 +144,7 @@ public class Registration : Aggregate<RegistrationId>
         var oldTickets = _tickets.ToList();
         _tickets.Clear();
         _tickets.AddRange(newTickets);
+        Status = DeriveStatus(_tickets);
 
         if (HasSameTicketSelection(oldTickets, newTickets))
             return;
@@ -169,6 +172,7 @@ public class Registration : Aggregate<RegistrationId>
         SearchText = BuildSearchText(Email, FirstName, LastName);
         _tickets.Clear();
         _tickets.AddRange(newTickets);
+        Status = DeriveStatus(_tickets);
 
         if (HasSameTicketSelection(oldTickets, newTickets))
             return;
@@ -182,6 +186,9 @@ public class Registration : Aggregate<RegistrationId>
     {
         if (Status == RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.CannotReconfirmCancelled);
+
+        if (Status == RegistrationStatus.Waitlisted)
+            throw new BusinessRuleViolationException(Errors.CannotReconfirmWaitlisted);
 
         if (HasReconfirmed)
             return;
@@ -197,12 +204,18 @@ public class Registration : Aggregate<RegistrationId>
         if (Status == RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.CannotCheckInCancelled);
 
+        if (Status == RegistrationStatus.Waitlisted)
+            throw new BusinessRuleViolationException(Errors.CannotCheckInWaitlisted);
+
         if (CheckedInAt is not null)
             return;
 
         CheckedInAt = serverNow;
         AddDomainEvent(new RegistrationCheckedInDomainEvent(TeamId, EventId, Id, serverNow, source));
     }
+
+    private static RegistrationStatus DeriveStatus(IReadOnlyList<TicketTypeSnapshot> tickets) =>
+        tickets.Count > 0 ? RegistrationStatus.Registered : RegistrationStatus.Waitlisted;
 
     private static string BuildSearchText(EmailAddress email, FirstName firstName, LastName lastName) =>
         $"{firstName.Value} {lastName.Value} {email.Value}".ToLowerInvariant();
@@ -240,9 +253,19 @@ public class Registration : Aggregate<RegistrationId>
             "A cancelled registration cannot be checked in.",
             Type: ErrorType.Conflict);
 
+        public static readonly Error CannotCheckInWaitlisted = new(
+            "registration.cannot_check_in_waitlisted",
+            "A waitlisted registration cannot be checked in.",
+            Type: ErrorType.Conflict);
+
         public static readonly Error CannotReconfirmCancelled = new(
             "registration.cannot_reconfirm_cancelled",
             "A cancelled registration cannot be reconfirmed.",
+            Type: ErrorType.Conflict);
+
+        public static readonly Error CannotReconfirmWaitlisted = new(
+            "registration.cannot_reconfirm_waitlisted",
+            "A waitlisted registration cannot be reconfirmed.",
             Type: ErrorType.Conflict);
 
         public static readonly Error CannotResetActive = new(

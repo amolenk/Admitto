@@ -532,6 +532,84 @@ public sealed class RegistrationTests
         domainEvent.RegisteredAt.ShouldBe(resetAt);
     }
 
+    // Given a registration created with zero confirmed tickets
+    // When it is created
+    // Then its status is Waitlisted
+    [TestMethod]
+    public void Registration_Create_NoTickets_StatusIsWaitlisted()
+    {
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, []);
+
+        sut.Status.ShouldBe(RegistrationStatus.Waitlisted);
+    }
+
+    // Given a registration created with one confirmed ticket
+    // When it is created
+    // Then its status is Registered
+    [TestMethod]
+    public void Registration_Create_WithTickets_StatusIsRegistered()
+    {
+        var sut = NewRegistration();
+
+        sut.Status.ShouldBe(RegistrationStatus.Registered);
+    }
+
+    // Given a Waitlisted registration with zero confirmed tickets
+    // When its ticket composition changes to include a confirmed ticket
+    // Then its status becomes Registered
+    [TestMethod]
+    public void ChangeTickets_FromZeroToOneTicket_StatusBecomesRegistered()
+    {
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, []);
+        sut.Status.ShouldBe(RegistrationStatus.Waitlisted);
+
+        sut.ChangeTickets(
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            DateTimeOffset.UtcNow);
+
+        sut.Status.ShouldBe(RegistrationStatus.Registered);
+    }
+
+    // Given a Registered registration with a confirmed ticket
+    // When its ticket composition changes to zero confirmed tickets
+    // Then its status becomes Waitlisted
+    [TestMethod]
+    public void ChangeTickets_FromOneToZeroTickets_StatusBecomesWaitlisted()
+    {
+        var sut = NewRegistration();
+        sut.Status.ShouldBe(RegistrationStatus.Registered);
+
+        sut.ChangeTickets([], DateTimeOffset.UtcNow);
+
+        sut.Status.ShouldBe(RegistrationStatus.Waitlisted);
+    }
+
+    // Given a Waitlisted registration
+    // When check-in is attempted
+    // Then it throws the waitlisted check-in error
+    [TestMethod]
+    public void CheckIn_WaitlistedRegistration_ThrowsCannotCheckInWaitlisted()
+    {
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, []);
+
+        var result = ErrorResult.Capture(() => sut.CheckIn(DateTimeOffset.UtcNow));
+
+        result.Error.ShouldMatch(Registration.Errors.CannotCheckInWaitlisted);
+    }
+
+    // Given a Waitlisted registration
+    // When reconfirmation is attempted
+    // Then it throws the waitlisted reconfirm error
+    [TestMethod]
+    public void Reconfirm_WaitlistedRegistration_ThrowsCannotReconfirmWaitlisted()
+    {
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, []);
+
+        var result = ErrorResult.Capture(() => sut.Reconfirm(DateTimeOffset.UtcNow));
+
+        result.Error.ShouldMatch(Registration.Errors.CannotReconfirmWaitlisted);
+    }
+
     // Given a registered attendee
     // When the attendee is checked in at a server timestamp
     // Then the timestamp is stored and one check-in event is raised

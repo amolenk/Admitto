@@ -8,5 +8,6 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts;
 public enum RegistrationStatus
 {
     Registered = 0,
-    Cancelled = 1
+    Cancelled = 1,
+    Waitlisted = 2
 }
