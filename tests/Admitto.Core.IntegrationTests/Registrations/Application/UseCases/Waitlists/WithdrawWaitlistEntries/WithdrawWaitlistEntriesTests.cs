@@ -1,5 +1,4 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.WithdrawWaitlistEntries.EventHandlers;
-using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.WithdrawWaitlistEntries;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -12,25 +11,20 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 public sealed class WithdrawWaitlistEntriesTests(TestContext testContext) : AspireIntegrationTestBase
 {
     // Given a cancelled attendee with active waitlist entries on two different ticket types for the event
-    // When the RegistrationCancelled domain event is handled
+    // When waitlist entries are withdrawn for that email
     // Then every one of those active entries is removed
     [TestMethod]
-    public async ValueTask HandleAsync_EntriesOnMultipleTicketTypes_RemovesEveryActiveEntry()
+    public async ValueTask WithdrawWaitlistEntries_EntriesOnMultipleTicketTypes_RemovesEveryActiveEntry()
     {
         var fixture = WithdrawWaitlistEntriesFixture.WithEntriesOnTwoTicketTypes();
         await fixture.SetupAsync(Environment);
 
-        var domainEvent = new RegistrationCancelledDomainEvent(
-            fixture.TeamId,
-            fixture.EventId,
-            RegistrationId.New(),
-            fixture.CancelledAttendeeEmail,
-            FirstName.From("Alice"),
-            LastName.From("Test"),
-            CancellationReason.AttendeeRequest);
-        var sut = new RegistrationCancelledDomainEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new WithdrawWaitlistEntriesHandler(Environment.RegistrationsDatabase.Context);
 
-        await sut.HandleAsync(domainEvent, testContext.CancellationToken);
+        await sut.HandleAsync(
+            new WithdrawWaitlistEntriesCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.CancelledAttendeeEmail.Value),
+            testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -46,25 +40,20 @@ public sealed class WithdrawWaitlistEntriesTests(TestContext testContext) : Aspi
     }
 
     // Given a waitlist entry sandwiched between two other active entries
-    // When the RegistrationCancelled domain event is handled for the sandwiched entry's email
+    // When waitlist entries are withdrawn for the sandwiched entry's email
     // Then the remaining active entries are renumbered correctly
     [TestMethod]
-    public async ValueTask HandleAsync_RemovingEntry_RenumbersRemainingActiveEntries()
+    public async ValueTask WithdrawWaitlistEntries_RemovingEntry_RenumbersRemainingActiveEntries()
     {
         var fixture = WithdrawWaitlistEntriesFixture.WithSurroundingActiveEntries();
         await fixture.SetupAsync(Environment);
 
-        var domainEvent = new RegistrationCancelledDomainEvent(
-            fixture.TeamId,
-            fixture.EventId,
-            RegistrationId.New(),
-            fixture.CancelledAttendeeEmail,
-            FirstName.From("Alice"),
-            LastName.From("Test"),
-            CancellationReason.AttendeeRequest);
-        var sut = new RegistrationCancelledDomainEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new WithdrawWaitlistEntriesHandler(Environment.RegistrationsDatabase.Context);
 
-        await sut.HandleAsync(domainEvent, testContext.CancellationToken);
+        await sut.HandleAsync(
+            new WithdrawWaitlistEntriesCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.CancelledAttendeeEmail.Value),
+            testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -87,25 +76,20 @@ public sealed class WithdrawWaitlistEntriesTests(TestContext testContext) : Aspi
     }
 
     // Given an event with no waitlists at all
-    // When the RegistrationCancelled domain event is handled
+    // When waitlist entries are withdrawn for an attendee's email
     // Then it completes without throwing and leaves no waitlist behind
     [TestMethod]
-    public async ValueTask HandleAsync_NoWaitlistsForEvent_IsNoOp()
+    public async ValueTask WithdrawWaitlistEntries_NoWaitlistsForEvent_IsNoOp()
     {
         var fixture = WithdrawWaitlistEntriesFixture.WithNoWaitlists();
         await fixture.SetupAsync(Environment);
 
-        var domainEvent = new RegistrationCancelledDomainEvent(
-            fixture.TeamId,
-            fixture.EventId,
-            RegistrationId.New(),
-            fixture.CancelledAttendeeEmail,
-            FirstName.From("Alice"),
-            LastName.From("Test"),
-            CancellationReason.AttendeeRequest);
-        var sut = new RegistrationCancelledDomainEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new WithdrawWaitlistEntriesHandler(Environment.RegistrationsDatabase.Context);
 
-        await sut.HandleAsync(domainEvent, testContext.CancellationToken);
+        await sut.HandleAsync(
+            new WithdrawWaitlistEntriesCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.CancelledAttendeeEmail.Value),
+            testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -118,22 +102,17 @@ public sealed class WithdrawWaitlistEntriesTests(TestContext testContext) : Aspi
     // When the next coupon is issued from that waitlist
     // Then no coupon is issued because the cancelled attendee's entry no longer exists
     [TestMethod]
-    public async ValueTask HandleAsync_ThenIssueNextCoupon_CancelledAttendeeCannotBePromoted()
+    public async ValueTask WithdrawWaitlistEntries_ThenIssueNextCoupon_CancelledAttendeeCannotBePromoted()
     {
         var fixture = WithdrawWaitlistEntriesFixture.WithEntriesOnTwoTicketTypes();
         await fixture.SetupAsync(Environment);
 
-        var domainEvent = new RegistrationCancelledDomainEvent(
-            fixture.TeamId,
-            fixture.EventId,
-            RegistrationId.New(),
-            fixture.CancelledAttendeeEmail,
-            FirstName.From("Alice"),
-            LastName.From("Test"),
-            CancellationReason.AttendeeRequest);
-        var sut = new RegistrationCancelledDomainEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new WithdrawWaitlistEntriesHandler(Environment.RegistrationsDatabase.Context);
 
-        await sut.HandleAsync(domainEvent, testContext.CancellationToken);
+        await sut.HandleAsync(
+            new WithdrawWaitlistEntriesCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.CancelledAttendeeEmail.Value),
+            testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
