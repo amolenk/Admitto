@@ -90,14 +90,15 @@ function dataRows() {
     return screen.getAllByRole("row").slice(1);
 }
 
-/** Picks an option from a Radix Select trigger. */
-async function selectOption(
+/** Toggles an option in a MultiSelectFilter dropdown, identified by its trigger's accessible name. */
+async function toggleFilterOption(
     user: ReturnType<typeof renderPage>["user"],
-    trigger: HTMLElement,
+    triggerName: string,
     optionName: string,
 ) {
-    await user.click(trigger);
-    await user.click(await screen.findByRole("option", { name: optionName }));
+    await user.click(screen.getByRole("button", { name: triggerName }));
+    await user.click(await screen.findByRole("menuitemcheckbox", { name: optionName }));
+    await user.keyboard("{Escape}");
 }
 
 describe("RegistrationsPage", () => {
@@ -295,10 +296,69 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("ada@example.com");
 
-        await selectOption(user, screen.getByRole("combobox", { name: "Ticket type" }), "VIP");
+        await toggleFilterOption(user, "Ticket type", "VIP");
 
         expect(screen.queryByText("ada@example.com")).not.toBeInTheDocument();
         expect(screen.getByText("bob@example.com")).toBeInTheDocument();
+    });
+
+    // Given attendees with different ticket types
+    // When two ticket-type options are selected in the filter
+    // Then rows matching either selected ticket type remain (OR, not AND)
+    it("shows the union of rows for multiple selected ticket types", async () => {
+        const { user } = renderPage();
+        await screen.findByText("ada@example.com");
+
+        await toggleFilterOption(user, "Ticket type", "General Admission");
+        await toggleFilterOption(user, "Ticket type", "VIP");
+
+        expect(screen.getByText("ada@example.com")).toBeInTheDocument();
+        expect(screen.getByText("bob@example.com")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Ticket type" })).toHaveTextContent("2 selected");
+    });
+
+    // Given two ticket-type options selected in the filter
+    // When one of them is unchecked
+    // Then only rows matching the remaining selected option stay visible
+    it("removes a ticket type from the filter when unchecked", async () => {
+        const { user } = renderPage();
+        await screen.findByText("ada@example.com");
+
+        await toggleFilterOption(user, "Ticket type", "General Admission");
+        await toggleFilterOption(user, "Ticket type", "VIP");
+        await toggleFilterOption(user, "Ticket type", "General Admission");
+
+        expect(screen.queryByText("ada@example.com")).not.toBeInTheDocument();
+        expect(screen.getByText("bob@example.com")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Ticket type" })).toHaveTextContent("VIP");
+    });
+
+    // Given registrations with distinct displayed statuses
+    // When two status options are selected in the filter
+    // Then rows matching either selected status remain (OR, not AND)
+    it("shows the union of rows for multiple selected statuses", async () => {
+        const cancelled = registrationListItemDto({
+            id: "r-cancelled-union",
+            email: "cancelled-union@example.com",
+            status: "cancelled",
+        });
+        const registered = registrationListItemDto({
+            id: "r-registered-union",
+            email: "registered-union@example.com",
+            status: "registered",
+            hasReconfirmed: false,
+        });
+        mockData({ registrations: [cancelled, registered] });
+
+        const { user } = renderPage();
+        await screen.findByText("cancelled-union@example.com");
+
+        await toggleFilterOption(user, "Status", "Cancelled");
+        await toggleFilterOption(user, "Status", "Registered");
+
+        expect(screen.getByText("cancelled-union@example.com")).toBeInTheDocument();
+        expect(screen.getByText("registered-union@example.com")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Status" })).toHaveTextContent("2 selected");
     });
 
     // Given a ticket type in the catalog that no registration has selected
@@ -309,7 +369,7 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("ada@example.com");
 
-        await selectOption(user, screen.getByRole("combobox", { name: "Ticket type" }), "Workshop");
+        await toggleFilterOption(user, "Ticket type", "Workshop");
 
         expect(screen.getByText("No registrations match the current filters.")).toBeInTheDocument();
         expect(screen.getByText("No results")).toBeInTheDocument();
@@ -349,7 +409,7 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("cancelled@example.com");
 
-        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Reconfirmed");
+        await toggleFilterOption(user, "Status", "Reconfirmed");
 
         expect(screen.queryByText("cancelled@example.com")).not.toBeInTheDocument();
         expect(screen.queryByText("registered@example.com")).not.toBeInTheDocument();
@@ -378,7 +438,7 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("checked-in-filter@example.com");
 
-        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Checked in");
+        await toggleFilterOption(user, "Status", "Checked in");
 
         expect(screen.getByText("checked-in-filter@example.com")).toBeInTheDocument();
         expect(screen.queryByText("registered-filter@example.com")).not.toBeInTheDocument();
@@ -411,7 +471,7 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("cancelled2@example.com");
 
-        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Registered");
+        await toggleFilterOption(user, "Status", "Registered");
 
         expect(screen.queryByText("cancelled2@example.com")).not.toBeInTheDocument();
         expect(screen.queryByText("reconfirmed2@example.com")).not.toBeInTheDocument();
@@ -440,7 +500,7 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("cancelled3@example.com");
 
-        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Cancelled");
+        await toggleFilterOption(user, "Status", "Cancelled");
 
         expect(screen.getByText("cancelled3@example.com")).toBeInTheDocument();
         expect(screen.queryByText("registered3@example.com")).not.toBeInTheDocument();
@@ -453,7 +513,7 @@ describe("RegistrationsPage", () => {
         renderPage();
         await screen.findByText("ada@example.com");
 
-        expect(screen.getByRole("combobox", { name: "Status" })).toHaveTextContent("All statuses");
+        expect(screen.getByRole("button", { name: "Status" })).toHaveTextContent("All statuses");
         expect(screen.getByText("ada@example.com")).toBeInTheDocument();
         expect(screen.getByText("bob@example.com")).toBeInTheDocument();
     });
