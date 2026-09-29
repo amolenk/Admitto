@@ -47,6 +47,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetPub
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetTicketTypes.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.GetWaitlistDetails.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteWaitlistEntry.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.RemoveWaitlistEntry.AdminApi;
 
 namespace Amolenk.Admitto.Core.Registrations;
@@ -112,6 +113,7 @@ public static class RegistrationsModule
             .MapGroup("/ticket-types/{ticketTypeId:guid}")
             .WithTags("Admin - Waitlist")
             .MapRemoveWaitlistEntry()
+            .MapPromoteWaitlistEntry()
             .MapGetWaitlistDetails();
 
         return group;

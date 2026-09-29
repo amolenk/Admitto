@@ -367,7 +367,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         }
     }
 
-    private TicketType FindTicketType(TicketTypeId id)
+    public TicketType FindTicketType(TicketTypeId id)
     {
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == id);
         if (ticketType is null)

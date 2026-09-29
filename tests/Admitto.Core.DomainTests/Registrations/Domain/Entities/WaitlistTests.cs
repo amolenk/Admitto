@@ -394,6 +394,132 @@ public sealed class WaitlistTests
         sut.Coupons.ShouldBeEmpty();
     }
 
+    // Given a waitlist with three active entries
+    // When a coupon is issued to the middle entry
+    // Then that entry leaves the queue, the others are renumbered, and the coupon goes to that attendee
+    [TestMethod]
+    public void IssueCouponToEntry_MidQueueEntry_RemovesEntryRenumbersAndReturnsCoupon()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var now = DateTimeOffset.UtcNow;
+        sut.AddEntry(EmailAddress.From("first@example.com"), now);
+        sut.AddEntry(EmailAddress.From("second@example.com"), now.AddMinutes(1));
+        sut.AddEntry(EmailAddress.From("third@example.com"), now.AddMinutes(2));
+        var target = sut.Entries.Single(e => e.Email.Value == "second@example.com");
+
+        // Act
+        var result = sut.IssueCouponToEntry(target.Id, CreateTicketedEvent(), CreateTicketType(), now);
+
+        // Assert
+        result.Email.Value.ShouldBe("second@example.com");
+        result.Source.ShouldBe(CouponSource.Waitlist);
+        result.AllowedTicketTypeIds.ShouldBe([DefaultTicketTypeId]);
+        target.Status.ShouldBe(WaitlistEntryStatus.Removed);
+        sut.GetActivePosition(EmailAddress.From("first@example.com")).ShouldBe(1);
+        sut.GetActivePosition(EmailAddress.From("third@example.com")).ShouldBe(2);
+        sut.Coupons.ShouldHaveSingleItem().Id.ShouldBe(result.Id);
+    }
+
+    // Given a waitlist with an active entry
+    // When a coupon is issued to that specific entry
+    // Then a WaitlistCouponIssued domain event is raised with the recipient, coupon code, ticket type name, and expiry
+    [TestMethod]
+    public void IssueCouponToEntry_ActiveEntry_RaisesWaitlistCouponIssuedDomainEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("vip@example.com");
+        sut.AddEntry(EmailAddress.From("first@example.com"), DateTimeOffset.UtcNow);
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
+        sut.ClearDomainEvents();
+        var ticketType = CreateTicketType();
+        var entryId = sut.Entries.Single(e => e.Email == email).Id;
+
+        // Act
+        var result = sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow);
+
+        // Assert
+        sut.GetDomainEvents()
+            .OfType<WaitlistCouponIssuedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(
+                e => e.TeamId.ShouldBe(DefaultTeamId),
+                e => e.TicketedEventId.ShouldBe(DefaultEventId),
+                e => e.TicketTypeId.ShouldBe(DefaultTicketTypeId),
+                e => e.RecipientEmail.ShouldBe(email),
+                e => e.CouponCode.ShouldBe(result.Code),
+                e => e.TicketTypeName.ShouldBe(ticketType.Name.Value),
+                e => e.ExpiresAt.ShouldBe(result.ExpiresAt));
+    }
+
+    // Given the current time falls inside the event's quiet hours
+    // When a coupon is issued to a specific entry
+    // Then its expiry uses the same claim-window calculation as front-of-queue promotion
+    [TestMethod]
+    public void IssueCouponToEntry_DuringQuietHours_UsesClaimWindowCalculation()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("vip@example.com"), DateTimeOffset.UtcNow);
+        var ticketedEvent = CreateTicketedEvent();
+        var ticketType = CreateTicketType();
+        var now = new DateTimeOffset(2026, 6, 15, 23, 0, 0, TimeSpan.Zero);
+        var expected = WaitlistClaimWindowCalculator.ComputeExpiresAt(
+            now,
+            ticketedEvent.TimeZone,
+            ticketedEvent.WaitlistPolicy.QuietHoursStart,
+            ticketedEvent.WaitlistPolicy.QuietHoursEnd,
+            ticketType.ClaimWindowHours);
+
+        // Act
+        var result = sut.IssueCouponToEntry(sut.Entries.Single().Id, ticketedEvent, ticketType, now);
+
+        // Assert
+        result.ExpiresAt.ShouldBe(expected);
+    }
+
+    // Given an entry that has already left the waitlist
+    // When a coupon is issued to that entry
+    // Then it throws the entry-not-active error and issues no coupon
+    [TestMethod]
+    public void IssueCouponToEntry_RemovedEntry_ThrowsEntryNotActive()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("vip@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
+        var entryId = sut.Entries.Single().Id;
+        sut.RemoveEntry(email);
+        sut.ClearDomainEvents();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow));
+
+        // Assert
+        result.Error.ShouldMatch(Waitlist.Errors.EntryNotActive);
+        sut.Coupons.ShouldBeEmpty();
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    // Given a waitlist without the requested entry
+    // When a coupon is issued to that entry
+    // Then it throws the entry-not-active error
+    [TestMethod]
+    public void IssueCouponToEntry_UnknownEntry_ThrowsEntryNotActive()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.IssueCouponToEntry(WaitlistEntryId.New(), CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow));
+
+        // Assert
+        result.Error.ShouldMatch(Waitlist.Errors.EntryNotActive);
+    }
+
     // Given a coupon that has already been redeemed
     // When redemption is attempted again
     // Then it throws a business rule violation instead of silently overwriting

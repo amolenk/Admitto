@@ -110,7 +110,7 @@ public class Waitlist : Aggregate<TicketTypeId>
     // }
 
     /// <summary>
-    /// Issues a coupon to the top-ranked active waitlist entry and removes that entry from the.
+    /// Issues a coupon to the top-ranked active waitlist entry and removes that entry from the queue.
     /// Returns <c>null</c> when there are no active entries.
     /// </summary>
     public Coupon? IssueNextCoupon(
@@ -118,21 +118,41 @@ public class Waitlist : Aggregate<TicketTypeId>
         TicketType ticketType,
         DateTimeOffset utcNow)
     {
-        // TODO PopNextEntry
         var entry = _entries
             .Where(e => e.Status == WaitlistEntryStatus.Active)
             .MinBy(e => e.Position);
 
-        if (entry is null)
-            return null;
+        return entry is null ? null : IssueCoupon(entry, ticketedEvent, ticketType, utcNow);
+    }
 
+    /// <summary>
+    /// Issues a coupon to one specific active waitlist entry, regardless of its queue position (e.g. a VIP
+    /// promotion by an organizer), and removes that entry from the queue.
+    /// </summary>
+    public Coupon IssueCouponToEntry(
+        WaitlistEntryId entryId,
+        TicketedEvent ticketedEvent,
+        TicketType ticketType,
+        DateTimeOffset utcNow)
+    {
+        var entry = _entries.FirstOrDefault(e => e.Id == entryId && e.Status == WaitlistEntryStatus.Active);
+        if (entry is null)
+            throw new BusinessRuleViolationException(Errors.EntryNotActive);
+
+        return IssueCoupon(entry, ticketedEvent, ticketType, utcNow);
+    }
+
+    private Coupon IssueCoupon(
+        WaitlistEntry entry,
+        TicketedEvent ticketedEvent,
+        TicketType ticketType,
+        DateTimeOffset utcNow)
+    {
         entry.Remove();
         RenumberPositions();
-        // END TODO
 
-        var now = utcNow;
         var expiresAt = WaitlistClaimWindowCalculator.ComputeExpiresAt(
-            now,
+            utcNow,
             ticketedEvent.TimeZone,
             ticketedEvent.WaitlistPolicy.QuietHoursStart,
             ticketedEvent.WaitlistPolicy.QuietHoursEnd,
@@ -146,10 +166,10 @@ public class Waitlist : Aggregate<TicketTypeId>
             expiresAt,
             bypassRegistrationWindow: true,
             [new TicketTypeInfo(ticketType.Id)],
-            now,
+            utcNow,
             CouponSource.Waitlist);
 
-        _coupons.Add(new WaitlistCoupon(coupon.Id, now));
+        _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow));
 
         AddDomainEvent(new WaitlistCouponIssuedDomainEvent(
             TeamId, EventId, ticketType.Id, entry.Email, coupon.Code, ticketType.Name.Value, expiresAt));
@@ -250,6 +270,11 @@ public class Waitlist : Aggregate<TicketTypeId>
             "waitlist.entry_not_found",
             "The waitlist entry could not be found.",
             Type: ErrorType.NotFound);
+
+        public static readonly Error EntryNotActive = new(
+            "waitlist.entry_not_active",
+            "The waitlist entry is no longer active on this waitlist.",
+            Type: ErrorType.Conflict);
 
         public static readonly Error CouponNotFound = new(
             "waitlist.coupon_not_found",
