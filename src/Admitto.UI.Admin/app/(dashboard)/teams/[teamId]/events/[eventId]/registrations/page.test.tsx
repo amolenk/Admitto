@@ -524,6 +524,64 @@ describe("RegistrationsPage", () => {
         expect(screen.queryByText("registered3@example.com")).not.toBeInTheDocument();
     });
 
+    // Given a purely-waitlisted registration
+    // When the status column renders
+    // Then it shows "Waitlisted"
+    it("shows Waitlisted for a waitlisted registration", async () => {
+        mockData({
+            registrations: [
+                registrationListItemDto({
+                    id: "r-waitlisted",
+                    email: "waitlisted@example.com",
+                    status: "waitlisted",
+                    hasReconfirmed: false,
+                }),
+            ],
+        });
+
+        renderPage();
+
+        const row = (await screen.findByText("waitlisted@example.com")).closest("tr") as HTMLElement;
+        expect(within(row).getByText("Waitlisted")).toBeInTheDocument();
+    });
+
+    // Given the Status filter dropdown
+    // When it is opened
+    // Then "Waitlisted" is a selectable option
+    it("offers Waitlisted as a status filter option", async () => {
+        const { user } = renderPage();
+        await screen.findByText("ada@example.com");
+
+        await user.click(screen.getByRole("button", { name: "Status" }));
+
+        expect(await screen.findByRole("menuitemcheckbox", { name: "Waitlisted" })).toBeInTheDocument();
+    });
+
+    // Given a waitlisted registration and a plain registered one
+    // When the Status filter is set to "Waitlisted"
+    // Then only the waitlisted row remains
+    it("narrows rows to only Waitlisted with the status filter", async () => {
+        const waitlisted = registrationListItemDto({
+            id: "r-waitlisted-filter",
+            email: "waitlisted-filter@example.com",
+            status: "waitlisted",
+        });
+        const registered = registrationListItemDto({
+            id: "r-registered-filter-wl",
+            email: "registered-filter-wl@example.com",
+            status: "registered",
+        });
+        mockData({ registrations: [waitlisted, registered] });
+
+        const { user } = renderPage();
+        await screen.findByText("waitlisted-filter@example.com");
+
+        await toggleFilterOption(user, "Status", "Waitlisted");
+
+        expect(screen.getByText("waitlisted-filter@example.com")).toBeInTheDocument();
+        expect(screen.queryByText("registered-filter-wl@example.com")).not.toBeInTheDocument();
+    });
+
     // Given the Status filter defaults to "All statuses"
     // When no filter is applied
     // Then rows of every status remain visible

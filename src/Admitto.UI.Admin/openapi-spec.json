@@ -6289,7 +6289,7 @@
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
+                  "$ref": "#/components/schemas/RegisterAttendeeSelfServiceTicketStateConflictProblemDetails"
                 }
               }
             }
@@ -8716,6 +8716,7 @@
           "status",
           "ticketTypeIds",
           "tickets",
+          "waitlistedTicketTypes",
           "additionalDetails"
         ],
         "type": "object",
@@ -8747,6 +8748,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PartnerTicketDetailDto"
+            }
+          },
+          "waitlistedTicketTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartnerWaitlistedTicketTypeDto"
             }
           },
           "additionalDetails": {
@@ -8817,6 +8824,27 @@
             "items": {
               "$ref": "#/components/schemas/PartnerAdditionalDetailFieldDto"
             }
+          }
+        }
+      },
+      "PartnerWaitlistedTicketTypeDto": {
+        "required": [
+          "ticketTypeId",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketTypeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -9348,7 +9376,8 @@
       "RegistrationStatus": {
         "enum": [
           "registered",
-          "cancelled"
+          "cancelled",
+          "waitlisted"
         ]
       },
       "RenameBadgeTypeHttpRequest": {
@@ -9908,7 +9937,8 @@
         "required": [
           "firstName",
           "lastName",
-          "ticketTypeIds"
+          "registerTicketTypeIds",
+          "waitlistTicketTypeIds"
         ],
         "type": "object",
         "properties": {
@@ -9918,7 +9948,17 @@
           "lastName": {
             "type": "string"
           },
-          "ticketTypeIds": {
+          "registerTicketTypeIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "waitlistTicketTypeIds": {
             "type": [
               "null",
               "array"

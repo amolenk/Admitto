@@ -63,15 +63,34 @@ function attendeeSortKey(r: RegistrationListItemDto) {
     return [r.lastName ?? "", r.firstName ?? "", r.email].join(" ").toLowerCase();
 }
 
-type DisplayStatus = "cancelled" | "reconfirmed" | "checkedIn" | "registered";
+type DisplayStatus = "cancelled" | "waitlisted" | "reconfirmed" | "checkedIn" | "registered";
 
-/** Cancelled > Checked in > Reconfirmed > Registered, matching the attendee detail page badge. */
+/** Cancelled > Waitlisted > Checked in > Reconfirmed > Registered, matching the attendee detail page badge. */
 function displayStatus(r: RegistrationListItemDto): DisplayStatus {
     if (r.status === "cancelled") return "cancelled";
+    if (r.status === "waitlisted") return "waitlisted";
     if (r.checkedInAt) return "checkedIn";
     if (r.hasReconfirmed) return "reconfirmed";
     return "registered";
 }
+
+/** Single source of truth for how each display status is labelled and badge-styled. */
+const STATUS_PRESENTATION: Record<DisplayStatus, { label: string; badgeClassName: string }> = {
+    registered: { label: "Registered", badgeClassName: "text-success border-success/30 bg-success/10" },
+    waitlisted: { label: "Waitlisted", badgeClassName: "text-warning border-warning/30 bg-warning/10" },
+    reconfirmed: { label: "Reconfirmed", badgeClassName: "text-primary border-primary/30 bg-primary/10" },
+    checkedIn: { label: "Checked in", badgeClassName: "text-success border-success/30 bg-success/10" },
+    cancelled: { label: "Cancelled", badgeClassName: "text-muted-foreground border-muted-foreground/30 bg-muted" },
+};
+
+/** Filter/badge order: Registered, Waitlisted, Reconfirmed, Checked in, Cancelled. */
+const STATUS_FILTER_OPTIONS: DisplayStatus[] = [
+    "registered",
+    "waitlisted",
+    "reconfirmed",
+    "checkedIn",
+    "cancelled",
+];
 
 /** The timestamp matching the row's currently displayed status. */
 function displayDate(r: RegistrationListItemDto): string {
@@ -255,12 +274,10 @@ export default function RegistrationsPage() {
                     <MultiSelectFilter
                         ariaLabel="Status"
                         allLabel="All statuses"
-                        options={[
-                            { value: "registered", label: "Registered" },
-                            { value: "reconfirmed", label: "Reconfirmed" },
-                            { value: "checkedIn", label: "Checked in" },
-                            { value: "cancelled", label: "Cancelled" },
-                        ]}
+                        options={STATUS_FILTER_OPTIONS.map((value) => ({
+                            value,
+                            label: STATUS_PRESENTATION[value].label,
+                        }))}
                         selected={statusFilter}
                         onChange={(values) => {
                             setStatusFilter(values);
@@ -334,23 +351,9 @@ export default function RegistrationsPage() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {status === "cancelled" ? (
-                                                        <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
-                                                            Cancelled
-                                                        </Badge>
-                                                    ) : status === "reconfirmed" ? (
-                                                        <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10">
-                                                            Reconfirmed
-                                                        </Badge>
-                                                    ) : status === "checkedIn" ? (
-                                                        <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-                                                            Checked in
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-                                                            Registered
-                                                        </Badge>
-                                                    )}
+                                                    <Badge variant="outline" className={STATUS_PRESENTATION[status].badgeClassName}>
+                                                        {STATUS_PRESENTATION[status].label}
+                                                    </Badge>
                                                 </TableCell>
                                                 <TableCell className="hidden sm:table-cell font-mono tabular-nums text-xs">
                                                     {new Date(displayDate(r)).toLocaleString(undefined, { hour12: false })}
