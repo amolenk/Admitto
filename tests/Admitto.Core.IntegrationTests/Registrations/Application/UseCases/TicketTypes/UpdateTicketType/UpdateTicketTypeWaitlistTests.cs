@@ -1,4 +1,8 @@
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetPartnerRegistrationDetails;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.DisableWaitlist;
@@ -194,6 +198,76 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         result.Status.ShouldBe(RegistrationStatus.Waitlisted);
         result.TicketTypeIds.ShouldBeEmpty();
         result.WaitlistedTicketTypes.ShouldBeEmpty();
+    }
+
+    // Given a registration with a confirmed Workshop ticket that is also waiting for the Conference Pass
+    // When the Conference Pass waitlist is disabled and an organizer later adds a Dinner ticket to the registration
+    // Then the ticket-changed email lists Workshop and Dinner as confirmed and no longer mentions the Conference Pass
+    [TestMethod]
+    public async ValueTask UpdateTicketType_WaitlistDisabled_LaterAdminTicketChangeEmailOmitsRemovedWaitlistedTicketType()
+    {
+        var fixture = UpdateTicketTypeWaitlistFixture.WithMixedRegistration();
+        await fixture.SetupAsync(Environment);
+        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity, waitlistEnabled: false);
+        Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
+
+        await new ChangeAttendeeTicketsHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System)
+            .HandleAsync(
+                new ChangeAttendeeTicketsCommand(
+                    fixture.EventId.Value,
+                    fixture.TeamId.Value,
+                    fixture.MixedRegistrationId.Value,
+                    [fixture.WorkshopTicketTypeId.Value, fixture.DinnerTicketTypeId.Value],
+                    ChangeMode.Admin),
+                testContext.CancellationToken);
+
+        await AssertTicketChangedEmailOmitsConferencePassAsync(fixture);
+    }
+
+    // Given a registration with a confirmed Workshop ticket that is also waiting for the Conference Pass
+    // When the Conference Pass waitlist is disabled and the attendee later adds a Dinner ticket themselves
+    // Then the ticket-changed email lists Workshop and Dinner as confirmed and no longer mentions the Conference Pass
+    [TestMethod]
+    public async ValueTask UpdateTicketType_WaitlistDisabled_LaterSelfServiceUpdateEmailOmitsRemovedWaitlistedTicketType()
+    {
+        var fixture = UpdateTicketTypeWaitlistFixture.WithMixedRegistration();
+        await fixture.SetupAsync(Environment);
+        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity, waitlistEnabled: false);
+        Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
+
+        await new UpdatePartnerRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System)
+            .HandleAsync(
+                new UpdatePartnerRegistrationCommand(
+                    fixture.EventId.Value,
+                    fixture.TeamId.Value,
+                    fixture.MixedRegistrationId.Value,
+                    "Alice",
+                    "Doe",
+                    [fixture.WorkshopTicketTypeId.Value, fixture.DinnerTicketTypeId.Value],
+                    []),
+                testContext.CancellationToken);
+
+        await AssertTicketChangedEmailOmitsConferencePassAsync(fixture);
+    }
+
+    private async ValueTask AssertTicketChangedEmailOmitsConferencePassAsync(UpdateTicketTypeWaitlistFixture fixture)
+    {
+        var registration = await Environment.RegistrationsDatabase.Context.Registrations
+            .FirstAsync(r => r.Id == fixture.MixedRegistrationId, testContext.CancellationToken);
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<TicketsChangedDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.OldWaitlistedTickets.ShouldBeEmpty();
+        domainEvent.NewWaitlistedTickets.ShouldBeEmpty();
+
+        var delivery = await TicketConfirmationEmailPipeline.PrepareAsync(
+            Environment, fixture.TeamId, fixture.EventId, domainEvent, testContext.CancellationToken);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.TextBody.ShouldContain("- Workshop");
+        delivery.TextBody.ShouldContain("- Dinner");
+        delivery.TextBody.ShouldNotContain("Conference Pass");
+        delivery.TextBody.ShouldNotContain("You're on the waitlist for:");
     }
 
     private async ValueTask UpdateTicketTypeAsync(

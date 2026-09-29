@@ -15,14 +15,18 @@ internal sealed class UpdateTicketTypeWaitlistFixture
     private int _waitingCount;
     private bool _withOutstandingCoupon;
     private bool _withWaitlistedRegistration;
+    private bool _withMixedRegistration;
 
     public TeamId TeamId { get; } = TeamId.New();
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
+    public TicketTypeId WorkshopTicketTypeId { get; } = TicketTypeId.New();
+    public TicketTypeId DinnerTicketTypeId { get; } = TicketTypeId.New();
     public const int MaxCapacity = 1;
     public static EmailAddress OfferedEmail { get; } = EmailAddress.From("offered@example.com");
     public Guid OutstandingCouponCode { get; private set; }
     public RegistrationId WaitlistedRegistrationId { get; private set; }
+    public RegistrationId MixedRegistrationId { get; private set; }
 
     public static EmailAddress WaitingEmail(int position) => EmailAddress.From($"attendee{position}@example.com");
 
@@ -47,6 +51,13 @@ internal sealed class UpdateTicketTypeWaitlistFixture
     /// </summary>
     public static UpdateTicketTypeWaitlistFixture WithWaitlistedRegistration() =>
         new() { _waitingCount = 2, _withWaitlistedRegistration = true };
+
+    /// <summary>
+    /// The first waiting attendee holds a <see cref="RegistrationStatus.Registered"/> registration with a confirmed
+    /// Workshop ticket while waiting for the Conference Pass. A Dinner ticket type with free capacity is also on sale.
+    /// </summary>
+    public static UpdateTicketTypeWaitlistFixture WithMixedRegistration() =>
+        new() { _waitingCount = 2, _withMixedRegistration = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -73,6 +84,11 @@ internal sealed class UpdateTicketTypeWaitlistFixture
                 TicketTypeId, TicketTypeName.From("Conference Pass"), [], MaxCapacity, waitlistEnabled: true);
             for (var i = 0; i < MaxCapacity; i++)
                 catalog.Claim([TicketTypeId], ClaimMode.Public); // sells out → WaitlistMode
+            catalog.AddTicketType(WorkshopTicketTypeId, TicketTypeName.From("Workshop"), [], 10);
+            catalog.AddTicketType(DinnerTicketTypeId, TicketTypeName.From("Dinner"), [], 10);
+            var workshopTickets = _withMixedRegistration
+                ? catalog.Claim([WorkshopTicketTypeId], ClaimMode.Public)
+                : [];
             catalog.ClearDomainEvents();
             dbContext.TicketCatalogs.Add(catalog);
 
@@ -106,6 +122,21 @@ internal sealed class UpdateTicketTypeWaitlistFixture
                     waitlistedTickets: [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("Conference Pass"), [])]);
                 registration.ClearDomainEvents();
                 WaitlistedRegistrationId = registration.Id;
+                dbContext.Registrations.Add(registration);
+            }
+
+            if (_withMixedRegistration)
+            {
+                var registration = Registration.Create(
+                    TeamId,
+                    EventId,
+                    WaitingEmail(1),
+                    FirstName.From("Alice"),
+                    LastName.From("Doe"),
+                    workshopTickets,
+                    waitlistedTickets: [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("Conference Pass"), [])]);
+                registration.ClearDomainEvents();
+                MixedRegistrationId = registration.Id;
                 dbContext.Registrations.Add(registration);
             }
         });
