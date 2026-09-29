@@ -814,4 +814,119 @@ public sealed class WaitlistTests
         sut.Coupons.ShouldBeEmpty();
         sut.GetDomainEvents().ShouldBeEmpty();
     }
+
+    // Given a waitlist with three active entries
+    // When coupons are issued to every entry (the capacity limit was removed)
+    // Then each attendee receives a coupon and offer email in queue order and nobody is left waiting
+    [TestMethod]
+    public void IssueCouponsToAllEntries_ActiveEntries_IssuesCouponToEveryEntryInQueueOrder()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var now = DateTimeOffset.UtcNow;
+        sut.AddEntry(EmailAddress.From("first@example.com"), now);
+        sut.AddEntry(EmailAddress.From("second@example.com"), now.AddMinutes(1));
+        sut.AddEntry(EmailAddress.From("third@example.com"), now.AddMinutes(2));
+        sut.ClearDomainEvents();
+
+        // Act
+        var coupons = sut.IssueCouponsToAllEntries(CreateTicketedEvent(), CreateTicketType(), now);
+
+        // Assert
+        coupons.Select(c => c.Email.Value).ShouldBe(["first@example.com", "second@example.com", "third@example.com"]);
+        sut.ActiveEntryCount.ShouldBe(0);
+        sut.IssuedCouponCount.ShouldBe(3);
+        sut.GetDomainEvents().OfType<WaitlistCouponIssuedDomainEvent>().Count().ShouldBe(3);
+        sut.GetDomainEvents().OfType<WaitlistExhaustedDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a waitlist with no active entries
+    // When coupons are issued to every entry
+    // Then no coupon is issued
+    [TestMethod]
+    public void IssueCouponsToAllEntries_NoActiveEntries_IssuesNothing()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+
+        // Act
+        var coupons = sut.IssueCouponsToAllEntries(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
+
+        // Assert
+        coupons.ShouldBeEmpty();
+        sut.Coupons.ShouldBeEmpty();
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    // Given a waitlist with three active entries and an outstanding coupon
+    // When the waitlist is disabled with one freed slot
+    // Then the front entry receives a coupon, the rest are removed without an offer, and the outstanding coupon stays issued
+    [TestMethod]
+    public void Disable_WithFreedSlot_OffersFrontEntryThenRemovesTheRest()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var outstanding = IssueCoupon(sut);
+        var now = DateTimeOffset.UtcNow;
+        sut.AddEntry(EmailAddress.From("first@example.com"), now);
+        sut.AddEntry(EmailAddress.From("second@example.com"), now.AddMinutes(1));
+        sut.AddEntry(EmailAddress.From("third@example.com"), now.AddMinutes(2));
+        sut.ClearDomainEvents();
+
+        // Act
+        var coupons = sut.Disable(freedSlots: 1, CreateTicketedEvent(), CreateTicketType(), now);
+
+        // Assert
+        coupons.ShouldHaveSingleItem().Email.Value.ShouldBe("first@example.com");
+        sut.ActiveEntryCount.ShouldBe(0);
+        sut.Coupons.Single(c => c.Id == outstanding.Id).Status.ShouldBe(WaitlistCouponStatus.Issued);
+        sut.IssuedCouponCount.ShouldBe(2);
+        sut.GetDomainEvents().OfType<WaitlistCouponIssuedDomainEvent>()
+            .ShouldHaveSingleItem().RecipientEmail.Value.ShouldBe("first@example.com");
+        sut.GetDomainEvents().OfType<WaitlistEntryRemovedDomainEvent>()
+            .Select(e => e.Email.Value)
+            .ShouldBe(["second@example.com", "third@example.com"], ignoreOrder: true);
+    }
+
+    // Given a waitlist with two active entries and no outstanding coupons
+    // When the waitlist is disabled with no freed slots
+    // Then every entry is removed, no coupon is issued, and the waitlist reports it is exhausted
+    [TestMethod]
+    public void Disable_NoFreedSlotsAndNoOutstandingCoupons_RemovesEveryEntryAndRaisesExhausted()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var now = DateTimeOffset.UtcNow;
+        sut.AddEntry(EmailAddress.From("first@example.com"), now);
+        sut.AddEntry(EmailAddress.From("second@example.com"), now.AddMinutes(1));
+        sut.ClearDomainEvents();
+
+        // Act
+        var coupons = sut.Disable(freedSlots: 0, CreateTicketedEvent(), CreateTicketType(), now);
+
+        // Assert
+        coupons.ShouldBeEmpty();
+        sut.Entries.ShouldAllBe(e => e.Status == WaitlistEntryStatus.Removed);
+        sut.Coupons.ShouldBeEmpty();
+        sut.GetDomainEvents().OfType<WaitlistCouponIssuedDomainEvent>().ShouldBeEmpty();
+        sut.GetDomainEvents().OfType<WaitlistExhaustedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    // Given a waitlist with one active entry
+    // When the waitlist is disabled with more freed slots than entries
+    // Then only that entry receives a coupon
+    [TestMethod]
+    public void Disable_MoreFreedSlotsThanEntries_IssuesOneCouponPerEntry()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("first@example.com"), DateTimeOffset.UtcNow);
+
+        // Act
+        var coupons = sut.Disable(freedSlots: 3, CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
+
+        // Assert
+        coupons.ShouldHaveSingleItem();
+        sut.ActiveEntryCount.ShouldBe(0);
+    }
 }

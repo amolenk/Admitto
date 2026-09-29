@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.DisableWaitlist;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteWaitlistEntry;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -143,6 +145,30 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             await context.SaveChangesAsync(cancellationToken);
             context.ChangeTracker.Clear();
         }
+    }
+
+    /// <summary>
+    /// Has the organizer explicitly disable the ticket type's waitlist (keeping its capacity), applying the
+    /// resulting <c>WaitlistDisabledDomainEvent</c> through the real handler: everyone still waiting is removed,
+    /// outstanding coupons stay issued.
+    /// </summary>
+    public async ValueTask DisableWaitlistAsync(
+        IntegrationTestEnvironment environment,
+        CancellationToken cancellationToken = default)
+    {
+        var context = environment.RegistrationsDatabase.Context;
+        var capacity = Math.Max(CouponsToIssue, 1);
+
+        await new UpdateTicketTypeHandler(context).HandleAsync(
+            new UpdateTicketTypeCommand(
+                EventId.Value, TeamId.Value, TicketTypeId.Value, Name: null, MaxCapacity: capacity, WaitlistEnabled: false),
+            cancellationToken);
+        await new DisableWaitlistHandler(context, TimeProvider.System).HandleAsync(
+            new DisableWaitlistCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: 0),
+            cancellationToken);
+
+        await context.SaveChangesAsync(cancellationToken);
+        context.ChangeTracker.Clear();
     }
 
     /// <summary>

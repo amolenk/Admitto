@@ -302,6 +302,38 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         });
     }
 
+    // Given an unclaimed waitlist offer on a ticket type whose waitlist the organizer has since disabled
+    // When the offer lapses and the process-expired-waitlist-coupons job runs
+    // Then the coupon is expired and its recipient still gets the expired-offer email, but nobody else is offered
+    [TestMethod]
+    public async ValueTask Execute_WhenCouponExpiresAfterWaitlistDisabled_RaisesExpiredOfferEventWithoutCascading()
+    {
+        // Arrange — one offer outstanding and one person waiting when the waitlist is disabled
+        var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithTwoEntriesOnePendingCoupon();
+        await fixture.SetupAsync(Environment, activeEntriesAfterCoupon: 1, testContext.CancellationToken);
+        await fixture.DisableWaitlistAsync(Environment, testContext.CancellationToken);
+        await fixture.BackdateCouponExpiryAsync(Environment, TimeSpan.FromMinutes(10), testContext.CancellationToken);
+
+        // Act
+        await CreateJob().Execute(QuartzContext());
+
+        // Assert
+        var waitlist = await Environment.RegistrationsDatabase.Context.Waitlists
+            .FirstAsync(w => w.Id == fixture.TicketTypeId, testContext.CancellationToken);
+        waitlist.GetDomainEvents()
+            .OfType<WaitlistCouponExpiredDomainEvent>()
+            .ShouldHaveSingleItem()
+            .RecipientEmail.Value.ShouldBe("attendee1@example.com");
+        waitlist.GetDomainEvents().OfType<WaitlistCouponIssuedDomainEvent>().ShouldBeEmpty();
+
+        await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
+        {
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldHaveSingleItem().Value.ShouldBe(WaitlistCouponStatus.Expired);
+            (await ctx.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(1);
+        });
+    }
+
     // ─── helpers ───────────────────────────────────────────────────────────────
 
     private ProcessExpiredWaitlistCouponsJob CreateJob() =>

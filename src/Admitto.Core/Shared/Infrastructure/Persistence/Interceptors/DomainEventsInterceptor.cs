@@ -16,7 +16,14 @@ public sealed class DomainEventsInterceptor(IServiceProvider serviceProvider) : 
         Dispatchers = new();
 
     /// <summary>
-    /// When saving, dispatches all pending domain events to all registered handlers.
+    /// Upper bound on dispatch rounds, guarding against handlers that keep raising events for each other.
+    /// </summary>
+    private const int MaxDispatchRounds = 10;
+
+    /// <summary>
+    /// When saving, dispatches all pending domain events to all registered handlers. Handlers may load further
+    /// aggregates and raise new events on them (e.g. a ticket type update that issues waitlist coupons), so
+    /// dispatching repeats until no tracked entity has pending events.
     /// </summary>
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -26,19 +33,31 @@ public sealed class DomainEventsInterceptor(IServiceProvider serviceProvider) : 
         var dbContext = eventData.Context;
         if (dbContext is null) return result;
 
-        foreach (var entry in dbContext.ChangeTracker.Entries().ToList())
+        for (var round = 0; ; round++)
         {
-            if (entry.Entity is not IDomainEventsProvider provider) continue;
+            var providers = dbContext.ChangeTracker.Entries()
+                .Select(entry => entry.Entity)
+                .OfType<IDomainEventsProvider>()
+                .Where(provider => provider.GetDomainEvents().Count > 0)
+                .ToList();
 
-            var events = provider.GetDomainEvents().ToArray();
-            if (events.Length == 0) continue;
+            if (providers.Count == 0) break;
 
-            foreach (var domainEvent in events)
+            if (round == MaxDispatchRounds)
+                throw new InvalidOperationException(
+                    $"Domain events were still being raised after {MaxDispatchRounds} dispatch rounds.");
+
+            foreach (var provider in providers)
             {
-                await PublishDomainEventAsync(domainEvent, cancellationToken);
-            }
+                // Clear before dispatching, so events a handler raises on this same entity go to the next round.
+                var events = provider.GetDomainEvents().ToArray();
+                provider.ClearDomainEvents();
 
-            provider.ClearDomainEvents();
+                foreach (var domainEvent in events)
+                {
+                    await PublishDomainEventAsync(domainEvent, cancellationToken);
+                }
+            }
         }
 
         return result;

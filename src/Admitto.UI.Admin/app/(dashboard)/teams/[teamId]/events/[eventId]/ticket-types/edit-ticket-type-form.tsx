@@ -3,7 +3,7 @@
 import { useState } from "react";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     AlertDialog,
@@ -84,9 +84,13 @@ export function EditTicketTypeForm({
     const [showDisableWaitlistConfirm, setShowDisableWaitlistConfirm] = useState(false);
     const [pendingSubmitValues, setPendingSubmitValues] = useState<EditValues | null>(null);
 
+    // A waitlist only has people waiting while the ticket type is in waitlist mode. Removing the capacity
+    // limit also switches the waitlist off, but then everyone waiting receives an offer instead.
+    const hasPeopleWaiting = ticketType.waitlistEnabled && ticketType.waitlistMode;
+
     async function onSubmit(values: EditValues) {
         const isDisablingActiveWaitlist =
-            ticketType.waitlistMode && !values.waitlistEnabled && ticketType.waitlistEnabled;
+            hasPeopleWaiting && values.limitCapacity && !values.waitlistEnabled;
 
         if (isDisablingActiveWaitlist) {
             setPendingSubmitValues(values);
@@ -121,9 +125,8 @@ export function EditTicketTypeForm({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Disable waitlist?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This ticket type currently has an active waitlist. Disabling the waitlist will
-                            immediately revoke all pending claim coupons and remove all waiting entries.
-                            This action cannot be undone.
+                            Disabling the waitlist removes everyone who is still waiting. You&apos;ll need to
+                            inform them yourself. Offers already sent stay valid until they expire.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -200,6 +203,16 @@ export function EditTicketTypeForm({
                                     </FormItem>
                                 )}
                             />
+                            {!limitCapacity && hasPeopleWaiting && (
+                                <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertTitle>Everyone waiting will receive an offer</AlertTitle>
+                                    <AlertDescription>
+                                        Without a capacity limit there is room for everyone, so the waitlist is
+                                        switched off and everyone waiting will receive an offer.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             {limitCapacity && (
                                 <FormField
                                     control={form.control}

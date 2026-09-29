@@ -828,9 +828,9 @@ public sealed class TicketCatalogTests
 
     // Given a ticket type currently in waitlist mode
     // When waitlist is disabled for it via an update
-    // Then waitlist mode is forced off and a WaitlistForcedDisabled event is raised
+    // Then waitlist mode is switched off and a WaitlistDisabled event is raised with no freed slots
     [TestMethod]
-    public void UpdateTicketType_DisableWaitlistWhileInWaitlistMode_ForcesDisableAndRaisesEvent()
+    public void UpdateTicketType_DisableWaitlistWhileInWaitlistMode_RaisesWaitlistDisabledEvent()
     {
         // Arrange — waitlist mode active
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
@@ -845,18 +845,66 @@ public sealed class TicketCatalogTests
         var tt = sut.GetTicketType(id)!;
         tt.WaitlistEnabled.ShouldBeFalse();
         tt.WaitlistMode.ShouldBeFalse();
-        sut.GetDomainEvents().OfType<WaitlistForcedDisabledDomainEvent>()
+        var evt = sut.GetDomainEvents().OfType<WaitlistDisabledDomainEvent>().ShouldHaveSingleItem();
+        evt.TicketTypeId.ShouldBe(id);
+        evt.FreedSlots.ShouldBe(0);
+        sut.GetDomainEvents().OfType<WaitlistCapacityLimitRemovedDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a sold-out ticket type in waitlist mode
+    // When its capacity is raised and its waitlist disabled in the same update
+    // Then a single WaitlistDisabled event carries the freed slots, so they are offered before the queue is cleared
+    [TestMethod]
+    public void UpdateTicketType_CapacityIncreaseAndDisableWaitlist_RaisesWaitlistDisabledEventWithFreedSlots()
+    {
+        // Arrange — sold out and in WaitlistMode
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], ClaimMode.Public);
+        sut.ClearDomainEvents();
+
+        // Act — add 2 slots and disable the waitlist
+        sut.UpdateTicketType(id, name: null, maxCapacity: 3, waitlistEnabled: false);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.MaxCapacity.ShouldBe(3);
+        tt.WaitlistEnabled.ShouldBeFalse();
+        tt.WaitlistMode.ShouldBeFalse();
+        sut.GetDomainEvents().OfType<WaitlistDisabledDomainEvent>()
             .ShouldHaveSingleItem()
-            .TicketTypeId.ShouldBe(id);
+            .FreedSlots.ShouldBe(2);
+        sut.GetDomainEvents().OfType<WaitlistCapacityFreedDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a ticket type with waitlist enabled but not in waitlist mode
+    // When its capacity is raised and its waitlist disabled in the same update
+    // Then the WaitlistDisabled event reports no freed slots because nobody was waiting for them
+    [TestMethod]
+    public void UpdateTicketType_CapacityIncreaseAndDisableWaitlistOutsideWaitlistMode_ReportsNoFreedSlots()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 5, waitlistEnabled: true);
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: 10, waitlistEnabled: false);
+
+        // Assert
+        sut.GetDomainEvents().OfType<WaitlistDisabledDomainEvent>()
+            .ShouldHaveSingleItem()
+            .FreedSlots.ShouldBe(0);
     }
 
     // Given a ticket type with waitlist enabled and a bounded capacity
     // When the capacity limit is removed via an update
-    // Then waitlist is forced off, waitlist mode clears, and a WaitlistForcedDisabled event is raised
+    // Then the waitlist is switched off and a WaitlistCapacityLimitRemoved event is raised instead of WaitlistDisabled
     [TestMethod]
-    public void UpdateTicketType_RemoveCapacityLimitWithWaitlistEnabled_ForcesDisableAndRaisesEvent()
+    public void UpdateTicketType_RemoveCapacityLimitWithWaitlistEnabled_RaisesWaitlistCapacityLimitRemovedEvent()
     {
-        // Removing the capacity bound requires force-disabling waitlist
+        // Arrange
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10, waitlistEnabled: true);
@@ -869,9 +917,33 @@ public sealed class TicketCatalogTests
         tt.WaitlistEnabled.ShouldBeFalse();
         tt.WaitlistMode.ShouldBeFalse();
         tt.MaxCapacity.ShouldBeNull();
-        sut.GetDomainEvents().OfType<WaitlistForcedDisabledDomainEvent>()
+        sut.GetDomainEvents().OfType<WaitlistCapacityLimitRemovedDomainEvent>()
             .ShouldHaveSingleItem()
             .TicketTypeId.ShouldBe(id);
+        sut.GetDomainEvents().OfType<WaitlistDisabledDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a sold-out ticket type in waitlist mode
+    // When the capacity limit is removed and the waitlist switched off in the same update (as the Admin UI sends it)
+    // Then it is treated as a capacity-limit removal, not an explicit disable
+    [TestMethod]
+    public void UpdateTicketType_RemoveCapacityLimitAndDisableWaitlist_RaisesOnlyWaitlistCapacityLimitRemovedEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], ClaimMode.Public);
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: null, waitlistEnabled: false);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.WaitlistEnabled.ShouldBeFalse();
+        tt.WaitlistMode.ShouldBeFalse();
+        sut.GetDomainEvents().OfType<WaitlistCapacityLimitRemovedDomainEvent>().ShouldHaveSingleItem();
+        sut.GetDomainEvents().OfType<WaitlistDisabledDomainEvent>().ShouldBeEmpty();
     }
 
     // Given a ticket type that is sold out and in waitlist mode

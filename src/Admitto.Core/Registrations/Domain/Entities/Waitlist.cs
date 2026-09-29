@@ -96,18 +96,55 @@ public class Waitlist : Aggregate<TicketTypeId>
         CheckExhausted();
     }
 
-    // /// <summary>
-    // /// Removes all active entries unconditionally (e.g., on force-disable of the waitlist).
-    // /// </summary>
-    // public void ForceRemoveAllEntries()
-    // {
-    //     foreach (var entry in _entries.Where(e => e.Status == WaitlistEntryStatus.Active).ToList())
-    //     {
-    //         entry.Remove();
-    //     }
-    //
-    //     CheckExhausted();
-    // }
+    /// <summary>
+    /// Handles an explicit disable of this waitlist's ticket type: offers up to <paramref name="freedSlots"/>
+    /// coupons to the front of the queue, then removes everyone still waiting. Removed attendees get no email
+    /// (the organizer informs them); outstanding coupons stay valid until they are redeemed or expire.
+    /// Returns the newly issued coupons.
+    /// </summary>
+    public IReadOnlyList<Coupon> Disable(
+        int freedSlots,
+        TicketedEvent ticketedEvent,
+        TicketType ticketType,
+        DateTimeOffset utcNow)
+    {
+        var coupons = IssueNextCoupons(freedSlots, ticketedEvent, ticketType, utcNow);
+
+        var remainingEntries = _entries.Where(e => e.Status == WaitlistEntryStatus.Active).ToList();
+        foreach (var entry in remainingEntries)
+        {
+            entry.Remove();
+            AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
+        }
+
+        if (remainingEntries.Count > 0)
+            CheckExhausted();
+
+        return coupons;
+    }
+
+    /// <summary>
+    /// Issues a coupon to every active entry in queue order, e.g. when the ticket type's capacity limit is
+    /// removed and there is room for everyone. Returns the issued coupons.
+    /// </summary>
+    public IReadOnlyList<Coupon> IssueCouponsToAllEntries(
+        TicketedEvent ticketedEvent,
+        TicketType ticketType,
+        DateTimeOffset utcNow)
+        => IssueNextCoupons(ActiveEntryCount, ticketedEvent, ticketType, utcNow);
+
+    private List<Coupon> IssueNextCoupons(
+        int maxCount,
+        TicketedEvent ticketedEvent,
+        TicketType ticketType,
+        DateTimeOffset utcNow)
+    {
+        var coupons = new List<Coupon>();
+        while (coupons.Count < maxCount && IssueNextCoupon(ticketedEvent, ticketType, utcNow) is { } coupon)
+            coupons.Add(coupon);
+
+        return coupons;
+    }
 
     /// <summary>
     /// Issues a coupon to the top-ranked active waitlist entry and removes that entry from the queue.

@@ -149,3 +149,80 @@ describe("EditTicketTypeForm waitlist cascade", () => {
         expect(put.mock.calls[0]![1]).not.toHaveProperty("timeSlots");
     });
 });
+
+describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () => {
+    beforeEach(() => {
+        put.mockReset();
+        put.mockResolvedValue(undefined);
+    });
+
+    // Given a ticket type whose waitlist has people waiting
+    // When the organizer switches the waitlist off and saves
+    // Then a confirmation explains that everyone waiting is removed and must be informed, and nothing is saved yet
+    it("asks for confirmation with the removal wording when explicitly disabling an active waitlist", async () => {
+        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: true });
+
+        await user.click(screen.getByRole("switch", { name: /enable waitlist/i }));
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+        const dialog = await screen.findByRole("alertdialog");
+        expect(dialog).toHaveTextContent("Disable waitlist?");
+        expect(dialog).toHaveTextContent(
+            "Disabling the waitlist removes everyone who is still waiting. You'll need to inform them yourself. " +
+            "Offers already sent stay valid until they expire.",
+        );
+        expect(dialog).not.toHaveTextContent(/revoke/i);
+        expect(put).not.toHaveBeenCalled();
+    });
+
+    // Given the disable confirmation is showing
+    // When the organizer confirms
+    // Then the ticket type is saved with its waitlist switched off
+    it("saves the disabled waitlist once the organizer confirms", async () => {
+        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: true });
+
+        await user.click(screen.getByRole("switch", { name: /enable waitlist/i }));
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+        await user.click(await screen.findByRole("button", { name: "Disable waitlist" }));
+
+        await waitFor(() =>
+            expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, expect.objectContaining({
+                maxCapacity: 100,
+                waitlistEnabled: false,
+            })),
+        );
+    });
+
+    // Given a ticket type whose waitlist has people waiting
+    // When the organizer removes the capacity limit
+    // Then an informational note says everyone waiting will receive an offer, and saving needs no confirmation
+    it("shows an informational note instead of the disable dialog when removing the capacity limit", async () => {
+        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: true });
+
+        await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
+
+        const note = screen.getByRole("alert");
+        expect(note).toHaveTextContent(/everyone waiting will receive an offer/i);
+
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+        await waitFor(() =>
+            expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, expect.objectContaining({
+                maxCapacity: null,
+                waitlistEnabled: false,
+            })),
+        );
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+
+    // Given a ticket type with a waitlist but nobody waiting
+    // When the organizer removes the capacity limit
+    // Then no note about offers is shown
+    it("does not show the offer note when nobody is waiting", async () => {
+        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: false });
+
+        await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
+
+        expect(screen.queryByText(/everyone waiting will receive an offer/i)).not.toBeInTheDocument();
+    });
+});

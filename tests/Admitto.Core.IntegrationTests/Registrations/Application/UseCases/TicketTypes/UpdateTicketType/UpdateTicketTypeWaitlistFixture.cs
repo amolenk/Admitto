@@ -1,0 +1,113 @@
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+
+namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
+
+/// <summary>
+/// A sold-out, waitlist-enabled ticket type in WaitlistMode with people waiting, for the capacity-change and
+/// disable flows of <c>UpdateTicketType</c>.
+/// </summary>
+internal sealed class UpdateTicketTypeWaitlistFixture
+{
+    private int _waitingCount;
+    private bool _withOutstandingCoupon;
+    private bool _withWaitlistedRegistration;
+
+    public TeamId TeamId { get; } = TeamId.New();
+    public TicketedEventId EventId { get; } = TicketedEventId.New();
+    public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
+    public const int MaxCapacity = 1;
+    public static EmailAddress OfferedEmail { get; } = EmailAddress.From("offered@example.com");
+    public Guid OutstandingCouponCode { get; private set; }
+    public RegistrationId WaitlistedRegistrationId { get; private set; }
+
+    public static EmailAddress WaitingEmail(int position) => EmailAddress.From($"attendee{position}@example.com");
+
+    private UpdateTicketTypeWaitlistFixture()
+    {
+    }
+
+    /// <summary>
+    /// The given number of attendees waiting, in queue order <c>attendee1..N@example.com</c>.
+    /// </summary>
+    public static UpdateTicketTypeWaitlistFixture WithWaitingEntries(int count) =>
+        new() { _waitingCount = count };
+
+    /// <summary>
+    /// Attendees waiting, plus an offer already sent to <see cref="OfferedEmail"/> that has not been claimed yet.
+    /// </summary>
+    public static UpdateTicketTypeWaitlistFixture WithWaitingEntriesAndOutstandingCoupon(int count) =>
+        new() { _waitingCount = count, _withOutstandingCoupon = true };
+
+    /// <summary>
+    /// The first waiting attendee holds a <see cref="RegistrationStatus.Waitlisted"/> registration (no confirmed tickets).
+    /// </summary>
+    public static UpdateTicketTypeWaitlistFixture WithWaitlistedRegistration() =>
+        new() { _waitingCount = 2, _withWaitlistedRegistration = true };
+
+    public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
+    {
+        await environment.RegistrationsDatabase.SeedAsync(dbContext =>
+        {
+            var ticketedEvent = TicketedEvent.Create(
+                CreationRequestId.From(Guid.NewGuid()),
+                EventId,
+                TeamId,
+                EventName.From("DevConf"),
+                AbsoluteUrl.From("https://example.com"),
+                AbsoluteUrl.From("https://tickets.example.com"),
+                DateTimeOffset.UtcNow.AddDays(30),
+                DateTimeOffset.UtcNow.AddDays(31),
+                TimeZoneId.From("UTC"));
+            ticketedEvent.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
+                DateTimeOffset.UtcNow.AddDays(-1),
+                DateTimeOffset.UtcNow.AddDays(20)));
+            ticketedEvent.ClearDomainEvents();
+            dbContext.TicketedEvents.Add(ticketedEvent);
+
+            var catalog = TicketCatalog.Create(EventId, TeamId);
+            catalog.AddTicketType(
+                TicketTypeId, TicketTypeName.From("Conference Pass"), [], MaxCapacity, waitlistEnabled: true);
+            for (var i = 0; i < MaxCapacity; i++)
+                catalog.Claim([TicketTypeId], ClaimMode.Public); // sells out → WaitlistMode
+            catalog.ClearDomainEvents();
+            dbContext.TicketCatalogs.Add(catalog);
+
+            var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
+            var now = DateTimeOffset.UtcNow;
+
+            if (_withOutstandingCoupon)
+            {
+                waitlist.AddEntry(OfferedEmail, now.AddMinutes(-1));
+                var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog.GetTicketType(TicketTypeId)!, now)!;
+                coupon.ClearDomainEvents();
+                OutstandingCouponCode = coupon.Code.Value;
+                dbContext.Coupons.Add(coupon);
+            }
+
+            for (var i = 1; i <= _waitingCount; i++)
+                waitlist.AddEntry(WaitingEmail(i), now.AddMinutes(i));
+
+            waitlist.ClearDomainEvents();
+            dbContext.Waitlists.Add(waitlist);
+
+            if (_withWaitlistedRegistration)
+            {
+                var registration = Registration.Create(
+                    TeamId,
+                    EventId,
+                    WaitingEmail(1),
+                    FirstName.From("Alice"),
+                    LastName.From("Doe"),
+                    [],
+                    waitlistedTickets: [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("Conference Pass"), [])]);
+                registration.ClearDomainEvents();
+                WaitlistedRegistrationId = registration.Id;
+                dbContext.Registrations.Add(registration);
+            }
+        });
+    }
+}

@@ -126,26 +126,46 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (updateMaxReconfirmationEmails)
             ticketType.UpdateMaxReconfirmationEmails(maxReconfirmationEmails);
 
-        // Disabling waitlist or removing capacity limit forces waitlist off
-        bool forceDisabling = (waitlistEnabled == false && ticketType.WaitlistEnabled)
-                              || (maxCapacity is null && ticketType.WaitlistEnabled);
+        // Removing the capacity limit or explicitly disabling the waitlist switches the waitlist off.
+        // Removing the limit takes precedence: with unbounded capacity everyone waiting can be offered a
+        // coupon, whereas an explicit disable removes everyone still waiting.
+        var removingCapacityLimit = maxCapacity is null && ticketType.WaitlistEnabled;
+        var disablingWaitlist = !removingCapacityLimit && waitlistEnabled == false && ticketType.WaitlistEnabled;
 
-        if (forceDisabling)
+        if (removingCapacityLimit || disablingWaitlist)
         {
-            if (ticketType.WaitlistMode)
-                ticketType.DeactivateWaitlistMode();
-            ticketType.DisableWaitlist();
-            AddDomainEvent(new WaitlistForcedDisabledDomainEvent(TeamId, Id, id));
+            var wasInWaitlistMode = ticketType.WaitlistMode;
+            var previousPublicAvailable = ticketType.PublicAvailableCapacity(
+                ticketType.MaxCapacity, ticketType.ReservedCapacity);
+
             ticketType.UpdateCapacity(maxCapacity);
             ticketType.UpdateReservedCapacity(reservedCapacity);
-            var forcedBranchSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
-            if (forcedBranchSelfServiceCount != previousSelfServiceCount)
+
+            if (wasInWaitlistMode)
+                ticketType.DeactivateWaitlistMode();
+            ticketType.DisableWaitlist();
+
+            if (removingCapacityLimit)
+            {
+                AddDomainEvent(new WaitlistCapacityLimitRemovedDomainEvent(TeamId, Id, id));
+            }
+            else
+            {
+                // Slots freed by the same update go to the front of the queue before the rest is removed.
+                var freedSlots = wasInWaitlistMode
+                    ? Math.Max(0, ticketType.PublicAvailableCapacity(maxCapacity, reservedCapacity) - previousPublicAvailable)
+                    : 0;
+                AddDomainEvent(new WaitlistDisabledDomainEvent(TeamId, Id, id, freedSlots));
+            }
+
+            var waitlistOffSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
+            if (waitlistOffSelfServiceCount != previousSelfServiceCount)
             {
                 AddDomainEvent(new TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent(
                     TeamId,
                     Id,
                     Version,
-                    forcedBranchSelfServiceCount));
+                    waitlistOffSelfServiceCount));
             }
             return;
         }
