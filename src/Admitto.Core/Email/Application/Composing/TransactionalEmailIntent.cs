@@ -33,6 +33,12 @@ internal sealed record WaitlistOfferIntent(
     DateTimeOffset ExpiresAt)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
+internal sealed record WaitlistOfferExpiredIntent(
+    TeamId TeamId,
+    TicketedEventId TicketedEventId,
+    string TicketTypeName)
+    : TransactionalEmailIntent(TeamId, TicketedEventId);
+
 internal abstract record RegistrationCancellationIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
@@ -41,6 +47,17 @@ internal abstract record RegistrationCancellationIntent(
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal sealed record AttendeeRequestCancellationIntent(
+    TeamId TeamId,
+    TicketedEventId TicketedEventId,
+    string FirstName,
+    RegistrationId RegistrationId)
+    : RegistrationCancellationIntent(TeamId, TicketedEventId, FirstName, RegistrationId);
+
+/// <summary>
+/// Attendee-requested cancellation of a registration that held no confirmed tickets, i.e. the
+/// attendee was only on one or more waitlists.
+/// </summary>
+internal sealed record WaitlistCancellationIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     string FirstName,

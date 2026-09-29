@@ -91,11 +91,14 @@ public class Registration : Aggregate<RegistrationId>
         if (CheckedInAt is not null)
             throw new BusinessRuleViolationException(Errors.CannotCancelCheckedIn);
 
+        var wasWaitlisted = Status == RegistrationStatus.Waitlisted;
+
         Status = RegistrationStatus.Cancelled;
         CancellationReason = reason;
         CancelledAt = DateTimeOffset.UtcNow;
 
-        AddDomainEvent(new RegistrationCancelledDomainEvent(TeamId, EventId, Id, Email, FirstName, LastName, reason));
+        AddDomainEvent(new RegistrationCancelledDomainEvent(
+            TeamId, EventId, Id, Email, FirstName, LastName, reason, wasWaitlisted));
     }
 
     public void Reset(

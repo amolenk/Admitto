@@ -191,6 +191,18 @@ public class Waitlist : Aggregate<TicketTypeId>
         CheckExhausted();
     }
 
+    /// <summary>
+    /// Marks the given waitlist coupon as revoked because it lapsed unclaimed, and raises
+    /// <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired.
+    /// </summary>
+    public void ExpireCoupon(Coupon coupon, TicketType ticketType)
+    {
+        RevokeCoupon(coupon.Id);
+
+        AddDomainEvent(new WaitlistCouponExpiredDomainEvent(
+            TeamId, EventId, ticketType.Id, coupon.Email, coupon.Code, ticketType.Name.Value));
+    }
+
     private WaitlistCoupon FindActiveCoupon(CouponId couponId)
     {
         var coupon = _coupons.FirstOrDefault(c => c.Id == couponId);

@@ -70,8 +70,19 @@ internal sealed class TransactionalEmailComposer(
                     ["expires_at"] = value.ExpiresAt.ToString("f"),
                     ["register_link"] = context.GetLinks(null).RegisterLink
                 }),
+            WaitlistOfferExpiredIntent value => (
+                BuiltInEmailTemplateNames.WaitlistOfferExpired,
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["event_name"] = context.EventName,
+                    ["event_website"] = context.WebsiteUrl,
+                    ["ticket_type_name"] = value.TicketTypeName
+                }),
             AttendeeRequestCancellationIntent value => (
                 BuiltInEmailTemplateNames.Cancellation,
+                CancellationParameters(value.FirstName, context, value.RegistrationId)),
+            WaitlistCancellationIntent value => (
+                BuiltInEmailTemplateNames.WaitlistCancellation,
                 CancellationParameters(value.FirstName, context, value.RegistrationId)),
             ReconfirmAutoCancellationIntent value => (
                 BuiltInEmailTemplateNames.ReconfirmCancelled,

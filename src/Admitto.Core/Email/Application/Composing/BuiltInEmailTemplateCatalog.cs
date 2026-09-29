@@ -39,6 +39,8 @@ internal static class BuiltInEmailTemplateCatalog
                 resourceKey:  "reconfirm"),
             Build(BuiltInEmailTemplateNames.Cancellation,
                 resourceKey:  "cancellation"),
+            Build(BuiltInEmailTemplateNames.WaitlistCancellation,
+                resourceKey:  "waitlist-cancellation"),
             Build(BuiltInEmailTemplateNames.ReconfirmCancelled,
                 resourceKey:  "reconfirm-cancelled"),
             Build(BuiltInEmailTemplateNames.VisaLetterDenied,
@@ -49,6 +51,8 @@ internal static class BuiltInEmailTemplateCatalog
                 resourceKey: "coupon-invitation"),
             Build(BuiltInEmailTemplateNames.WaitlistNotification,
                 resourceKey:  "waitlist-notification"),
+            Build(BuiltInEmailTemplateNames.WaitlistOfferExpired,
+                resourceKey:  "waitlist-offer-expired"),
         ];
     }
 

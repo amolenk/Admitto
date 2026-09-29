@@ -584,6 +584,38 @@ public sealed class RegistrationTests
         sut.Status.ShouldBe(RegistrationStatus.Waitlisted);
     }
 
+    // Given a Waitlisted registration with zero confirmed tickets
+    // When it is cancelled
+    // Then the RegistrationCancelled event records that the registration was waitlisted
+    [TestMethod]
+    public void Cancel_WaitlistedRegistration_RaisesEventMarkedAsWasWaitlisted()
+    {
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, []);
+        ClearEvents(sut);
+
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        sut.GetDomainEvents().OfType<RegistrationCancelledDomainEvent>()
+            .ShouldHaveSingleItem()
+            .WasWaitlisted.ShouldBeTrue();
+    }
+
+    // Given a Registered registration with a confirmed ticket
+    // When it is cancelled
+    // Then the RegistrationCancelled event records that the registration was not waitlisted
+    [TestMethod]
+    public void Cancel_RegisteredRegistration_RaisesEventNotMarkedAsWasWaitlisted()
+    {
+        var sut = NewRegistration();
+        ClearEvents(sut);
+
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        sut.GetDomainEvents().OfType<RegistrationCancelledDomainEvent>()
+            .ShouldHaveSingleItem()
+            .WasWaitlisted.ShouldBeFalse();
+    }
+
     // Given a Waitlisted registration
     // When check-in is attempted
     // Then it throws the waitlisted check-in error

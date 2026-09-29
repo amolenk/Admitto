@@ -104,7 +104,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             EmailAddress.From("carol@example.com"),
             FirstName.From("Carol"),
             LastName.From("Clark"),
-            CancellationReason.AttendeeRequest);
+            CancellationReason.AttendeeRequest,
+            WasWaitlisted: true);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -115,6 +116,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.RegistrationId.ShouldBe(registrationId.Value);
         evt.RecipientEmail.ShouldBe("carol@example.com");
         evt.Reason.ShouldBe(nameof(CancellationReason.AttendeeRequest));
+        evt.WasWaitlisted.ShouldBeTrue();
     }
 
     // Given a RegistrationReconfirmed domain event

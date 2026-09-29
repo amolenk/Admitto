@@ -28,12 +28,24 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     public static ProcessExpiredWaitlistCouponsJobFixture WithOneEntryOnePendingCoupon() => new();
 
     /// <summary>
+    /// Three waitlist entries, two issued coupons — one more person waiting after both lapse.
+    /// </summary>
+    public static ProcessExpiredWaitlistCouponsJobFixture WithThreeEntriesTwoPendingCoupons() =>
+        new() { CouponsToIssue = 2 };
+
+    /// <summary>
+    /// Number of coupons issued (to the front-of-queue entries) during setup.
+    /// </summary>
+    public int CouponsToIssue { get; private init; } = 1;
+
+    /// <summary>
     /// Seeds the database with a TicketedEvent, TicketCatalog in WaitlistMode, a Waitlist with
     /// <paramref name="activeEntries"/> entries, and then issues a coupon to the first entry using
     /// the real handler so the coupon row exists in the DB with a real <c>expires_at</c>.
+    /// Issues <see cref="CouponsToIssue"/> coupons to the front-of-queue entries.
     /// </summary>
     /// <param name="activeEntriesAfterCoupon">
-    /// Number of active entries that should remain in the waitlist AFTER the first coupon is issued.
+    /// Number of active entries that should remain in the waitlist AFTER the coupons are issued.
     /// Pass 1 to leave one more waiting person; pass 0 for an empty waitlist after the coupon.
     /// </param>
     public async ValueTask SetupAsync(
@@ -41,8 +53,8 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
         int activeEntriesAfterCoupon,
         CancellationToken cancellationToken = default)
     {
-        // Total entries = the one that will receive the coupon + the remaining active ones.
-        var totalEntries = 1 + activeEntriesAfterCoupon;
+        // Total entries = the ones that will receive a coupon + the remaining active ones.
+        var totalEntries = CouponsToIssue + activeEntriesAfterCoupon;
 
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
@@ -59,9 +71,10 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             dbContext.TicketedEvents.Add(ticketedEvent);
 
             var catalog = TicketCatalog.Create(EventId, TeamId);
-            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: 1,
+            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: CouponsToIssue,
                 waitlistEnabled: true, claimWindowHours: 8);
-            catalog.Claim([TicketTypeId], ClaimMode.Public);   // fill to capacity → WaitlistMode activates
+            for (var i = 0; i < CouponsToIssue; i++)
+                catalog.Claim([TicketTypeId], ClaimMode.Public);   // fill to capacity → WaitlistMode activates
             dbContext.TicketCatalogs.Add(catalog);
 
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
@@ -72,13 +85,13 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             dbContext.Waitlists.Add(waitlist);
         }, cancellationToken);
 
-        // Issue a coupon to the first entry using the real handler, so a proper coupon row is
+        // Issue coupons to the front entries using the real handler, so proper coupon rows are
         // persisted before we backdate expires_at via raw SQL.
         var handler = new ProcessWaitlistNotificationsHandler(
             environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         await handler.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: CouponsToIssue),
             cancellationToken);
 
         await environment.RegistrationsDatabase.Context.SaveChangesAsync(cancellationToken);

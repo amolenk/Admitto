@@ -11,4 +11,5 @@ public record RegistrationCancelledDomainEvent(
     EmailAddress Email,
     FirstName FirstName,
     LastName LastName,
-    CancellationReason Reason) : DomainEvent;
+    CancellationReason Reason,
+    bool WasWaitlisted) : DomainEvent;

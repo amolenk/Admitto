@@ -87,6 +87,58 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
         rendered.HtmlBody.ShouldContain("September 5, 2026");
     }
 
+    // Given the queue has moved past an attendee whose waitlist offer went unclaimed
+    // When a waitlist-offer-expired email is created
+    // Then it tells the attendee their offer for the ticket type has lapsed, without offering a coupon
+    [TestMethod]
+    public async ValueTask ComposeAsync_WaitlistOfferExpired_RendersExpiredOffer()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var fixture = TransactionalEmailComposerFixture.CompleteEventContext();
+        await fixture.SetupAsync(Environment, teamId, eventId);
+
+        var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
+            new WaitlistOfferExpiredIntent(teamId, eventId, "Conference Pass"),
+            testContext.CancellationToken);
+
+        rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistOfferExpired);
+        rendered.Subject.ShouldBe("Your waitlist offer for DevConf has expired");
+        rendered.TextBody.ShouldContain("Ticket type: Conference Pass");
+        rendered.TextBody.ShouldContain("was not claimed in time");
+        rendered.TextBody.ShouldNotContain("coupon code:");
+        rendered.HtmlBody.ShouldContain("Your waitlist offer for DevConf has expired");
+        rendered.HtmlBody.ShouldContain("Conference Pass");
+        rendered.HtmlBody.ShouldNotContain("Your spot at DevConf is ready");
+    }
+
+    // Given an attendee who was only on a waitlist has cancelled their registration
+    // When a waitlist-cancellation email is created
+    // Then the message describes removal from the waitlist rather than a cancelled ticket
+    [TestMethod]
+    public async ValueTask ComposeAsync_WaitlistCancellation_RendersWaitlistRemoval()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var registrationId = RegistrationId.New();
+        var fixture = TransactionalEmailComposerFixture.CompleteEventContext();
+        await fixture.SetupAsync(Environment, teamId, eventId);
+
+        var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
+            new WaitlistCancellationIntent(teamId, eventId, "Alice", registrationId),
+            testContext.CancellationToken);
+
+        rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistCancellation);
+        rendered.Subject.ShouldBe("You've been removed from the DevConf waitlist");
+        rendered.TextBody.ShouldContain("Alice");
+        rendered.TextBody.ShouldContain("removed you from the waitlist for DevConf");
+        rendered.TextBody.ShouldContain("https://public.example/e/devconf/register");
+        rendered.TextBody.ShouldNotContain("Your DevConf Registration Has Been Cancelled");
+        rendered.TextBody.ShouldNotContain("sorry you can’t make it");
+        rendered.HtmlBody.ShouldContain("You've been removed from the DevConf waitlist");
+        rendered.HtmlBody.ShouldContain("href=\"https://public.example/e/devconf/register\"");
+    }
+
     // Given an attendee has cancelled their registration
     // When an attendee-cancellation email is created
     // Then the message confirms the cancellation and offers a registration link

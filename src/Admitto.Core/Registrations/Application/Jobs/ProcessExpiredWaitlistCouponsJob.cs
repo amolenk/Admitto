@@ -10,7 +10,9 @@ namespace Amolenk.Admitto.Core.Registrations.Application.Jobs;
 
 /// <summary>
 /// Polls for expired waitlist coupons (past the grace period) and processes each one:
-/// revokes the coupon on the <see cref="Waitlist"/> aggregate, then fires
+/// expires the coupon on the <see cref="Waitlist"/> aggregate (which raises
+/// <see cref="Domain.DomainEvents.WaitlistCouponExpiredDomainEvent"/> so the recipient is told
+/// their offer lapsed), then fires
 /// <see cref="ProcessWaitlistNotificationsCommand"/> to cascade the freed slot to the next
 /// person in queue. If the waitlist is empty after revocation, the domain raises
 /// <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
@@ -93,9 +95,17 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                     continue;
                 }
 
+                var ticketType = catalog.GetTicketType(ticketTypeId);
+
                 foreach (var coupon in couponsToRevoke)
                 {
-                    waitlist.RevokeCoupon(coupon.Id);
+                    // Without a ticket type there is nothing to name in the expired-offer email;
+                    // still revoke so the freed slot cascades.
+                    if (ticketType is null)
+                        waitlist.RevokeCoupon(coupon.Id);
+                    else
+                        waitlist.ExpireCoupon(coupon, ticketType);
+
                     coupon.Revoke();
                 }
 

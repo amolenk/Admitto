@@ -17,7 +17,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
       IDomainEventHandler<TicketedEventStatusChangedDomainEvent>,
       IDomainEventHandler<TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent>,
       IDomainEventHandler<TicketsChangedDomainEvent>,
-      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>
+      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>,
+      IDomainEventHandler<WaitlistCouponExpiredDomainEvent>
 {
     public ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
@@ -67,7 +68,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.Email.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.Reason.ToString()));
+            domainEvent.Reason.ToString(),
+            domainEvent.WasWaitlisted));
 
         return ValueTask.CompletedTask;
     }
@@ -183,6 +185,18 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.CouponCode.Value.ToString(),
             domainEvent.TicketTypeName,
             domainEvent.ExpiresAt));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(WaitlistCouponExpiredDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new WaitlistCouponExpiredIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value,
+            domainEvent.RecipientEmail.Value,
+            domainEvent.CouponCode.Value.ToString(),
+            domainEvent.TicketTypeName));
 
         return ValueTask.CompletedTask;
     }

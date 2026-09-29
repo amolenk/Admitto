@@ -8,6 +8,8 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class CancelRegistrationFixture
 {
     private bool _preCancel;
+    private bool _waitlistedOnly;
+    private bool _alsoOnWaitlist;
     private DateTimeOffset? _eventStartsAt;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
@@ -21,6 +23,17 @@ internal sealed class CancelRegistrationFixture
     public static CancelRegistrationFixture ActiveRegistration() => new();
 
     public static CancelRegistrationFixture AlreadyCancelled() => new() { _preCancel = true };
+
+    /// <summary>
+    /// A registration with no confirmed tickets whose attendee is only on a ticket type's waitlist.
+    /// </summary>
+    public static CancelRegistrationFixture WaitlistedRegistration() =>
+        new() { _waitlistedOnly = true, _alsoOnWaitlist = true };
+
+    /// <summary>
+    /// A registration with a confirmed ticket whose attendee is also on another ticket type's waitlist.
+    /// </summary>
+    public static CancelRegistrationFixture RegisteredWithWaitlistEntry() => new() { _alsoOnWaitlist = true };
 
     public static CancelRegistrationFixture WithEventAlreadyStarted() =>
         new() { _eventStartsAt = DateTimeOffset.UtcNow.AddDays(-1) };
@@ -44,7 +57,20 @@ internal sealed class CancelRegistrationFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot(ticketTypeId, TicketTypeName.From("General Admission"), [])]);
+                _waitlistedOnly
+                    ? []
+                    : [new TicketTypeSnapshot(ticketTypeId, TicketTypeName.From("General Admission"), [])]);
+
+            if (_alsoOnWaitlist)
+            {
+                var waitlistedTicketTypeId = TicketTypeId.New();
+                catalog.AddTicketType(
+                    waitlistedTicketTypeId, TicketTypeName.From("Workshop"), [], maxCapacity: 1, waitlistEnabled: true);
+
+                var waitlist = Waitlist.Create(EventId, waitlistedTicketTypeId, TeamId);
+                waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+                dbContext.Waitlists.Add(waitlist);
+            }
 
             RegistrationId = registration.Id;
 

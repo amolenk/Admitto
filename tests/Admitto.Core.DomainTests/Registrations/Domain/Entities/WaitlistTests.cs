@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 
 namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
@@ -301,6 +302,59 @@ public sealed class WaitlistTests
                 e => e.CouponCode.ShouldBe(result.Code),
                 e => e.TicketTypeName.ShouldBe(ticketType.Name.Value),
                 e => e.ExpiresAt.ShouldBe(result.ExpiresAt));
+    }
+
+    // Given a waitlist coupon that was issued to the front-of-queue attendee
+    // When that coupon expires unclaimed
+    // Then the waitlist coupon is revoked and a WaitlistCouponExpired event is raised for that attendee
+    [TestMethod]
+    public void ExpireCoupon_WhenCouponIssued_RevokesAndRaisesWaitlistCouponExpiredDomainEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
+        var ticketType = CreateTicketType();
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow)!;
+        sut.ClearDomainEvents();
+
+        // Act
+        sut.ExpireCoupon(coupon, ticketType);
+
+        // Assert
+        sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Revoked);
+        sut.GetDomainEvents()
+            .OfType<WaitlistCouponExpiredDomainEvent>()
+            .ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(
+                e => e.TeamId.ShouldBe(DefaultTeamId),
+                e => e.TicketedEventId.ShouldBe(DefaultEventId),
+                e => e.TicketTypeId.ShouldBe(DefaultTicketTypeId),
+                e => e.RecipientEmail.ShouldBe(email),
+                e => e.CouponCode.ShouldBe(coupon.Code),
+                e => e.TicketTypeName.ShouldBe(ticketType.Name.Value));
+    }
+
+    // Given a waitlist coupon that has already been redeemed
+    // When an expiry is attempted for that coupon
+    // Then it throws the coupon-not-revokable error and no expired event is raised
+    [TestMethod]
+    public void ExpireCoupon_WhenCouponAlreadyRedeemed_ThrowsAndRaisesNoExpiredEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var ticketType = CreateTicketType();
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow)!;
+        sut.RedeemCoupon(coupon.Id);
+        sut.ClearDomainEvents();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon, ticketType));
+
+        // Assert
+        result.Error.ShouldMatch(WaitlistCoupon.Errors.CouponNotRevokable);
+        sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldBeEmpty();
     }
 
     // Given a waitlist with two active entries added at different times

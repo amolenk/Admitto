@@ -16,8 +16,8 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     private static readonly TicketedEventId EventGuid = TicketedEventId.New();
     private static readonly Guid RegistrationGuid = Guid.NewGuid();
 
-    private static RegistrationCancelledIntegrationEvent Event(string reason) =>
-        new(TeamGuid.Value, EventGuid.Value, RegistrationGuid, "alice@example.com", "Alice", "Test", reason)
+    private static RegistrationCancelledIntegrationEvent Event(string reason, bool wasWaitlisted = false) =>
+        new(TeamGuid.Value, EventGuid.Value, RegistrationGuid, "alice@example.com", "Alice", "Test", reason, wasWaitlisted)
         {
             IntegrationEventId = Guid.Parse("11111111-1111-1111-1111-111111111111")
         };
@@ -46,6 +46,34 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         delivery.RecipientName.ShouldBe("Alice Test");
         delivery.IdempotencyKey.ShouldBe("registration-cancelled:11111111111111111111111111111111");
         delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.Cancellation);
+        delivery.RegistrationId.ShouldBe(RegistrationGuid);
+    }
+
+    // Given an attendee who was only on a waitlist has asked to cancel their registration
+    // When the attendee-cancellation event is processed
+    // Then the attendee receives the waitlist-removal cancellation email instead of the ticket cancellation email
+    [TestMethod]
+    public async Task HandleAsync_AttendeeRequestForWaitlistedRegistration_UsesWaitlistCancellationIntent()
+    {
+        var composer = Substitute.For<ITransactionalEmailComposer>();
+        composer.ReturnRenderedEmail(BuiltInEmailTemplateNames.WaitlistCancellation);
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        var sut = new RegistrationCancelledIntegrationEventHandler(composer, deliveryHandler);
+
+        await sut.HandleAsync(Event("AttendeeRequest", wasWaitlisted: true), testContext.CancellationToken);
+
+        await composer.Received(1).ComposeAsync(
+            Arg.Is<WaitlistCancellationIntent>(intent =>
+                intent != null && intent.TeamId == TeamGuid && intent.TicketedEventId == EventGuid
+                && intent.FirstName == "Alice" && intent.RegistrationId.Value == RegistrationGuid),
+            Arg.Any<CancellationToken>());
+        await composer.DidNotReceive().ComposeAsync(
+            Arg.Any<AttendeeRequestCancellationIntent>(), Arg.Any<CancellationToken>());
+
+        var delivery = deliveryHandler.ReceivedDelivery();
+        delivery.RecipientAddress.ShouldBe("alice@example.com");
+        delivery.IdempotencyKey.ShouldBe("registration-cancelled:11111111111111111111111111111111");
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistCancellation);
         delivery.RegistrationId.ShouldBe(RegistrationGuid);
     }
 

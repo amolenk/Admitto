@@ -1,0 +1,15 @@
+You've been removed from the {{ event_name }} waitlist
+
+Hi {{ first_name }},
+
+As requested, we've removed you from the waitlist for {{ event_name }}. You didn't hold a confirmed ticket, so there is nothing else to cancel, and you won't receive any further waitlist offers.
+
+Changed your mind?
+If you'd like to join us after all, you can register again or rejoin the waitlist:
+{{ register_link }}
+
+For more details about the event, visit: {{ event_website }}
+
+We hope to see you at a future event!
+Best regards,
+The {{ event_name }} Team
