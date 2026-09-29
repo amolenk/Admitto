@@ -26,4 +26,24 @@ internal static class WaitlistHoldAssertions
             waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued),
             "the ticket type should hold one seat per outstanding waitlist offer");
     }
+
+    /// <summary>
+    /// Asserts the invariant between the two aggregates: the attendees a ticket type counts as queued equal the
+    /// number of <see cref="WaitlistEntryStatus.Active"/> entries on its waitlist.
+    /// </summary>
+    public static async ValueTask ShouldCountEveryActiveEntryAsync(
+        this RegistrationsDbContext dbContext,
+        TicketedEventId eventId,
+        TicketTypeId ticketTypeId,
+        CancellationToken cancellationToken)
+    {
+        var catalog = await dbContext.TicketCatalogs.AsNoTracking()
+            .SingleAsync(c => c.Id == eventId, cancellationToken);
+        var waitlist = await dbContext.Waitlists.AsNoTracking()
+            .SingleAsync(w => w.Id == ticketTypeId, cancellationToken);
+
+        catalog.FindTicketType(ticketTypeId).WaitlistQueuedCount.ShouldBe(
+            waitlist.ActiveEntryCount,
+            "the ticket type should count every attendee actively queued on its waitlist");
+    }
 }

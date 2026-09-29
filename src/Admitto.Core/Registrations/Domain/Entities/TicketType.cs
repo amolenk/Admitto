@@ -68,6 +68,13 @@ public class TicketType : Entity<TicketTypeId>
     public int WaitlistHeldCapacity { get; private set; }
 
     /// <summary>
+    /// Attendees actively queued on this ticket type's waitlist. Updated in the same unit of work as every entry that
+    /// joins or leaves the <see cref="Waitlist"/>, so that a WaitlistMode lift and a concurrent join write the same
+    /// aggregate and cannot both commit.
+    /// </summary>
+    public int WaitlistQueuedCount { get; private set; }
+
+    /// <summary>
     /// Portion of <paramref name="reservedCapacity"/> not yet consumed by reserved claims, and
     /// therefore still held back from the public pool.
     /// </summary>
@@ -164,6 +171,23 @@ public class TicketType : Entity<TicketTypeId>
     internal void ReleaseWaitlistHold()
     {
         WaitlistHeldCapacity = Math.Max(0, WaitlistHeldCapacity - 1);
+    }
+
+    /// <summary>
+    /// Counts an attendee joining the waitlist queue.
+    /// </summary>
+    internal void JoinWaitlistQueue()
+    {
+        WaitlistQueuedCount++;
+    }
+
+    /// <summary>
+    /// Counts an attendee leaving the waitlist queue (removed, withdrawn, offered a coupon or redeemed one). Clamped
+    /// at zero.
+    /// </summary>
+    internal void LeaveWaitlistQueue()
+    {
+        WaitlistQueuedCount = Math.Max(0, WaitlistQueuedCount - 1);
     }
 
     /// <summary>

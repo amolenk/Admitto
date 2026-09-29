@@ -6,8 +6,11 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.DeactivateWaitlist.EventHandlers;
 
 /// <summary>
-/// Attempts to deactivate WaitlistMode on the TicketCatalog when the Waitlist is exhausted
-/// (no active entries, no issued coupons). WaitlistMode is cleared only when capacity is available.
+/// Clears WaitlistMode on the TicketCatalog when the Waitlist is exhausted (no active entries, no issued coupons),
+/// whatever the ticket type's availability. The catalog checks its own counts
+/// (<see cref="Domain.Entities.TicketType.WaitlistQueuedCount"/>, <see cref="Domain.Entities.TicketType.WaitlistHeldCapacity"/>)
+/// rather than trusting the event, so a waitlist join committing concurrently on the same ticket type makes one of the
+/// two saves fail.
 /// </summary>
 internal sealed class WaitlistExhaustedDomainEventHandler(IRegistrationsWriteStore writeStore)
     : IDomainEventHandler<WaitlistExhaustedDomainEvent>
@@ -27,6 +30,6 @@ internal sealed class WaitlistExhaustedDomainEventHandler(IRegistrationsWriteSto
         if (catalog.EventStatus != EventLifecycleStatus.Active)
             return;
 
-        catalog.ForceDeactivateWaitlistMode(domainEvent.TicketTypeId);
+        catalog.LiftWaitlistModeWhenExhausted(domainEvent.TicketTypeId);
     }
 }

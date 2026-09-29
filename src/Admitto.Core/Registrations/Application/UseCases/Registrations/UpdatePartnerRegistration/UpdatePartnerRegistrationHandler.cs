@@ -133,7 +133,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
         foreach (var ticketTypeId in toWaitlistLeave)
         {
             if (waitlistsById.TryGetValue(ticketTypeId, out var waitlist))
-                waitlist.RemoveEntry(registration.Email);
+                waitlist.RemoveEntry(registration.Email, catalog);
         }
 
         foreach (var ticketTypeId in toWaitlistJoin)
@@ -145,13 +145,13 @@ internal sealed class UpdatePartnerRegistrationHandler(
                 waitlistsById[ticketTypeId] = waitlist;
             }
 
-            waitlist.AddEntry(registration.Email, now);
+            waitlist.AddEntry(registration.Email, now, catalog);
         }
 
         if (coupon is not null)
         {
             RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlists(
-                waitlists, coupon, registration.Email, couponGrantedIds);
+                waitlists, catalog, coupon, registration.Email, couponGrantedIds);
         }
     }
 

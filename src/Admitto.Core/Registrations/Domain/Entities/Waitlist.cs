@@ -54,13 +54,15 @@ public class Waitlist : Aggregate<TicketTypeId>
         => new(eventId, ticketTypeId, teamId);
 
     /// <summary>
-    /// Adds an active waitlist entry immediately. Idempotent — returns false without adding a duplicate
-    /// when the email already has an active entry.
+    /// Adds an active waitlist entry immediately and counts it on the <paramref name="catalog"/>'s ticket type.
+    /// Idempotent — returns false without adding a duplicate when the email already has an active entry.
     /// </summary>
-    public bool AddEntry(EmailAddress email, DateTimeOffset addedAt)
+    public bool AddEntry(EmailAddress email, DateTimeOffset addedAt, TicketCatalog catalog)
     {
         if (_entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Active))
             return false;
+
+        catalog.JoinWaitlistQueue(Id);
 
         var nextPosition = _entries.Count(e => e.Status == WaitlistEntryStatus.Active) + 1;
         _entries.Add(new WaitlistEntry(WaitlistEntryId.New(), email, nextPosition, addedAt));
@@ -68,18 +70,20 @@ public class Waitlist : Aggregate<TicketTypeId>
     }
 
     /// <summary>
-    /// Removes the active entry for the given email. Idempotent if not found.
+    /// Removes the active entry for the given email, and its count on the <paramref name="catalog"/>'s ticket type.
+    /// Idempotent if not found.
     /// </summary>
-    public void RemoveEntry(EmailAddress email)
+    public void RemoveEntry(EmailAddress email, TicketCatalog catalog)
     {
-        if (RemoveActiveEntry(email))
+        if (RemoveActiveEntry(email, catalog))
             CheckExhausted();
     }
 
     /// <summary>
-    /// Removes the entry with the given ID. Idempotent if already removed.
+    /// Removes the entry with the given ID, and its count on the <paramref name="catalog"/>'s ticket type.
+    /// Idempotent if already removed.
     /// </summary>
-    public void RemoveEntry(WaitlistEntryId entryId)
+    public void RemoveEntry(WaitlistEntryId entryId, TicketCatalog catalog)
     {
         var entry = _entries.FirstOrDefault(e => e.Id == entryId);
         if (entry is null)
@@ -88,7 +92,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         if (entry.Status == WaitlistEntryStatus.Removed)
             return;
 
-        entry.Remove();
+        LeaveQueue(entry, catalog);
         RenumberPositions();
         AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
         CheckExhausted();
@@ -111,7 +115,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         var remainingEntries = _entries.Where(e => e.Status == WaitlistEntryStatus.Active).ToList();
         foreach (var entry in remainingEntries)
         {
-            entry.Remove();
+            LeaveQueue(entry, catalog);
             AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
         }
 
@@ -146,7 +150,7 @@ public class Waitlist : Aggregate<TicketTypeId>
 
     /// <summary>
     /// Issues a coupon to the top-ranked active waitlist entry and removes that entry from the queue. The offer
-    /// holds a seat on the <paramref name="catalog"/>'s ticket type. Returns <c>null</c> when there are no active
+    /// holds a seat on the <paramref name="catalog"/>'s ticket type, and the entry leaves its queued count. Returns <c>null</c> when there are no active
     /// entries.
     /// </summary>
     public Coupon? IssueNextCoupon(
@@ -191,7 +195,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         var ticketType = catalog.FindTicketType(Id);
         catalog.HoldForWaitlistOffer(Id);
 
-        entry.Remove();
+        LeaveQueue(entry, catalog);
         RenumberPositions();
 
         var expiresAt = WaitlistClaimWindowCalculator.ComputeExpiresAt(
@@ -222,12 +226,12 @@ public class Waitlist : Aggregate<TicketTypeId>
 
     /// <summary>
     /// Applies a coupon redemption that granted this waitlist's ticket type, whatever the coupon's source:
-    /// removes the redeeming email's active entry (if any), and marks the coupon redeemed if it was issued
-    /// from this waitlist.
+    /// removes the redeeming email's active entry (if any) and its count on the <paramref name="catalog"/>'s ticket
+    /// type, and marks the coupon redeemed if it was issued from this waitlist.
     /// </summary>
-    public void ApplyCouponRedemption(CouponId couponId, EmailAddress email)
+    public void ApplyCouponRedemption(CouponId couponId, EmailAddress email, TicketCatalog catalog)
     {
-        var entryRemoved = RemoveActiveEntry(email);
+        var entryRemoved = RemoveActiveEntry(email, catalog);
 
         var issuedCoupon = _coupons.FirstOrDefault(c => c.Id == couponId);
         issuedCoupon?.Redeem();
@@ -277,16 +281,26 @@ public class Waitlist : Aggregate<TicketTypeId>
         return coupon;
     }
 
-    private bool RemoveActiveEntry(EmailAddress email)
+    private bool RemoveActiveEntry(EmailAddress email, TicketCatalog catalog)
     {
         var entry = _entries.FirstOrDefault(e => e.Email == email && e.Status == WaitlistEntryStatus.Active);
         if (entry is null)
             return false;
 
-        entry.Remove();
+        LeaveQueue(entry, catalog);
         RenumberPositions();
         AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, email));
         return true;
+    }
+
+    /// <summary>
+    /// Takes the entry out of the queue and out of the <paramref name="catalog"/>'s queued count together, keeping
+    /// <see cref="TicketType.WaitlistQueuedCount"/> equal to the number of active entries.
+    /// </summary>
+    private void LeaveQueue(WaitlistEntry entry, TicketCatalog catalog)
+    {
+        entry.Remove();
+        catalog.LeaveWaitlistQueue(Id);
     }
 
     private void RenumberPositions()

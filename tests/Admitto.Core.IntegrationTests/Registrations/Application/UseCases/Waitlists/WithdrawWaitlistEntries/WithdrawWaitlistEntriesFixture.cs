@@ -51,6 +51,8 @@ internal sealed class WithdrawWaitlistEntriesFixture
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
             var now = DateTimeOffset.UtcNow;
+            var catalog = TicketCatalog.Create(EventId, TeamId);
+            dbContext.TicketCatalogs.Add(catalog);
 
             switch (_scenario)
             {
@@ -59,9 +61,10 @@ internal sealed class WithdrawWaitlistEntriesFixture
                     {
                         var ticketTypeId = TicketTypeId.New();
                         TicketTypeIds.Add(ticketTypeId);
+                        AddWaitlistEnabledTicketType(catalog, ticketTypeId, $"Workshop {i + 1}");
 
                         var waitlist = Waitlist.Create(EventId, ticketTypeId, TeamId);
-                        waitlist.AddEntry(CancelledAttendeeEmail, now);
+                        waitlist.AddEntry(CancelledAttendeeEmail, now, catalog);
                         dbContext.Waitlists.Add(waitlist);
                     }
                     break;
@@ -70,11 +73,12 @@ internal sealed class WithdrawWaitlistEntriesFixture
                 {
                     var ticketTypeId = TicketTypeId.New();
                     TicketTypeIds.Add(ticketTypeId);
+                    AddWaitlistEnabledTicketType(catalog, ticketTypeId, "Workshop");
 
                     var waitlist = Waitlist.Create(EventId, ticketTypeId, TeamId);
-                    waitlist.AddEntry(OtherAttendeeBeforeEmail, now); // position 1
-                    waitlist.AddEntry(CancelledAttendeeEmail, now.AddMinutes(1)); // position 2 - withdrawn
-                    waitlist.AddEntry(OtherAttendeeAfterEmail, now.AddMinutes(2)); // position 3 -> becomes 2
+                    waitlist.AddEntry(OtherAttendeeBeforeEmail, now, catalog); // position 1
+                    waitlist.AddEntry(CancelledAttendeeEmail, now.AddMinutes(1), catalog); // position 2 - withdrawn
+                    waitlist.AddEntry(OtherAttendeeAfterEmail, now.AddMinutes(2), catalog); // position 3 -> becomes 2
                     dbContext.Waitlists.Add(waitlist);
                     break;
                 }
@@ -84,4 +88,7 @@ internal sealed class WithdrawWaitlistEntriesFixture
             }
         });
     }
+
+    private static void AddWaitlistEnabledTicketType(TicketCatalog catalog, TicketTypeId id, string name) =>
+        catalog.AddTicketType(id, TicketTypeName.From(name), [], maxCapacity: 10, waitlistEnabled: true);
 }

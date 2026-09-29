@@ -78,7 +78,7 @@ internal sealed class TicketTypeManagementFixture
             {
                 var waitlist = Waitlist.Create(eventId, ExistingTicketTypeId, team.Id);
                 for (var i = 1; i <= _waitingCount; i++)
-                    waitlist.AddEntry(WaitingEmail(i), DateTimeOffset.UtcNow.AddMinutes(i));
+                    waitlist.AddEntry(WaitingEmail(i), DateTimeOffset.UtcNow.AddMinutes(i), catalog);
                 db.Waitlists.Add(waitlist);
             }
         });

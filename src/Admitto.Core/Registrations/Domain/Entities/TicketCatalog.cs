@@ -208,17 +208,18 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     /// <summary>
     /// Re-evaluates WaitlistMode for the given ticket type. Clears WaitlistMode only when all three conditions
-    /// hold: available capacity, no active waitlist entries, and no outstanding waitlist offers
-    /// (<see cref="TicketType.WaitlistHeldCapacity"/>).
+    /// hold: nobody queued (<see cref="TicketType.WaitlistQueuedCount"/>), no outstanding waitlist offers
+    /// (<see cref="TicketType.WaitlistHeldCapacity"/>), and seats available to the public. Both counts live on the
+    /// catalog, so a concurrent waitlist join or offer on the same ticket type makes one of the two saves fail.
     /// </summary>
-    public void ReEvaluateWaitlistMode(TicketTypeId ticketTypeId, int activeEntryCount)
+    public void ReEvaluateWaitlistMode(TicketTypeId ticketTypeId)
     {
         EnsureEventActive();
 
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
         if (ticketType is null || !ticketType.WaitlistMode) return;
 
-        if (activeEntryCount == 0
+        if (ticketType.WaitlistQueuedCount == 0
             && ticketType.WaitlistHeldCapacity == 0
             && !ticketType.IsSoldOut)
         {
@@ -227,20 +228,23 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     }
 
     /// <summary>
-    /// Clears WaitlistMode only when publicly available capacity exists (not IsSoldOut).
-    /// Called when the Waitlist aggregate signals it is exhausted (no active entries, no issued coupons).
+    /// Counts an attendee joining the ticket type's waitlist queue, in the same unit of work as the
+    /// <see cref="Waitlist"/> entry is added.
     /// </summary>
-    public void TryDeactivateWaitlistMode(TicketTypeId ticketTypeId)
+    public void JoinWaitlistQueue(TicketTypeId ticketTypeId)
     {
         EnsureEventActive();
 
-        var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
-        if (ticketType is null || !ticketType.WaitlistMode) return;
+        FindTicketType(ticketTypeId).JoinWaitlistQueue();
+    }
 
-        if (!ticketType.IsSoldOut)
-        {
-            ticketType.DeactivateWaitlistMode();
-        }
+    /// <summary>
+    /// Counts an attendee leaving the ticket type's waitlist queue, in the same unit of work as the
+    /// <see cref="Waitlist"/> entry is removed. Unknown IDs are silently skipped.
+    /// </summary>
+    public void LeaveWaitlistQueue(TicketTypeId ticketTypeId)
+    {
+        GetTicketType(ticketTypeId)?.LeaveWaitlistQueue();
     }
 
     /// <summary>
@@ -268,14 +272,18 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     }
 
     /// <summary>
-    /// Unconditionally clears WaitlistMode for a ticket type (used on admin force-disable).
+    /// Clears WaitlistMode for a ticket type whatever its availability, once the catalog counts nobody queued
+    /// (<see cref="TicketType.WaitlistQueuedCount"/>) and no outstanding waitlist offers
+    /// (<see cref="TicketType.WaitlistHeldCapacity"/>). Called when the <see cref="Waitlist"/> is exhausted; reading the
+    /// catalog's own counts means a concurrent waitlist join on the same ticket type makes one of the two saves fail.
     /// </summary>
-    public void ForceDeactivateWaitlistMode(TicketTypeId ticketTypeId)
+    public void LiftWaitlistModeWhenExhausted(TicketTypeId ticketTypeId)
     {
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
         if (ticketType is null || !ticketType.WaitlistMode) return;
 
-        ticketType.DeactivateWaitlistMode();
+        if (ticketType.WaitlistQueuedCount == 0 && ticketType.WaitlistHeldCapacity == 0)
+            ticketType.DeactivateWaitlistMode();
     }
 
     public void EnsureEventActive()

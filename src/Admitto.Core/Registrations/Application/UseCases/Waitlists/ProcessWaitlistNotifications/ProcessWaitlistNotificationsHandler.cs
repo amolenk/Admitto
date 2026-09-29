@@ -55,6 +55,6 @@ internal sealed class ProcessWaitlistNotificationsHandler(
             await writeStore.Coupons.AddAsync(coupon, cancellationToken);
         }
 
-        catalog.ReEvaluateWaitlistMode(ticketTypeId, waitlist.ActiveEntryCount);
+        catalog.ReEvaluateWaitlistMode(ticketTypeId);
     }
 }

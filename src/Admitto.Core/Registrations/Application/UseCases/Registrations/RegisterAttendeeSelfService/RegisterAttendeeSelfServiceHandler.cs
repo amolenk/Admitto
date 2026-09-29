@@ -96,7 +96,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
                 await writeStore.Waitlists.AddAsync(waitlist, cancellationToken);
             }
 
-            waitlist.AddEntry(email, now);
+            waitlist.AddEntry(email, now, catalog);
         }
 
         return new RegisterAttendeeSelfServiceResult(

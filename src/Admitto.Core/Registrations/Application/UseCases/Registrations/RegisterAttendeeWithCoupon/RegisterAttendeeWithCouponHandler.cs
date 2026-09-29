@@ -82,7 +82,7 @@ internal sealed class RegisterAttendeeWithCouponHandler(
         var waitlists = await writeStore.Waitlists
             .Where(w => w.EventId == eventId && w.TeamId == teamId)
             .ToListAsync(cancellationToken);
-        ApplyRedemptionToWaitlists(waitlists, coupon, email, couponGrantedIds);
+        ApplyRedemptionToWaitlists(waitlists, catalog, coupon, email, couponGrantedIds);
 
         return registration.Id.Value;
     }
@@ -90,17 +90,19 @@ internal sealed class RegisterAttendeeWithCouponHandler(
     /// <summary>
     /// Redemption-time waitlist cleanup shared by every coupon redemption path: for each ticket type the
     /// redemption actually granted, removes the redeeming email's active waitlist entry and settles the
-    /// coupon on the waitlist that issued it — uniformly, whatever the coupon's source.
+    /// coupon on the waitlist that issued it — uniformly, whatever the coupon's source. Removed entries leave the
+    /// <paramref name="catalog"/>'s queued count.
     /// </summary>
     internal static void ApplyRedemptionToWaitlists(
         IEnumerable<Waitlist> eventWaitlists,
+        TicketCatalog catalog,
         Coupon coupon,
         EmailAddress email,
         IReadOnlyList<TicketTypeId> couponGrantedIds)
     {
         foreach (var waitlist in eventWaitlists.Where(w => couponGrantedIds.Contains(w.Id)))
         {
-            waitlist.ApplyCouponRedemption(coupon.Id, email);
+            waitlist.ApplyCouponRedemption(coupon.Id, email, catalog);
         }
     }
 

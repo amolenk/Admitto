@@ -63,6 +63,10 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
             b.Property(tt => tt.WaitlistHeldCapacity)
                 .HasJsonPropertyName("waitlist_held_capacity");
 
+            // Stored without a key before the catalog counted queued attendees; a missing key reads as 0.
+            b.Property(tt => tt.WaitlistQueuedCount)
+                .HasJsonPropertyName("waitlist_queued_count");
+
             b.Property(tt => tt.SelfServiceEnabled)
                 .HasJsonPropertyName("self_service_enabled")
                 .IsRequired();

@@ -86,7 +86,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
             waitlistEnabled: true);
 
         var waitlist = Waitlist.Create(eventId, ticketTypeId, teamId);
-        waitlist.AddEntry(EmailAddress.From("attendee@example.com"), DateTimeOffset.UtcNow);
+        waitlist.AddEntry(EmailAddress.From("attendee@example.com"), DateTimeOffset.UtcNow, catalog);
 
         return (waitlist, ticketedEvent, catalog);
     }

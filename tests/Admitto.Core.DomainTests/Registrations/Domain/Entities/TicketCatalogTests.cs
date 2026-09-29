@@ -987,7 +987,7 @@ public sealed class TicketCatalogTests
     }
 
     // Given a ticket type in waitlist mode where used capacity is below total capacity but still at the public threshold
-    // When waitlist mode is re-evaluated with no active entries and no issued coupons
+    // When waitlist mode is re-evaluated with nobody queued and no outstanding offers
     // Then waitlist mode remains active because the public threshold is still met
     [TestMethod]
     public void ReEvaluateWaitlistMode_BelowTotalCapacityButAtPublicThreshold_KeepsWaitlistMode()
@@ -998,15 +998,15 @@ public sealed class TicketCatalogTests
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true, reservedCapacity: 1);
         sut.Claim([id], ClaimMode.Public); // 1 of 2 used → publicly sold out (threshold 1) → WaitlistMode on
 
-        // Act — no active entries, no issued coupons
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
+        // Act — nobody queued, no outstanding offers
+        sut.ReEvaluateWaitlistMode(id);
 
         // Assert — a naive UsedCapacity < MaxCapacity check would wrongly clear WaitlistMode here
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
     // Given a ticket type in waitlist mode with a slot now freed
-    // When waitlist mode is re-evaluated with no active entries and no issued coupons
+    // When waitlist mode is re-evaluated with nobody queued and no outstanding offers
     // Then waitlist mode is cleared
     [TestMethod]
     public void ReEvaluateWaitlistMode_AllConditionsMet_ClearsWaitlistMode()
@@ -1019,15 +1019,15 @@ public sealed class TicketCatalogTests
         var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
         sut.Release(tickets); // one slot freed
 
-        // Act — no active entries, no issued coupons
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
+        // Act — nobody queued, no outstanding offers
+        sut.ReEvaluateWaitlistMode(id);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
     }
 
     // Given a ticket type in waitlist mode that is still at capacity
-    // When waitlist mode is re-evaluated with no active entries and no issued coupons
+    // When waitlist mode is re-evaluated with nobody queued and no outstanding offers
     // Then waitlist mode remains active
     [TestMethod]
     public void ReEvaluateWaitlistMode_StillAtCapacity_KeepsWaitlistMode()
@@ -1039,13 +1039,13 @@ public sealed class TicketCatalogTests
         sut.Claim([id], ClaimMode.Public); // WaitlistMode on
 
         // Act
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
+        sut.ReEvaluateWaitlistMode(id);
 
         // Assert — still at capacity → stays in WaitlistMode
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
-    // Given a ticket type in waitlist mode with a slot freed but active waitlist entries remaining
+    // Given a ticket type in waitlist mode with a slot freed but an attendee still queued
     // When waitlist mode is re-evaluated
     // Then waitlist mode remains active
     [TestMethod]
@@ -1058,9 +1058,10 @@ public sealed class TicketCatalogTests
         sut.Claim([id], ClaimMode.Public);
         var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
         sut.Release(tickets); // one slot freed
+        sut.JoinWaitlistQueue(id);
 
-        // Act — entries still active
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 1);
+        // Act — an attendee is still queued
+        sut.ReEvaluateWaitlistMode(id);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
@@ -1084,69 +1085,125 @@ public sealed class TicketCatalogTests
         sut.Release(second); // one seat free once the offer is covered
 
         // Act — the offer is still in flight
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
+        sut.ReEvaluateWaitlistMode(id);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
-    // Given a ticket type in waitlist mode with a slot now freed
-    // When waitlist mode deactivation is attempted
-    // Then waitlist mode is cleared
+    // Given a sold-out ticket type in waitlist mode with nobody queued and no outstanding offers
+    // When waitlist mode is lifted because the waitlist is exhausted
+    // Then waitlist mode is cleared even though it is sold out
     [TestMethod]
-    public void TryDeactivateWaitlistMode_WhenCapacityAvailable_ClearsWaitlistMode()
+    public void LiftWaitlistModeWhenExhausted_NobodyQueuedWhileSoldOut_ClearsWaitlistMode()
     {
-        // Arrange — sold out → WaitlistMode on, then one slot freed
+        // Arrange
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
-        sut.Claim([id], ClaimMode.Public);
-        var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
-        sut.Release(tickets); // UsedCapacity < MaxCapacity now
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], ClaimMode.Public); // WaitlistMode on
 
         // Act
-        sut.TryDeactivateWaitlistMode(id);
+        sut.LiftWaitlistModeWhenExhausted(id);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
     }
 
-    // Given a ticket type in waitlist mode that is still at capacity
-    // When waitlist mode deactivation is attempted
+    // Given a ticket type in waitlist mode with an attendee the catalog still counts as queued
+    // When waitlist mode is lifted because the waitlist is exhausted
     // Then waitlist mode remains active
     [TestMethod]
-    public void TryDeactivateWaitlistMode_WhenAtCapacity_DoesNotClearWaitlistMode()
+    public void LiftWaitlistModeWhenExhausted_AttendeeQueued_KeepsWaitlistMode()
     {
-        // Arrange — sold out → WaitlistMode on, still at capacity
+        // Arrange — e.g. an attendee joined concurrently after the waitlist reported itself exhausted
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
-        sut.Claim([id], ClaimMode.Public); // WaitlistMode on, UsedCapacity == MaxCapacity
+        sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.JoinWaitlistQueue(id);
 
         // Act
-        sut.TryDeactivateWaitlistMode(id);
+        sut.LiftWaitlistModeWhenExhausted(id);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
-    // Given a ticket type in waitlist mode where used capacity is below total capacity but still at the public threshold
-    // When waitlist mode deactivation is attempted
-    // Then waitlist mode remains active because the public threshold is still met
+    // Given a ticket type in waitlist mode with a waitlist offer outstanding
+    // When waitlist mode is lifted because the waitlist is exhausted
+    // Then waitlist mode remains active
     [TestMethod]
-    public void TryDeactivateWaitlistMode_BelowTotalCapacityButAtPublicThreshold_DoesNotClearWaitlistMode()
+    public void LiftWaitlistModeWhenExhausted_OfferOutstanding_KeepsWaitlistMode()
     {
-        // Arrange — 1 of 2 used, 1 reserved → public threshold is 1, so still publicly sold out
+        // Arrange
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true, reservedCapacity: 1);
-        sut.Claim([id], ClaimMode.Public); // 1 of 2 used → publicly sold out (threshold 1) → WaitlistMode on
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.HoldForWaitlistOffer(id);
 
-        // Act — a naive UsedCapacity < MaxCapacity check would wrongly clear WaitlistMode here
-        sut.TryDeactivateWaitlistMode(id);
+        // Act
+        sut.LiftWaitlistModeWhenExhausted(id);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
+    // Given a ticket type with two attendees queued
+    // When one leaves, and then leaving is counted twice more
+    // Then the queued count goes down to zero and stays there
+    [TestMethod]
+    public void LeaveWaitlistQueue_MoreLeavesThanJoins_ClampsAtZero()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.JoinWaitlistQueue(id);
+        sut.JoinWaitlistQueue(id);
+
+        // Act
+        sut.LeaveWaitlistQueue(id);
+        var afterOneLeave = sut.GetTicketType(id)!.WaitlistQueuedCount;
+        sut.LeaveWaitlistQueue(id);
+        sut.LeaveWaitlistQueue(id);
+
+        // Assert
+        afterOneLeave.ShouldBe(1);
+        sut.GetTicketType(id)!.WaitlistQueuedCount.ShouldBe(0);
+    }
+
+    // Given a catalog without the ticket type
+    // When leaving its waitlist queue is counted
+    // Then nothing happens
+    [TestMethod]
+    public void LeaveWaitlistQueue_UnknownTicketType_IsIgnored()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+
+        // Act & Assert
+        Should.NotThrow(() => sut.LeaveWaitlistQueue(TicketTypeId.New()));
+    }
+
+    // Given an archived event
+    // When an attendee joining a ticket type's waitlist queue is counted
+    // Then it throws EventNotActive
+    [TestMethod]
+    public void JoinWaitlistQueue_EventArchived_ThrowsEventNotActive()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.MarkEventArchived();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.JoinWaitlistQueue(id));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
     // ─── Waitlist-held capacity ───────────────────────────────────────────────

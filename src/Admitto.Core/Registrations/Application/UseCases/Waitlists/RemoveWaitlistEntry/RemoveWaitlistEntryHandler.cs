@@ -18,7 +18,7 @@ internal sealed class RemoveWaitlistEntryHandler(IRegistrationsWriteStore writeS
         TeamId teamId = TeamId.From(command.TeamId);
         WaitlistEntryId entryId = WaitlistEntryId.From(command.EntryId);
 
-        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+        var catalog = await writeStore.TicketCatalogs.GetAsync(
             tc => tc.Id == ticketedEventId && tc.TeamId == teamId,
             cancellationToken);
 
@@ -32,7 +32,7 @@ internal sealed class RemoveWaitlistEntryHandler(IRegistrationsWriteStore writeS
         if (waitlist is null)
             throw new BusinessRuleViolationException(Errors.WaitlistNotFound);
 
-        waitlist.RemoveEntry(entryId);
+        waitlist.RemoveEntry(entryId, catalog);
     }
 
     internal static class Errors

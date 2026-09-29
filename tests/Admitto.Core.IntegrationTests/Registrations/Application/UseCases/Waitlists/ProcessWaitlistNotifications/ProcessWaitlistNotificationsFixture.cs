@@ -88,7 +88,7 @@ internal sealed class ProcessWaitlistNotificationsFixture
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(EventId, TicketTypeId, TeamId);
             var now = DateTimeOffset.UtcNow;
             for (var i = 0; i < activeEntries + OutstandingVipOffers; i++)
-                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i));
+                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i), catalog);
             for (var i = 0; i < OutstandingVipOffers; i++)
             {
                 var vipEntry = waitlist.Entries.Where(e => e.Status == WaitlistEntryStatus.Active).MaxBy(e => e.Position)!;
