@@ -14,6 +14,7 @@ public sealed class WaitlistTests
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
     private static readonly TicketTypeId DefaultTicketTypeId = TicketTypeId.New();
     private static readonly TeamId DefaultTeamId = TeamId.New();
+    private static readonly EmailAddress RedeemerEmail = EmailAddress.From("redeemer@example.com");
 
     private static Waitlist CreateWaitlist() =>
         Waitlist.Create(DefaultEventId, DefaultTicketTypeId, DefaultTeamId);
@@ -221,7 +222,7 @@ public sealed class WaitlistTests
     // When the coupon is redeemed
     // Then its status becomes Redeemed
     [TestMethod]
-    public void RedeemCoupon_TransitionsStatusToRedeemed()
+    public void ApplyCouponRedemption_TransitionsStatusToRedeemed()
     {
         // Arrange
         var sut = CreateWaitlist();
@@ -229,7 +230,7 @@ public sealed class WaitlistTests
         sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
 
         // Act
-        sut.RedeemCoupon(couponId);
+        sut.ApplyCouponRedemption(couponId, RedeemerEmail);
 
         // Assert
         sut.Coupons.Single().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
@@ -346,7 +347,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
         var ticketType = CreateTicketType();
         var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow)!;
-        sut.RedeemCoupon(coupon.Id);
+        sut.ApplyCouponRedemption(coupon.Id, RedeemerEmail);
         sut.ClearDomainEvents();
 
         // Act
@@ -397,23 +398,23 @@ public sealed class WaitlistTests
     // When redemption is attempted again
     // Then it throws a business rule violation instead of silently overwriting
     [TestMethod]
-    public void RedeemCoupon_WhenCouponAlreadyRedeemed_ThrowsConflictError()
+    public void ApplyCouponRedemption_WhenCouponAlreadyRedeemed_ThrowsConflictError()
     {
         // Arrange
         var sut = CreateWaitlist();
         var couponId = CouponId.New();
         sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
-        sut.RedeemCoupon(couponId);
+        sut.ApplyCouponRedemption(couponId, RedeemerEmail);
 
         // Act & Assert — second redemption attempt must fail, not silently overwrite
-        Should.Throw<BusinessRuleViolationException>(() => sut.RedeemCoupon(couponId));
+        Should.Throw<BusinessRuleViolationException>(() => sut.ApplyCouponRedemption(couponId, RedeemerEmail));
     }
 
     // Given a coupon that was already revoked (e.g. by an expiry job)
     // When an attendee then attempts to redeem it
     // Then it throws a business rule violation
     [TestMethod]
-    public void RedeemCoupon_WhenCouponAlreadyRevoked_ThrowsConflictError()
+    public void ApplyCouponRedemption_WhenCouponAlreadyRevoked_ThrowsConflictError()
     {
         // Arrange — simulates the race-loser scenario: expiry job revoked first, attendee redeems second
         var sut = CreateWaitlist();
@@ -423,7 +424,7 @@ public sealed class WaitlistTests
 
         // Act & Assert — the EF Core concurrency token (xmin) is the first guard; this is the
         // fallback guard for in-memory consistency.
-        Should.Throw<BusinessRuleViolationException>(() => sut.RedeemCoupon(couponId));
+        Should.Throw<BusinessRuleViolationException>(() => sut.ApplyCouponRedemption(couponId, RedeemerEmail));
     }
 
     // Given a coupon that an attendee already redeemed
@@ -436,7 +437,7 @@ public sealed class WaitlistTests
         var sut = CreateWaitlist();
         var couponId = CouponId.New();
         sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
-        sut.RedeemCoupon(couponId);
+        sut.ApplyCouponRedemption(couponId, RedeemerEmail);
 
         // Act & Assert
         Should.Throw<BusinessRuleViolationException>(() => sut.RevokeCoupon(couponId));
@@ -456,5 +457,48 @@ public sealed class WaitlistTests
 
         // Act & Assert
         Should.Throw<BusinessRuleViolationException>(() => sut.RevokeCoupon(couponId));
+    }
+
+    // Given a waitlist where the redeeming email is queued ahead of another attendee
+    // When a coupon granting this ticket type is redeemed by that email
+    // Then the redeemer's entry is removed, the other attendee moves up, and an entry-removed event is raised
+    [TestMethod]
+    public void ApplyCouponRedemption_RedeemerHasActiveEntry_RemovesEntryAndRenumbers()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var otherEmail = EmailAddress.From("other@example.com");
+        sut.AddEntry(RedeemerEmail, DateTimeOffset.UtcNow);
+        sut.AddEntry(otherEmail, DateTimeOffset.UtcNow);
+
+        // Act
+        sut.ApplyCouponRedemption(CouponId.New(), RedeemerEmail);
+
+        // Assert
+        sut.HasActiveEntry(RedeemerEmail).ShouldBeFalse();
+        sut.GetActivePosition(otherEmail).ShouldBe(1);
+        sut.GetDomainEvents().OfType<WaitlistEntryRemovedDomainEvent>().ShouldHaveSingleItem()
+            .Email.ShouldBe(RedeemerEmail);
+    }
+
+    // Given a waitlist that did not issue the coupon and has no entry for the redeeming email
+    // When a coupon granting this ticket type is redeemed
+    // Then the waitlist is left unchanged and raises no events
+    [TestMethod]
+    public void ApplyCouponRedemption_CouponNotIssuedAndNoEntry_LeavesWaitlistUnchanged()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var otherEmail = EmailAddress.From("other@example.com");
+        sut.AddEntry(otherEmail, DateTimeOffset.UtcNow);
+        sut.ClearDomainEvents();
+
+        // Act
+        sut.ApplyCouponRedemption(CouponId.New(), RedeemerEmail);
+
+        // Assert
+        sut.GetActivePosition(otherEmail).ShouldBe(1);
+        sut.Coupons.ShouldBeEmpty();
+        sut.GetDomainEvents().ShouldBeEmpty();
     }
 }

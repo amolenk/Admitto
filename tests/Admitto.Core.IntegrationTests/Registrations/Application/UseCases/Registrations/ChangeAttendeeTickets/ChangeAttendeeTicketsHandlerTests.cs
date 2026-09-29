@@ -211,9 +211,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
 
     // Given a waitlist coupon offering a workshop ticket
     // When the attendee self-serves a ticket change that omits the offered workshop ticket
-    // Then a WaitlistCouponTicketMissing error is thrown and the coupon remains unredeemed
+    // Then a no-coupon-ticket-type-selected error is thrown and the coupon remains unredeemed
     [TestMethod]
-    public async ValueTask ChangeAttendeeTickets_WaitlistCouponOfferedTicketMissing_ThrowsAndLeavesCouponUnredeemed()
+    public async ValueTask ChangeAttendeeTickets_CouponTicketTypesNotSelected_ThrowsAndLeavesCouponUnredeemed()
     {
         var fixture = ChangeAttendeeTicketsFixture.WithWaitlistCoupon();
         await fixture.SetupAsync(Environment);
@@ -229,7 +229,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(ChangeAttendeeTicketsHandler.Errors.WaitlistCouponTicketMissing(fixture.GetTicketTypeId("workshop")));
+        result.Error.ShouldMatch(Coupon.Errors.NoCouponTicketTypeSelected([fixture.GetTicketTypeId("workshop").Value]));
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {

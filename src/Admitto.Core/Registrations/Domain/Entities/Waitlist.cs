@@ -74,14 +74,8 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// </summary>
     public void RemoveEntry(EmailAddress email)
     {
-        var entry = _entries.FirstOrDefault(e => e.Email == email && e.Status == WaitlistEntryStatus.Active);
-        if (entry is null)
-            return;
-
-        entry.Remove();
-        RenumberPositions();
-        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, email));
-        CheckExhausted();
+        if (RemoveActiveEntry(email))
+            CheckExhausted();
     }
 
     /// <summary>
@@ -172,13 +166,19 @@ public class Waitlist : Aggregate<TicketTypeId>
     }
 
     /// <summary>
-    /// Marks the given waitlist coupon as redeemed.
+    /// Applies a coupon redemption that granted this waitlist's ticket type, whatever the coupon's source:
+    /// removes the redeeming email's active entry (if any), and marks the coupon redeemed if it was issued
+    /// from this waitlist.
     /// </summary>
-    public void RedeemCoupon(CouponId couponId)
+    public void ApplyCouponRedemption(CouponId couponId, EmailAddress email)
     {
-        var coupon = FindActiveCoupon(couponId);
-        coupon.Redeem();
-        CheckExhausted();
+        var entryRemoved = RemoveActiveEntry(email);
+
+        var issuedCoupon = _coupons.FirstOrDefault(c => c.Id == couponId);
+        issuedCoupon?.Redeem();
+
+        if (entryRemoved || issuedCoupon is not null)
+            CheckExhausted();
     }
 
     /// <summary>
@@ -210,6 +210,18 @@ public class Waitlist : Aggregate<TicketTypeId>
             throw new BusinessRuleViolationException(Errors.CouponNotFound);
 
         return coupon;
+    }
+
+    private bool RemoveActiveEntry(EmailAddress email)
+    {
+        var entry = _entries.FirstOrDefault(e => e.Email == email && e.Status == WaitlistEntryStatus.Active);
+        if (entry is null)
+            return false;
+
+        entry.Remove();
+        RenumberPositions();
+        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, email));
+        return true;
     }
 
     private void RenumberPositions()

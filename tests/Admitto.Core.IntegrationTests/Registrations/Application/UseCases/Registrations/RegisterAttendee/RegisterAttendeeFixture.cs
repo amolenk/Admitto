@@ -18,12 +18,13 @@ internal sealed class RegisterAttendeeFixture
     private TicketedEvent? _ticketedEvent;
     private TicketCatalog? _catalog;
     private Coupon? _coupon;
-    private global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist? _waitlist;
+    private readonly List<global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist> _waitlists = [];
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
     public string TicketTypeSlug { get; private set; } = "general-admission";
     public Guid CouponCode { get; private set; }
+    public static EmailAddress OtherQueuedEmail { get; } = EmailAddress.From("queued@example.com");
     public EmailAddress CouponEmail { get; private set; } = EmailAddress.From("speaker@gmail.com");
     public RegistrationId ExistingRegistrationId =>
         _existingRegistrationId
@@ -456,7 +457,7 @@ internal sealed class RegisterAttendeeFixture
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, ticketTypeId, f.TeamId);
         waitlist.TrackIssuedCoupon(f._coupon.Id, DateTimeOffset.UtcNow);
         waitlist.ClearDomainEvents();
-        f._waitlist = waitlist;
+        f._waitlists.Add(waitlist);
 
         return f;
     }
@@ -480,7 +481,57 @@ internal sealed class RegisterAttendeeFixture
 
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, ticketTypeId, f.TeamId);
         waitlist.ClearDomainEvents();
-        f._waitlist = waitlist;
+        f._waitlists.Add(waitlist);
+
+        return f;
+    }
+
+    /// <summary>
+    /// Two sold-out, waitlist-mode ticket types ("general-admission" and "workshop"). The coupon email is queued
+    /// on both waitlists (ahead of another attendee on the general-admission one) and holds an organiser-issued
+    /// coupon covering both ticket types.
+    /// </summary>
+    public static RegisterAttendeeFixture OrganiserMultiTicketTypeCouponForWaitlistedEmail()
+    {
+        var f = new RegisterAttendeeFixture { TicketTypeSlug = "general-admission" };
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        foreach (var (slug, name) in new[] { ("general-admission", "General Admission"), ("workshop", "Workshop") })
+        {
+            var id = TicketTypeId.New();
+            f._ticketTypeIdsBySlug[slug] = id;
+            catalog.AddTicketType(id, TicketTypeName.From(name), [], 1, waitlistEnabled: true);
+            catalog.Claim([id], ClaimMode.Public); // fills last slot → activates WaitlistMode
+        }
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+
+        var generalAdmissionId = f.GetTicketTypeId("general-admission");
+        var workshopId = f.GetTicketTypeId("workshop");
+
+        f._coupon = new CouponBuilder()
+            .WithEventId(f.EventId)
+            .WithTeamId(f.TeamId)
+            .WithEmail(f.CouponEmail)
+            .WithRequestedTicketTypeIds(generalAdmissionId, workshopId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(generalAdmissionId), new TicketTypeInfo(workshopId))
+            .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
+            .Build(); // Source=Organiser by default
+        f.CouponCode = f._coupon.Code.Value;
+
+        var generalAdmissionWaitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+            f.EventId, generalAdmissionId, f.TeamId);
+        generalAdmissionWaitlist.AddEntry(f.CouponEmail, DateTimeOffset.UtcNow);
+        generalAdmissionWaitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow);
+        generalAdmissionWaitlist.ClearDomainEvents();
+        f._waitlists.Add(generalAdmissionWaitlist);
+
+        var workshopWaitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+            f.EventId, workshopId, f.TeamId);
+        workshopWaitlist.AddEntry(f.CouponEmail, DateTimeOffset.UtcNow);
+        workshopWaitlist.ClearDomainEvents();
+        f._waitlists.Add(workshopWaitlist);
 
         return f;
     }
@@ -489,7 +540,7 @@ internal sealed class RegisterAttendeeFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (_ticketedEvent is not null || _catalog is not null || _coupon is not null || _waitlist is not null)
+        if (_ticketedEvent is not null || _catalog is not null || _coupon is not null || _waitlists.Count > 0)
         {
             await environment.RegistrationsDatabase.SeedAsync(dbContext =>
             {
@@ -499,8 +550,7 @@ internal sealed class RegisterAttendeeFixture
                     dbContext.TicketCatalogs.Add(_catalog);
                 if (_coupon is not null)
                     dbContext.Coupons.Add(_coupon);
-                if (_waitlist is not null)
-                    dbContext.Waitlists.Add(_waitlist);
+                dbContext.Waitlists.AddRange(_waitlists);
             });
         }
 

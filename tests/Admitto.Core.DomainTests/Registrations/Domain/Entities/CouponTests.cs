@@ -298,6 +298,162 @@ public sealed class CouponTests
         sut.RevokedAt.ShouldBe(firstRevokedAt);
     }
 
+    // Given a coupon allowing two ticket types
+    // When it is redeemed with a selection containing both
+    // Then both ticket types are granted and the coupon is marked redeemed
+    [TestMethod]
+    public void Redeem_SelectionContainsAllCouponTicketTypes_GrantsAllAndMarksRedeemed()
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon();
+
+        // Act
+        var granted = sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopA, WorkshopB], CouponBuilder.DefaultNow);
+
+        // Assert
+        granted.ShouldBe([WorkshopA, WorkshopB], ignoreOrder: true);
+        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Redeemed);
+    }
+
+    // Given a coupon allowing two ticket types
+    // When it is redeemed with a selection containing only one of them
+    // Then only that ticket type is granted, the other is forfeited, and the coupon is fully redeemed
+    [TestMethod]
+    public void Redeem_SelectionContainsSomeCouponTicketTypes_GrantsOverlapAndForfeitsRest()
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon();
+
+        // Act
+        var granted = sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopB], CouponBuilder.DefaultNow);
+
+        // Assert
+        granted.ShouldBe([WorkshopB]);
+        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Redeemed);
+
+        var second = ErrorResult.Capture(
+            () => sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopA], CouponBuilder.DefaultNow));
+        second.Error.ShouldMatch(Coupon.Errors.AlreadyRedeemed);
+    }
+
+    // Given a coupon allowing one ticket type
+    // When it is redeemed with a selection that also holds a ticket type the coupon does not cover
+    // Then only the coupon's own ticket type is granted
+    [TestMethod]
+    public void Redeem_SelectionContainsOtherTicketTypes_GrantsOnlyCouponTicketTypes()
+    {
+        // Arrange
+        var sut = new CouponBuilder().Build();
+        var otherTicketTypeId = TicketTypeId.New();
+
+        // Act
+        var granted = sut.Redeem(
+            CouponBuilder.DefaultEmail,
+            [otherTicketTypeId, CouponBuilder.DefaultTicketTypeId],
+            CouponBuilder.DefaultNow);
+
+        // Assert
+        granted.ShouldBe([CouponBuilder.DefaultTicketTypeId]);
+    }
+
+    // Given a coupon of either source allowing two ticket types
+    // When it is redeemed with a selection that includes none of them
+    // Then it fails with a no-coupon-ticket-type-selected error and the coupon stays active
+    [TestMethod]
+    [DataRow(CouponSource.Organiser)]
+    [DataRow(CouponSource.Waitlist)]
+    public void Redeem_SelectionContainsNoCouponTicketType_ThrowsNoCouponTicketTypeSelected(CouponSource source)
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon(source);
+
+        // Act
+        var result = ErrorResult.Capture(
+            () => sut.Redeem(CouponBuilder.DefaultEmail, [TicketTypeId.New()], CouponBuilder.DefaultNow));
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.NoCouponTicketTypeSelected([WorkshopA.Value, WorkshopB.Value]));
+        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Active);
+    }
+
+    // Given a waitlist-sourced coupon allowing two ticket types
+    // When it is redeemed with a selection containing one of them
+    // Then it follows the same partial-tolerant rule as an organiser coupon
+    [TestMethod]
+    public void Redeem_WaitlistSourcedMultiTicketTypeCoupon_GrantsOverlap()
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon(CouponSource.Waitlist);
+
+        // Act
+        var granted = sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopA], CouponBuilder.DefaultNow);
+
+        // Assert
+        granted.ShouldBe([WorkshopA]);
+        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Redeemed);
+    }
+
+    // Given a coupon issued to one email address
+    // When it is redeemed by a different email address
+    // Then it fails with an email-mismatch error
+    [TestMethod]
+    public void Redeem_DifferentEmail_ThrowsEmailMismatch()
+    {
+        // Arrange
+        var sut = new CouponBuilder().Build();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Redeem(
+            EmailAddress.From("someone-else@example.com"),
+            [CouponBuilder.DefaultTicketTypeId],
+            CouponBuilder.DefaultNow));
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.EmailMismatch);
+    }
+
+    // Given a coupon allowing two ticket types
+    // When it is checked against a selection holding a ticket type outside its allow-list
+    // Then it fails with a ticket-type-not-allowed error naming that ticket type
+    [TestMethod]
+    public void EnsureAllowsAll_SelectionOutsideAllowList_ThrowsTicketTypeNotAllowlisted()
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon();
+        var otherTicketTypeId = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.EnsureAllowsAll([WorkshopA, otherTicketTypeId]));
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.TicketTypeNotAllowlisted([otherTicketTypeId.Value]));
+    }
+
+    // Given a coupon of a given source
+    // When its redemption claim mode is read
+    // Then waitlist coupons re-fill the public pool and organiser coupons draw on the reserved buffer
+    [TestMethod]
+    [DataRow(CouponSource.Waitlist, ClaimMode.PublicUncapped)]
+    [DataRow(CouponSource.Organiser, ClaimMode.Reserved)]
+    public void RedemptionClaimMode_BySource_ReturnsCapacityPool(CouponSource source, ClaimMode expected)
+    {
+        // Arrange
+        var sut = new CouponBuilder().WithSource(source).Build();
+
+        // Act & Assert
+        sut.RedemptionClaimMode.ShouldBe(expected);
+    }
+
+    private static readonly TicketTypeId WorkshopA = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    private static readonly TicketTypeId WorkshopB = TicketTypeId.From(new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+
+    private static Coupon MultiTicketTypeCoupon(CouponSource source = CouponSource.Organiser) =>
+        new CouponBuilder()
+            .WithRequestedTicketTypeIds(WorkshopA, WorkshopB)
+            .WithAvailableTicketTypes(new TicketTypeInfo(WorkshopA), new TicketTypeInfo(WorkshopB))
+            .WithSource(source)
+            .Build();
+
     private static void SetRedeemedAt(Coupon coupon, DateTimeOffset redeemedAt)
     {
         var property = typeof(Coupon).GetProperty(nameof(Coupon.RedeemedAt))!;

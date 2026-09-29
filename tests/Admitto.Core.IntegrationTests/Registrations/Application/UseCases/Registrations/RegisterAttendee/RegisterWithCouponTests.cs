@@ -380,6 +380,39 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
+    // Given an organiser coupon covering two sold-out ticket types, both of whose waitlists the coupon email is on
+    // When the attendee registers with the coupon selecting only one of them
+    // Then only that ticket type is granted, its waitlist entry is removed, the other waitlist entry stays, and the coupon is redeemed
+    [TestMethod]
+    public async ValueTask RegisterWithCoupon_OrganiserMultiTicketTypeCouponForWaitlistedEmail_GrantsSelectedTicketAndRemovesItsWaitlistEntry()
+    {
+        var fixture = RegisterAttendeeFixture.OrganiserMultiTicketTypeCouponForWaitlistedEmail();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, fixture.CouponEmail.Value);
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("general-admission"));
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var generalAdmissionWaitlist = await dbContext.Waitlists
+                .SingleAsync(w => w.Id == fixture.GetTicketTypeId("general-admission"), testContext.CancellationToken);
+            generalAdmissionWaitlist.HasActiveEntry(fixture.CouponEmail).ShouldBeFalse();
+            generalAdmissionWaitlist.GetActivePosition(RegisterAttendeeFixture.OtherQueuedEmail).ShouldBe(1);
+
+            var workshopWaitlist = await dbContext.Waitlists
+                .SingleAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
+            workshopWaitlist.GetActivePosition(fixture.CouponEmail).ShouldBe(1);
+        });
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static RegisterAttendeeWithCouponCommand NewCommand(RegisterAttendeeFixture fixture, string email)

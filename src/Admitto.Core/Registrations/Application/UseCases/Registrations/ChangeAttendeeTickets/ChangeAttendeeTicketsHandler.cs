@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -54,25 +55,6 @@ internal sealed class ChangeAttendeeTicketsHandler(
         var newTicketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
         catalog.ValidateSelection(newTicketTypeIds);
 
-        Coupon? waitlistCoupon = null;
-        TicketTypeId? couponTicketTypeId = null;
-        if (command.WaitlistCouponCode is { } waitlistCouponCode)
-        {
-            waitlistCoupon = await writeStore.Coupons.GetAsync(
-                c => c.EventId == eventId && c.TeamId == teamId && c.Code == CouponCode.From(waitlistCouponCode),
-                cancellationToken);
-
-            if (waitlistCoupon.Source != CouponSource.Waitlist)
-                throw new BusinessRuleViolationException(Errors.WaitlistCouponRequired);
-
-            if (waitlistCoupon.AllowedTicketTypeIds.Count != 1)
-                throw new BusinessRuleViolationException(Errors.WaitlistCouponRequired);
-
-            couponTicketTypeId = waitlistCoupon.AllowedTicketTypeIds[0];
-            if (!newTicketTypeIds.Contains(couponTicketTypeId.Value))
-                throw new BusinessRuleViolationException(Errors.WaitlistCouponTicketMissing(couponTicketTypeId.Value));
-        }
-
         // 6. Compute delta: toRelease = current ∖ new, toClaim = new ∖ current.
         var currentIds = registration.Tickets.Select(t => t.Id.Value).ToHashSet();
         var newIdsSet = command.TicketTypeIds.ToHashSet();
@@ -80,18 +62,30 @@ internal sealed class ChangeAttendeeTicketsHandler(
         var toRelease = registration.Tickets.Where(t => !newIdsSet.Contains(t.Id.Value)).ToList();
         var toClaim = newTicketTypeIds.Where(id => !currentIds.Contains(id.Value)).ToList();
 
+        // Any coupon, whatever its source, can back the newly added ticket types; tickets the registration
+        // already holds are not granted by the coupon, so they cannot satisfy its redemption.
+        Coupon? coupon = null;
+        IReadOnlyList<TicketTypeId> couponGrantedIds = [];
+        if (command.CouponCode is { } couponCode)
+        {
+            coupon = await writeStore.Coupons.GetAsync(
+                c => c.EventId == eventId && c.TeamId == teamId && c.Code == CouponCode.From(couponCode),
+                cancellationToken);
+
+            couponGrantedIds = coupon.Redeem(registration.Email, toClaim, timeProvider.GetUtcNow());
+        }
+
         // 7. Release freed capacity.
         catalog.Release(toRelease);
 
-        // 8. Claim added capacity. A waitlist coupon grants only its offered ticket.
-        var couponBackedClaim = couponTicketTypeId is { } offeredTicketTypeId
-            && toClaim.Remove(offeredTicketTypeId);
+        // 8. Claim added capacity. Ticket types granted by a coupon are claimed under the coupon's pool.
+        toClaim = toClaim.Except(couponGrantedIds).ToList();
 
         var claimMode = command.Mode == ChangeMode.SelfService ? ClaimMode.Public : ClaimMode.Reserved;
         var claimedTickets = catalog.Claim(toClaim, claimMode);
-        var couponClaimedTickets = couponBackedClaim
-            ? catalog.Claim([couponTicketTypeId!.Value], ClaimMode.PublicUncapped)
-            : [];
+        var couponClaimedTickets = coupon is null
+            ? []
+            : catalog.Claim(couponGrantedIds, coupon.RedemptionClaimMode);
 
         // 9. Build new ticket snapshots. Newly claimed tickets keep the ClaimMode they were
         // claimed under (see step 8); tickets that were already on the registration keep their
@@ -116,16 +110,14 @@ internal sealed class ChangeAttendeeTicketsHandler(
         // 10. Apply the change to the registration.
         registration.ChangeTickets(newTickets, timeProvider.GetUtcNow());
 
-        if (waitlistCoupon is null || couponTicketTypeId is null)
+        if (coupon is null)
             return;
 
-        var now = timeProvider.GetUtcNow();
-        waitlistCoupon.Redeem(registration.Email, [couponTicketTypeId.Value], now);
-
-        var waitlist = await writeStore.Waitlists.GetAsync(
-            w => w.EventId == eventId && w.TeamId == teamId && w.Id == couponTicketTypeId.Value,
-            cancellationToken);
-        waitlist.RedeemCoupon(waitlistCoupon.Id);
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == eventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+        RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlists(
+            waitlists, coupon, registration.Email, couponGrantedIds);
     }
 
     internal static class Errors
@@ -144,16 +136,5 @@ internal sealed class ChangeAttendeeTicketsHandler(
             "change_tickets.no_ticket_types",
             "No ticket types have been configured for this event.",
             Type: ErrorType.Validation);
-
-        public static readonly Error WaitlistCouponRequired = new(
-            "change_tickets.waitlist_coupon_required",
-            "The supplied coupon is not a waitlist coupon.",
-            Type: ErrorType.Validation);
-
-        public static Error WaitlistCouponTicketMissing(TicketTypeId ticketTypeId) => new(
-            "change_tickets.waitlist_coupon_ticket_missing",
-            "The final ticket selection must include the waitlist coupon's offered ticket type.",
-            Type: ErrorType.Validation,
-            Details: new Dictionary<string, object?> { ["ticketTypeId"] = ticketTypeId.Value });
     }
 }

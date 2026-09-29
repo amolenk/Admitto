@@ -11,14 +11,16 @@ internal sealed class UpdatePartnerRegistrationFixture
     private TicketedEvent? _ticketedEvent;
     private TicketCatalog? _catalog;
     private Coupon? _coupon;
-    private global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist? _waitlist;
+    private readonly List<global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist> _waitlists = [];
     private bool _preCancel;
     private TicketTypeSnapshot? _reservedTicket;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
-    public Guid WaitlistCouponCode => _coupon?.Code.Value ?? throw new InvalidOperationException("No coupon has been seeded.");
+    public Guid CouponCode => _coupon?.Code.Value ?? throw new InvalidOperationException("No coupon has been seeded.");
+    public static EmailAddress AttendeeEmail { get; } = EmailAddress.From("alice@example.com");
+    public static EmailAddress OtherQueuedEmail { get; } = EmailAddress.From("bob@example.com");
 
     public TicketTypeId GetTicketTypeId(string slug) => _ticketTypeIdsBySlug[slug];
 
@@ -89,7 +91,12 @@ internal sealed class UpdatePartnerRegistrationFixture
         return f;
     }
 
-    public static UpdatePartnerRegistrationFixture WithWaitlistCoupon(bool overlappingTickets = false)
+    /// <summary>
+    /// Catalog with the registration's existing "early-bird" ticket and a sold-out, waitlist-mode "workshop".
+    /// A single-ticket-type waitlist coupon for the workshop was issued to the attendee (their own entry was
+    /// removed at issuance); another attendee is still queued behind them.
+    /// </summary>
+    public static UpdatePartnerRegistrationFixture WithWaitlistCoupon()
     {
         var f = new UpdatePartnerRegistrationFixture();
         f._ticketedEvent = f.MakeActiveEventWithSchema();
@@ -100,9 +107,8 @@ internal sealed class UpdatePartnerRegistrationFixture
         f._ticketTypeIdsBySlug["early-bird"] = earlyBirdId;
         f._ticketTypeIdsBySlug["workshop"] = workshopId;
 
-        var workshopSlot = overlappingTickets ? "morning" : "afternoon";
         catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [TimeSlot.From("morning")], 100);
-        catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From(workshopSlot)], 1, waitlistEnabled: true);
+        catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From("afternoon")], 1, waitlistEnabled: true);
         catalog.Claim([earlyBirdId], ClaimMode.Reserved);
         catalog.Claim([workshopId], ClaimMode.Public);
         catalog.ClearDomainEvents();
@@ -111,7 +117,7 @@ internal sealed class UpdatePartnerRegistrationFixture
         f._coupon = Coupon.Create(
             f.EventId,
             f.TeamId,
-            EmailAddress.From("alice@example.com"),
+            AttendeeEmail,
             [workshopId],
             DateTimeOffset.UtcNow.AddDays(30),
             bypassRegistrationWindow: true,
@@ -121,9 +127,65 @@ internal sealed class UpdatePartnerRegistrationFixture
         f._coupon.ClearDomainEvents();
 
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, workshopId, f.TeamId);
+        waitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow);
         waitlist.TrackIssuedCoupon(f._coupon.Id, DateTimeOffset.UtcNow);
         waitlist.ClearDomainEvents();
-        f._waitlist = waitlist;
+        f._waitlists.Add(waitlist);
+
+        return f;
+    }
+
+    /// <summary>
+    /// Catalog with the registration's existing "early-bird" ticket and two sold-out, waitlist-mode ticket types,
+    /// "workshop" and "masterclass". The attendee is queued on both waitlists (ahead of another attendee on the
+    /// workshop one) and holds an organiser-issued coupon covering both ticket types — or, with
+    /// <paramref name="coverExistingTicket"/>, covering the already-held early-bird and the workshop.
+    /// </summary>
+    public static UpdatePartnerRegistrationFixture WithOrganiserMultiTicketTypeCoupon(bool coverExistingTicket = false)
+    {
+        var f = new UpdatePartnerRegistrationFixture();
+        f._ticketedEvent = f.MakeActiveEventWithSchema();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var earlyBirdId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
+        var masterclassId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["early-bird"] = earlyBirdId;
+        f._ticketTypeIdsBySlug["workshop"] = workshopId;
+        f._ticketTypeIdsBySlug["masterclass"] = masterclassId;
+
+        catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], 100);
+        catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [], 1, waitlistEnabled: true);
+        catalog.AddTicketType(masterclassId, TicketTypeName.From("Masterclass"), [], 1, waitlistEnabled: true);
+        catalog.Claim([earlyBirdId], ClaimMode.Public);
+        catalog.Claim([workshopId], ClaimMode.Public); // fills the last slot -> activates WaitlistMode
+        catalog.Claim([masterclassId], ClaimMode.Public); // fills the last slot -> activates WaitlistMode
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+
+        f._coupon = Coupon.Create(
+            f.EventId,
+            f.TeamId,
+            AttendeeEmail,
+            coverExistingTicket ? [earlyBirdId, workshopId] : [workshopId, masterclassId],
+            DateTimeOffset.UtcNow.AddDays(30),
+            bypassRegistrationWindow: false,
+            [new TicketTypeInfo(earlyBirdId), new TicketTypeInfo(workshopId), new TicketTypeInfo(masterclassId)],
+            DateTimeOffset.UtcNow);
+        f._coupon.ClearDomainEvents();
+
+        var workshopWaitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+            f.EventId, workshopId, f.TeamId);
+        workshopWaitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow);
+        workshopWaitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow);
+        workshopWaitlist.ClearDomainEvents();
+        f._waitlists.Add(workshopWaitlist);
+
+        var masterclassWaitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+            f.EventId, masterclassId, f.TeamId);
+        masterclassWaitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow);
+        masterclassWaitlist.ClearDomainEvents();
+        f._waitlists.Add(masterclassWaitlist);
 
         return f;
     }
@@ -154,9 +216,9 @@ internal sealed class UpdatePartnerRegistrationFixture
         {
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
                 f.EventId, workshopId, f.TeamId);
-            waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+            waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow);
             waitlist.ClearDomainEvents();
-            f._waitlist = waitlist;
+            f._waitlists.Add(waitlist);
         }
 
         return f;
@@ -188,9 +250,9 @@ internal sealed class UpdatePartnerRegistrationFixture
         {
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
                 f.EventId, workshopId, f.TeamId);
-            waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+            waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow);
             waitlist.ClearDomainEvents();
-            f._waitlist = waitlist;
+            f._waitlists.Add(waitlist);
         }
 
         return f;
@@ -203,7 +265,7 @@ internal sealed class UpdatePartnerRegistrationFixture
             if (_ticketedEvent is not null) dbContext.TicketedEvents.Add(_ticketedEvent);
             if (_catalog is not null) dbContext.TicketCatalogs.Add(_catalog);
             if (_coupon is not null) dbContext.Coupons.Add(_coupon);
-            if (_waitlist is not null) dbContext.Waitlists.Add(_waitlist);
+            dbContext.Waitlists.AddRange(_waitlists);
 
             var earlyBirdId = _ticketTypeIdsBySlug.TryGetValue("early-bird", out var id) ? id : TicketTypeId.New();
             var initialTickets = _reservedTicket is { } reservedTicket
@@ -212,7 +274,7 @@ internal sealed class UpdatePartnerRegistrationFixture
             var registration = Registration.Create(
                 TeamId,
                 EventId,
-                EmailAddress.From("alice@example.com"),
+                AttendeeEmail,
                 FirstName.From("Alice"),
                 LastName.From("Test"),
                 initialTickets,

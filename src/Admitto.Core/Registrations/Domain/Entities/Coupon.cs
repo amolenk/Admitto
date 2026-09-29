@@ -120,9 +120,23 @@ public class Coupon : Aggregate<CouponId>
         return coupon;
     }
 
-    public void Redeem(
+    /// <summary>
+    /// The capacity pool a redemption of this coupon claims from. This is capacity bookkeeping only, not a
+    /// redemption rule: a waitlist coupon re-fills a slot already freed from the public pool, while any other
+    /// coupon draws on the reserved buffer first (see <see cref="ClaimMode"/>).
+    /// </summary>
+    public ClaimMode RedemptionClaimMode =>
+        Source == CouponSource.Waitlist ? ClaimMode.PublicUncapped : ClaimMode.Reserved;
+
+    /// <summary>
+    /// Redeems the coupon against the ticket types the attendee is claiming, regardless of the coupon's source.
+    /// Succeeds as long as the selection includes at least one of the coupon's allowed ticket types; allowed
+    /// ticket types missing from the selection are forfeited and the coupon is still fully redeemed
+    /// (single-use). Returns the ticket types actually granted by this redemption.
+    /// </summary>
+    public IReadOnlyList<TicketTypeId> Redeem(
         EmailAddress email,
-        IReadOnlyList<TicketTypeId> ticketTypeIds,
+        IReadOnlyList<TicketTypeId> selectedTicketTypeIds,
         DateTimeOffset now)
     {
         var status = GetStatus(now);
@@ -133,17 +147,33 @@ public class Coupon : Aggregate<CouponId>
         if (status == CouponStatus.Revoked)
             throw new BusinessRuleViolationException(Errors.Revoked);
 
+        if (Email != email)
+            throw new BusinessRuleViolationException(Errors.EmailMismatch);
+
+        var granted = _allowedTicketTypeIds
+            .Where(selectedTicketTypeIds.Contains)
+            .ToList();
+        if (granted.Count == 0)
+            throw new BusinessRuleViolationException(
+                Errors.NoCouponTicketTypeSelected(_allowedTicketTypeIds.Select(id => id.Value).ToArray()));
+
+        RedeemedAt = now;
+        return granted;
+    }
+
+    /// <summary>
+    /// Rejects a selection holding any ticket type outside this coupon's allow-list. Used where the coupon is
+    /// the only claim source for the whole selection (registering with a coupon), so it cannot be used to
+    /// claim uncapped capacity for ticket types it was never issued for.
+    /// </summary>
+    public void EnsureAllowsAll(IReadOnlyList<TicketTypeId> ticketTypeIds)
+    {
         var notAllowlisted = ticketTypeIds
-            .Where(id => !_allowedTicketTypeIds.Any(allowed => allowed == id))
+            .Where(id => !_allowedTicketTypeIds.Contains(id))
             .Select(id => id.Value)
             .ToArray();
         if (notAllowlisted.Length > 0)
             throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
-
-        if (Email != email)
-            throw new BusinessRuleViolationException(Errors.EmailMismatch);
-
-        RedeemedAt = now;
     }
 
     public void Revoke()
@@ -196,6 +226,12 @@ public class Coupon : Aggregate<CouponId>
             "coupon.ticket_type_not_allowed",
             "One or more ticket types are not allowed for this coupon.",
             Details: new Dictionary<string, object?> { ["ids"] = ids });
+
+        public static Error NoCouponTicketTypeSelected(Guid[] allowedIds) => new(
+            "coupon.no_coupon_ticket_type_selected",
+            "The ticket selection must include at least one of this coupon's ticket types.",
+            Type: ErrorType.Validation,
+            Details: new Dictionary<string, object?> { ["allowedTicketTypeIds"] = allowedIds });
 
         public static readonly Error EmailMismatch = new(
             "coupon.email_mismatch",

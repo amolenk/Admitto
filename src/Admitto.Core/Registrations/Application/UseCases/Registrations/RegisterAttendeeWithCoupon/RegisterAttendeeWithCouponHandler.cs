@@ -35,7 +35,9 @@ internal sealed class RegisterAttendeeWithCouponHandler(
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
         var now = timeProvider.GetUtcNow();
-        coupon.Redeem(email, ticketTypeIds, now);
+        // The coupon is the only claim source for this registration, so it cannot carry ticket types it doesn't cover.
+        coupon.EnsureAllowsAll(ticketTypeIds);
+        var couponGrantedIds = coupon.Redeem(email, ticketTypeIds, now);
 
         var additionalDetails = AdditionalDetails.Validate(
             command.AdditionalDetails,
@@ -55,10 +57,7 @@ internal sealed class RegisterAttendeeWithCouponHandler(
         var catalog = await writeStore.TicketCatalogs
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
-        // A waitlist coupon redeems a slot already freed from the public pool (see the waitlist
-        // notification flow); any other coupon source is a general reserved-capacity grant.
-        var claimMode = coupon.Source == CouponSource.Waitlist ? ClaimMode.PublicUncapped : ClaimMode.Reserved;
-        var tickets = catalog.Claim(ticketTypeIds, claimMode);
+        var tickets = catalog.Claim(ticketTypeIds, coupon.RedemptionClaimMode);
 
         Registration registration;
         if (existingRegistration is null)
@@ -80,15 +79,29 @@ internal sealed class RegisterAttendeeWithCouponHandler(
             registration.Reset(firstName, lastName, tickets, additionalDetails, now);
         }
 
-        if (coupon.Source != CouponSource.Waitlist) return registration.Id.Value;
-
-        var ticketTypeId = TicketTypeId.From(coupon.AllowedTicketTypeIds[0].Value);
-        var waitlist = await writeStore.Waitlists
-            .GetAsync(w => w.EventId == eventId && w.TeamId == teamId && w.Id == ticketTypeId, cancellationToken);
-
-        waitlist.RedeemCoupon(coupon.Id);
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == eventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+        ApplyRedemptionToWaitlists(waitlists, coupon, email, couponGrantedIds);
 
         return registration.Id.Value;
+    }
+
+    /// <summary>
+    /// Redemption-time waitlist cleanup shared by every coupon redemption path: for each ticket type the
+    /// redemption actually granted, removes the redeeming email's active waitlist entry and settles the
+    /// coupon on the waitlist that issued it — uniformly, whatever the coupon's source.
+    /// </summary>
+    internal static void ApplyRedemptionToWaitlists(
+        IEnumerable<Waitlist> eventWaitlists,
+        Coupon coupon,
+        EmailAddress email,
+        IReadOnlyList<TicketTypeId> couponGrantedIds)
+    {
+        foreach (var waitlist in eventWaitlists.Where(w => couponGrantedIds.Contains(w.Id)))
+        {
+            waitlist.ApplyCouponRedemption(coupon.Id, email);
+        }
     }
 
     internal static class Errors
