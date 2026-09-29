@@ -5,24 +5,24 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.NotifyWaitlist.EventHandlers;
 
 /// <summary>
-/// Handles <see cref="WaitlistCapacityFreedDomainEvent"/> (raising MaxCapacity or lowering ReservedCapacity while
-/// in WaitlistMode) by dispatching <see cref="ProcessWaitlistNotificationsCommand"/> with the freed slots, so the
-/// front of the queue is offered a coupon for each new slot.
+/// Handles <see cref="WaitlistCapacityAvailableDomainEvent"/> (tickets released, a waitlist hold released,
+/// MaxCapacity raised or ReservedCapacity lowered while in WaitlistMode) by dispatching
+/// <see cref="ProcessWaitlistNotificationsCommand"/> in the same unit of work, so the front of the queue is offered
+/// the seats the catalog has available.
 /// </summary>
-internal sealed class WaitlistCapacityFreedDomainEventHandler(
+internal sealed class WaitlistCapacityAvailableDomainEventHandler(
     ICommandHandler<ProcessWaitlistNotificationsCommand> processWaitlistNotificationsHandler)
-    : IDomainEventHandler<WaitlistCapacityFreedDomainEvent>
+    : IDomainEventHandler<WaitlistCapacityAvailableDomainEvent>
 {
     public async ValueTask HandleAsync(
-        WaitlistCapacityFreedDomainEvent domainEvent,
+        WaitlistCapacityAvailableDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
         await processWaitlistNotificationsHandler.HandleAsync(
             new ProcessWaitlistNotificationsCommand(
                 domainEvent.TicketedEventId.Value,
                 domainEvent.TeamId.Value,
-                domainEvent.TicketTypeId.Value,
-                domainEvent.FreedSlots),
+                domainEvent.TicketTypeId.Value),
             cancellationToken);
     }
 }

@@ -1,37 +1,32 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Quartz;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Jobs;
 
 /// <summary>
-/// Polls for waitlists holding issued coupons whose offer lapsed (past the grace period) and processes
-/// each one: expires the coupon on the <see cref="Waitlist"/> aggregate (which raises
+/// Polls for waitlists holding issued coupons whose offer lapsed (past the grace period) and expires
+/// each one on the <see cref="Waitlist"/> aggregate, which raises
 /// <see cref="Domain.DomainEvents.WaitlistCouponExpiredDomainEvent"/> so the recipient is told
-/// their offer lapsed), then fires
-/// <see cref="ProcessWaitlistNotificationsCommand"/> to cascade the freed slots to the next
-/// people in queue. Only <see cref="WaitlistCouponOrigin.Automatic"/> coupons free a slot: a
-/// manually issued (VIP) coupon was never backed by one, so its expiry cascades nothing. The command
-/// is fired even when no slot was freed, so WaitlistMode is still re-evaluated. If the waitlist is
-/// empty after expiry, the domain raises
-/// <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
+/// their offer lapsed, and gives back the seat the offer held on the <see cref="TicketCatalog"/>. The
+/// job counts no freed slots: the catalog decides from real capacity whether that seat goes to the
+/// next person in queue (<see cref="Domain.DomainEvents.WaitlistCapacityAvailableDomainEvent"/>) or
+/// covers an outstanding VIP offer or overbooking. If the waitlist is empty after expiry, the domain
+/// raises <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
 /// </summary>
 /// <remarks>
 /// The 2-minute grace period (<see cref="GracePeriod"/>) prevents the job from racing with
-/// a last-second redemption by the attendee. As a second line of defence, the
-/// <see cref="Waitlist"/> aggregate carries a PostgreSQL <c>xmin</c> row-version concurrency
-/// token; if both transactions attempt to commit simultaneously the loser receives a
-/// <see cref="Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException"/> which surfaces as
-/// a <see cref="Shared.Kernel.ErrorHandling.ConcurrencyConflictError"/> at the API layer.
+/// a last-second redemption by the attendee. As a second line of defence, the job writes both the
+/// <see cref="Waitlist"/> and the <see cref="TicketCatalog"/>, which each carry a PostgreSQL
+/// <c>xmin</c> row-version concurrency token; if a redemption, registration or cancellation on the
+/// same catalog commits first, the job's save fails with a
+/// <see cref="Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException"/> and the next run retries.
 /// </remarks>
 [DisallowConcurrentExecution]
 internal sealed class ProcessExpiredWaitlistCouponsJob(
     IRegistrationsWriteStore writeStore,
-    ICommandHandler<ProcessWaitlistNotificationsCommand> notifyHandler,
     [FromKeyedServices(RegistrationsModule.Key)] IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     ILogger<ProcessExpiredWaitlistCouponsJob> logger)
@@ -63,7 +58,6 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
             foreach (var waitlist in waitlists)
             {
                 var catalog = await writeStore.TicketCatalogs
-                    .AsNoTracking()
                     .FirstOrDefaultAsync(
                         c => c.Id == waitlist.EventId && c.TeamId == waitlist.TeamId,
                         context.CancellationToken);
@@ -84,20 +78,11 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                     .ToDictionaryAsync(c => c.Id, context.CancellationToken);
 
                 // Without a coupon or ticket type there is nothing to put in the expired-offer email; the
-                // aggregate still expires the waitlist coupon so any freed slot cascades.
-                var ticketType = catalog.GetTicketType(waitlist.Id);
-                var freedSlots = 0;
-
+                // aggregate still expires the waitlist coupon and gives back its hold.
                 foreach (var couponId in lapsedCouponIds)
                 {
-                    if (waitlist.ExpireCoupon(couponId, lapsedCoupons.GetValueOrDefault(couponId), ticketType))
-                        freedSlots++;
+                    waitlist.ExpireCoupon(couponId, lapsedCoupons.GetValueOrDefault(couponId), catalog);
                 }
-
-                await notifyHandler.HandleAsync(
-                    new ProcessWaitlistNotificationsCommand(
-                        waitlist.EventId.Value, waitlist.TeamId.Value, waitlist.Id.Value, freedSlots),
-                    context.CancellationToken);
             }
 
             await unitOfWork.SaveChangesAsync(context.CancellationToken);

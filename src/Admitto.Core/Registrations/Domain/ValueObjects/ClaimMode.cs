@@ -13,8 +13,9 @@ public enum ClaimMode
     Public,
 
     /// <summary>
-    /// Waitlist coupon redemption. Not enforced — the coupon already reserved
-    /// the slot when it was issued — but counts as public usage, not reserved usage.
+    /// Waitlist coupon redemption. Not enforced — issuing the coupon took a hold on
+    /// the ticket type, which the redemption turns into this claim — and counts as
+    /// public usage, not reserved usage.
     /// </summary>
     PublicUncapped,
 

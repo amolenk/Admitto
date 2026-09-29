@@ -49,6 +49,13 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
         new() { VipCouponsToIssue = 1 };
 
     /// <summary>
+    /// An automatic coupon for the front of the queue, then a VIP coupon for the next entry (position 2) made while
+    /// sold out, with one more entry waiting behind them.
+    /// </summary>
+    public static ProcessExpiredWaitlistCouponsJobFixture WithPendingCouponAndVipCouponAtPositionTwo() =>
+        new() { VipCouponsToIssue = 1, VipsFromFront = true };
+
+    /// <summary>
     /// Number of coupons issued (to the front-of-queue entries) during setup.
     /// </summary>
     public int CouponsToIssue { get; private init; } = 1;
@@ -59,11 +66,16 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     public int VipCouponsToIssue { get; private init; }
 
     /// <summary>
-    /// Seeds the database with a TicketedEvent, TicketCatalog in WaitlistMode, a Waitlist with
-    /// <paramref name="activeEntries"/> entries, and then issues a coupon to the first entry using
-    /// the real handler so the coupon row exists in the DB with a real <c>expires_at</c>.
-    /// Issues <see cref="CouponsToIssue"/> coupons to the front-of-queue entries, then promotes the last
-    /// <see cref="VipCouponsToIssue"/> entries as VIPs.
+    /// Whether VIP coupons go to the front of the remaining queue instead of its back.
+    /// </summary>
+    public bool VipsFromFront { get; private init; }
+
+    /// <summary>
+    /// Seeds the database with a TicketedEvent, a sold-out TicketCatalog in WaitlistMode and a Waitlist, then
+    /// frees <see cref="CouponsToIssue"/> seats and issues that many coupons to the front-of-queue entries using
+    /// the real handler so the coupon rows exist in the DB with a real <c>expires_at</c>. Finally promotes
+    /// <see cref="VipCouponsToIssue"/> entries (from the back of the queue, or its front if <see cref="VipsFromFront"/>)
+    /// as VIPs while the ticket type is sold out, so their offers hold seats beyond capacity.
     /// </summary>
     /// <param name="activeEntriesAfterCoupon">
     /// Number of active entries that should remain in the waitlist AFTER the coupons are issued.
@@ -96,8 +108,12 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             var catalog = TicketCatalog.Create(EventId, TeamId);
             catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: capacity,
                 waitlistEnabled: true, claimWindowHours: 8);
-            for (var i = 0; i < capacity; i++)
-                catalog.Claim([TicketTypeId], ClaimMode.Public);   // fill to capacity → WaitlistMode activates
+            var tickets = Enumerable.Range(0, capacity)
+                .Select(_ => catalog.Claim([TicketTypeId], ClaimMode.Public))   // fill to capacity → WaitlistMode
+                .ToList();
+            foreach (var ticket in tickets.Take(CouponsToIssue))
+                catalog.Release(ticket);   // seats for the coupons issued below
+            catalog.ClearDomainEvents();
             dbContext.TicketCatalogs.Add(catalog);
 
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
@@ -116,7 +132,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             var handler = new ProcessWaitlistNotificationsHandler(context, TimeProvider.System);
 
             await handler.HandleAsync(
-                new ProcessWaitlistNotificationsCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: CouponsToIssue),
+                new ProcessWaitlistNotificationsCommand(EventId.Value, TeamId.Value, TicketTypeId.Value),
                 cancellationToken);
 
             await context.SaveChangesAsync(cancellationToken);
@@ -127,9 +143,10 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
         {
             var waitlist = await context.Waitlists.AsNoTracking()
                 .FirstAsync(w => w.Id == TicketTypeId, cancellationToken);
-            var vipEntryIds = waitlist.Entries
-                .Where(e => e.Status == WaitlistEntryStatus.Active)
-                .OrderByDescending(e => e.Position)
+            var activeEntries = waitlist.Entries.Where(e => e.Status == WaitlistEntryStatus.Active);
+            var vipEntryIds = (VipsFromFront
+                    ? activeEntries.OrderBy(e => e.Position)
+                    : activeEntries.OrderByDescending(e => e.Position))
                 .Take(VipCouponsToIssue)
                 .Select(e => e.Id.Value)
                 .ToList();
@@ -172,21 +189,33 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     }
 
     /// <summary>
-    /// Backdates the expiry of all outstanding waitlist coupons to be <paramref name="offsetFromNow"/>
-    /// before now, bypassing the domain model: both the coupon rows and the issued coupons tracked in the
-    /// waitlist's <c>waitlist_coupons</c> JSON (which is what the expiry job looks at).
+    /// Backdates the expiry of the outstanding waitlist coupons — all of them, or only the one sent to
+    /// <paramref name="recipient"/> — to be <paramref name="offsetFromNow"/> before now, bypassing the domain model:
+    /// both the coupon rows and the issued coupons tracked in the waitlist's <c>waitlist_coupons</c> JSON (which is
+    /// what the expiry job looks at).
     /// </summary>
     public async ValueTask BackdateCouponExpiryAsync(
         IntegrationTestEnvironment environment,
         TimeSpan offsetFromNow,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? recipient = null)
     {
         var cutoff = DateTimeOffset.UtcNow - offsetFromNow;
 
         var database = environment.RegistrationsDatabase.Context.Database;
 
+        var couponIds = await environment.RegistrationsDatabase.Context.Coupons
+            .AsNoTracking()
+            .Where(c => c.Source == CouponSource.Waitlist && c.RedeemedAt == null)
+            .Select(c => new { c.Id, c.Email })
+            .ToListAsync(cancellationToken);
+        var targetIds = couponIds
+            .Where(c => recipient is null || c.Email.Value == recipient)
+            .Select(c => c.Id.Value.ToString())
+            .ToArray();
+
         await database.ExecuteSqlAsync(
-            $"UPDATE registrations.coupons SET expires_at = {cutoff} WHERE source = {nameof(CouponSource.Waitlist)} AND redeemed_at IS NULL",
+            $"UPDATE registrations.coupons SET expires_at = {cutoff} WHERE id::text = ANY({targetIds})",
             cancellationToken);
 
         await database.ExecuteSqlAsync(
@@ -194,7 +223,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
              UPDATE registrations.waitlists
              SET waitlist_coupons = (
                  SELECT jsonb_agg(
-                     CASE WHEN c->>'status' = {{nameof(WaitlistCouponStatus.Issued)}}
+                     CASE WHEN c->>'status' = {{nameof(WaitlistCouponStatus.Issued)}} AND c->>'id' = ANY({{targetIds}})
                           THEN jsonb_set(c, '{expires_at}', to_jsonb({{cutoff}}))
                           ELSE c
                      END)

@@ -36,9 +36,7 @@ internal sealed class DisableWaitlistHandler(
         var catalog = await writeStore.TicketCatalogs.GetAsync(
             c => c.Id == eventId && c.TeamId == teamId,
             cancellationToken);
-        var ticketType = catalog.FindTicketType(ticketTypeId);
-
-        var coupons = waitlist.Disable(command.FreedSlots, ticketedEvent, ticketType, timeProvider.GetUtcNow());
+        var coupons = waitlist.Disable(command.FreedSlots, ticketedEvent, catalog, timeProvider.GetUtcNow());
 
         await writeStore.Coupons.AddRangeAsync(coupons, cancellationToken);
     }

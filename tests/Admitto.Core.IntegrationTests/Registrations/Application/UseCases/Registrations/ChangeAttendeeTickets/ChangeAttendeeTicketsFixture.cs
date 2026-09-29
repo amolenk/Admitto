@@ -109,7 +109,7 @@ internal sealed class ChangeAttendeeTicketsFixture
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, workshopId, f.TeamId);
         waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
         f._coupon = waitlist.IssueNextCoupon(
-            f._ticketedEvent, catalog.GetTicketType(workshopId)!, DateTimeOffset.UtcNow)!;
+            f._ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
         f._coupon.ClearDomainEvents();
         waitlist.ClearDomainEvents();
         f._waitlist = waitlist;

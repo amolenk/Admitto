@@ -435,7 +435,7 @@ internal sealed class RegisterAttendeeFixture
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, ticketTypeId, f.TeamId);
         waitlist.AddEntry(f.CouponEmail, DateTimeOffset.UtcNow);
         f._coupon = waitlist.IssueNextCoupon(
-            f._ticketedEvent, f._catalog.GetTicketType(ticketTypeId)!, DateTimeOffset.UtcNow)!;
+            f._ticketedEvent, f._catalog, DateTimeOffset.UtcNow)!;
         f._coupon.ClearDomainEvents();
         f.CouponCode = f._coupon.Code.Value;
         waitlist.ClearDomainEvents();

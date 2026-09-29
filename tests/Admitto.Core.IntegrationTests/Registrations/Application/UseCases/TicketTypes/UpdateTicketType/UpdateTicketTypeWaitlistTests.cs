@@ -5,12 +5,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetP
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.DisableWaitlist;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.DisableWaitlist.EventHandlers;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.NotifyWaitlist.EventHandlers;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteEntireWaitlist;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteEntireWaitlist.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -22,8 +16,8 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 /// <summary>
 /// Covers what happens to the people waiting when an organizer changes a waitlisted ticket type's capacity or
-/// disables its waitlist. Domain events are not dispatched in handler-level tests, so each test routes the
-/// catalog's events to their real handlers, as <c>DomainEventsInterceptor</c> does in production.
+/// disables its waitlist. The update runs on a <see cref="DispatchingRegistrationsContext"/>, so the catalog's events
+/// reach their real handlers in the same save, as <c>DomainEventsInterceptor</c> does in production.
 /// </summary>
 [TestClass]
 public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : AspireIntegrationTestBase
@@ -49,11 +43,56 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
 
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.GetActivePosition(UpdateTicketTypeWaitlistFixture.WaitingEmail(3)).ShouldBe(1);
-            waitlist.IssuedCouponCount.ShouldBe(2);
+            waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(2);
+            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
             ticketType.WaitlistEnabled.ShouldBeTrue();
             ticketType.WaitlistMode.ShouldBeTrue();
+        });
+    }
+
+    // Given a sold-out ticket type with three people waiting and two VIP offers made while it was sold out
+    // When its capacity is raised by three
+    // Then the new seats first cover the VIP offers, and only one more person is offered
+    [TestMethod]
+    public async ValueTask UpdateTicketType_CapacityRaisedWithVipOffersOutstanding_OffersSeatsLeftAfterVipHolds()
+    {
+        var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntriesAndVipOffers(waitingCount: 3, vipOffers: 2);
+        await fixture.SetupAsync(Environment);
+
+        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity + 3, waitlistEnabled: true);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var newOffers = await dbContext.Coupons
+                .Where(c => !UpdateTicketTypeWaitlistFixture.VipEmails.Contains(c.Email))
+                .ToListAsync(testContext.CancellationToken);
+            newOffers.ShouldHaveSingleItem().Email.ShouldBe(UpdateTicketTypeWaitlistFixture.WaitingEmail(1));
+
+            var ticketType = await GetTicketTypeAsync(dbContext, fixture);
+            ticketType.WaitlistHeldCapacity.ShouldBe(3);
+            ticketType.AvailableCapacity.ShouldBe(0);
+            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+        });
+    }
+
+    // Given a sold-out ticket type with people waiting and two VIP offers made while it was sold out
+    // When its capacity is raised by only one
+    // Then the new seat covers a VIP offer and nobody else is offered
+    [TestMethod]
+    public async ValueTask UpdateTicketType_CapacityRaisedLessThanVipOffers_IssuesNoCoupon()
+    {
+        var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntriesAndVipOffers(waitingCount: 3, vipOffers: 2);
+        await fixture.SetupAsync(Environment);
+
+        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity + 1, waitlistEnabled: true);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(2);
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.ActiveEntryCount.ShouldBe(3);
         });
     }
 
@@ -78,7 +117,8 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
 
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.ActiveEntryCount.ShouldBe(0);
-            waitlist.IssuedCouponCount.ShouldBe(3);
+            waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(3);
+            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
             ticketType.MaxCapacity.ShouldBeNull();
@@ -170,7 +210,8 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
 
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.ActiveEntryCount.ShouldBe(0);
-            waitlist.IssuedCouponCount.ShouldBe(1);
+            waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(1);
+            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
@@ -270,15 +311,18 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         delivery.TextBody.ShouldNotContain("You're on the waitlist for:");
     }
 
+    /// <summary>
+    /// Runs the update on a <see cref="DispatchingRegistrationsContext"/>, so the catalog's events reach their real
+    /// handlers in the same save, as in production.
+    /// </summary>
     private async ValueTask UpdateTicketTypeAsync(
         UpdateTicketTypeWaitlistFixture fixture,
         int? maxCapacity,
         bool waitlistEnabled)
     {
-        var context = Environment.RegistrationsDatabase.Context;
-        var cancellationToken = testContext.CancellationToken;
+        await using var dispatch = DispatchingRegistrationsContext.Create(Environment);
 
-        await new UpdateTicketTypeHandler(context).HandleAsync(
+        await new UpdateTicketTypeHandler(dispatch.Context).HandleAsync(
             new UpdateTicketTypeCommand(
                 fixture.EventId.Value,
                 fixture.TeamId.Value,
@@ -286,33 +330,9 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
                 Name: null,
                 MaxCapacity: maxCapacity,
                 WaitlistEnabled: waitlistEnabled),
-            cancellationToken);
+            testContext.CancellationToken);
 
-        var catalog = context.ChangeTracker.Entries<TicketCatalog>().Single().Entity;
-        foreach (var domainEvent in catalog.GetDomainEvents().ToList())
-        {
-            switch (domainEvent)
-            {
-                case WaitlistCapacityFreedDomainEvent capacityFreed:
-                    await new WaitlistCapacityFreedDomainEventHandler(
-                            new ProcessWaitlistNotificationsHandler(context, TimeProvider.System))
-                        .HandleAsync(capacityFreed, cancellationToken);
-                    break;
-                case WaitlistDisabledDomainEvent disabled:
-                    await new WaitlistDisabledDomainEventHandler(
-                            new DisableWaitlistHandler(context, TimeProvider.System))
-                        .HandleAsync(disabled, cancellationToken);
-                    break;
-                case WaitlistCapacityLimitRemovedDomainEvent limitRemoved:
-                    await new WaitlistCapacityLimitRemovedDomainEventHandler(
-                            new PromoteEntireWaitlistHandler(context, TimeProvider.System))
-                        .HandleAsync(limitRemoved, cancellationToken);
-                    break;
-            }
-        }
-
-        catalog.ClearDomainEvents();
-        await context.SaveChangesAsync(cancellationToken);
+        await dispatch.SaveChangesAsync(testContext.CancellationToken);
     }
 
     private async ValueTask<TicketType> GetTicketTypeAsync(

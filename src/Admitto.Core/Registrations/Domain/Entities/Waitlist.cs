@@ -32,8 +32,6 @@ public class Waitlist : Aggregate<TicketTypeId>
 
     public int ActiveEntryCount => _entries.Count(e => e.Status == WaitlistEntryStatus.Active);
 
-    public int IssuedCouponCount =>  _coupons.Count(e => e.Status == WaitlistCouponStatus.Issued);
-
     public IReadOnlyList<WaitlistEntry> Entries => _entries.AsReadOnly();
     public IReadOnlyList<WaitlistCoupon> Coupons => _coupons.AsReadOnly();
 
@@ -99,16 +97,16 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// <summary>
     /// Handles an explicit disable of this waitlist's ticket type: offers up to <paramref name="freedSlots"/>
     /// coupons to the front of the queue, then removes everyone still waiting. Removed attendees get no email
-    /// (the organizer informs them); outstanding coupons stay valid until they are redeemed or expire.
-    /// Returns the newly issued coupons.
+    /// (the organizer informs them); outstanding coupons stay valid, and keep their hold, until they are redeemed
+    /// or expire. Returns the newly issued coupons.
     /// </summary>
     public IReadOnlyList<Coupon> Disable(
         int freedSlots,
         TicketedEvent ticketedEvent,
-        TicketType ticketType,
+        TicketCatalog catalog,
         DateTimeOffset utcNow)
     {
-        var coupons = IssueNextCoupons(freedSlots, ticketedEvent, ticketType, utcNow);
+        var coupons = IssueNextCoupons(freedSlots, ticketedEvent, catalog, utcNow);
 
         var remainingEntries = _entries.Where(e => e.Status == WaitlistEntryStatus.Active).ToList();
         foreach (var entry in remainingEntries)
@@ -129,30 +127,31 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// </summary>
     public IReadOnlyList<Coupon> IssueCouponsToAllEntries(
         TicketedEvent ticketedEvent,
-        TicketType ticketType,
+        TicketCatalog catalog,
         DateTimeOffset utcNow)
-        => IssueNextCoupons(ActiveEntryCount, ticketedEvent, ticketType, utcNow);
+        => IssueNextCoupons(ActiveEntryCount, ticketedEvent, catalog, utcNow);
 
     private List<Coupon> IssueNextCoupons(
         int maxCount,
         TicketedEvent ticketedEvent,
-        TicketType ticketType,
+        TicketCatalog catalog,
         DateTimeOffset utcNow)
     {
         var coupons = new List<Coupon>();
-        while (coupons.Count < maxCount && IssueNextCoupon(ticketedEvent, ticketType, utcNow) is { } coupon)
+        while (coupons.Count < maxCount && IssueNextCoupon(ticketedEvent, catalog, utcNow) is { } coupon)
             coupons.Add(coupon);
 
         return coupons;
     }
 
     /// <summary>
-    /// Issues a coupon to the top-ranked active waitlist entry and removes that entry from the queue.
-    /// Returns <c>null</c> when there are no active entries.
+    /// Issues a coupon to the top-ranked active waitlist entry and removes that entry from the queue. The offer
+    /// holds a seat on the <paramref name="catalog"/>'s ticket type. Returns <c>null</c> when there are no active
+    /// entries.
     /// </summary>
     public Coupon? IssueNextCoupon(
         TicketedEvent ticketedEvent,
-        TicketType ticketType,
+        TicketCatalog catalog,
         DateTimeOffset utcNow)
     {
         var entry = _entries
@@ -161,33 +160,37 @@ public class Waitlist : Aggregate<TicketTypeId>
 
         return entry is null
             ? null
-            : IssueCoupon(entry, ticketedEvent, ticketType, utcNow, WaitlistCouponOrigin.Automatic);
+            : IssueCoupon(entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Automatic);
     }
 
     /// <summary>
     /// Issues a coupon to one specific active waitlist entry, regardless of its queue position (e.g. a VIP
-    /// promotion by an organizer), and removes that entry from the queue.
+    /// promotion by an organizer), and removes that entry from the queue. Like any offer it holds a seat on the
+    /// <paramref name="catalog"/>'s ticket type, even when none is available: the next seat that frees up covers it.
     /// </summary>
     public Coupon IssueCouponToEntry(
         WaitlistEntryId entryId,
         TicketedEvent ticketedEvent,
-        TicketType ticketType,
+        TicketCatalog catalog,
         DateTimeOffset utcNow)
     {
         var entry = _entries.FirstOrDefault(e => e.Id == entryId && e.Status == WaitlistEntryStatus.Active);
         if (entry is null)
             throw new BusinessRuleViolationException(Errors.EntryNotActive);
 
-        return IssueCoupon(entry, ticketedEvent, ticketType, utcNow, WaitlistCouponOrigin.Manual);
+        return IssueCoupon(entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Manual);
     }
 
     private Coupon IssueCoupon(
         WaitlistEntry entry,
         TicketedEvent ticketedEvent,
-        TicketType ticketType,
+        TicketCatalog catalog,
         DateTimeOffset utcNow,
         WaitlistCouponOrigin origin)
     {
+        var ticketType = catalog.FindTicketType(Id);
+        catalog.HoldForWaitlistOffer(Id);
+
         entry.Remove();
         RenumberPositions();
 
@@ -243,18 +246,19 @@ public class Waitlist : Aggregate<TicketTypeId>
             .ToList();
 
     /// <summary>
-    /// Marks the given waitlist coupon as expired because it lapsed unclaimed, and raises
-    /// <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired. The
+    /// Marks the given waitlist coupon as expired because it lapsed unclaimed, gives back the seat the offer held
+    /// on the <paramref name="catalog"/> (which decides whether that leaves a seat for the next person waiting), and
+    /// raises <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired. The
     /// <paramref name="coupon"/> only supplies that email's recipient and code; when it or the ticket type
     /// no longer exists there is nothing to send, so the coupon is expired without raising the event.
-    /// Returns whether the coupon was backed by a freed slot (<see cref="WaitlistCouponOrigin.Automatic"/>),
-    /// which the caller should cascade to the next entry; a manually issued (VIP) coupon frees nothing.
     /// </summary>
-    public bool ExpireCoupon(CouponId couponId, Coupon? coupon, TicketType? ticketType)
+    public void ExpireCoupon(CouponId couponId, Coupon? coupon, TicketCatalog catalog)
     {
         var waitlistCoupon = FindCoupon(couponId);
         waitlistCoupon.Expire();
+        catalog.ReleaseWaitlistHold(Id);
 
+        var ticketType = catalog.GetTicketType(Id);
         if (coupon is not null && ticketType is not null)
         {
             AddDomainEvent(new WaitlistCouponExpiredDomainEvent(
@@ -262,7 +266,6 @@ public class Waitlist : Aggregate<TicketTypeId>
         }
 
         CheckExhausted();
-        return waitlistCoupon.Origin == WaitlistCouponOrigin.Automatic;
     }
 
     private WaitlistCoupon FindCoupon(CouponId couponId)

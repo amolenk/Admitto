@@ -8,7 +8,8 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.Prom
 /// <summary>
 /// Issues a waitlist coupon to one specific active waitlist entry, out of queue order (VIP promotion).
 /// The entry leaves the queue immediately and the attendee receives the regular waitlist-offer email via
-/// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/>.
+/// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/>. The offer holds a seat on the catalog even
+/// when the ticket type is sold out, so the next seat that frees up covers it instead of going to the queue.
 /// </summary>
 internal sealed class PromoteWaitlistEntryHandler(
     IRegistrationsWriteStore writeStore,
@@ -26,13 +27,11 @@ internal sealed class PromoteWaitlistEntryHandler(
         var ticketedEvent = await writeStore.TicketedEvents.GetUntrackedAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
-        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+        var catalog = await writeStore.TicketCatalogs.GetAsync(
             c => c.Id == eventId && c.TeamId == teamId,
             cancellationToken);
 
         catalog.EnsureEventActive();
-
-        var ticketType = catalog.FindTicketType(ticketTypeId);
 
         var waitlist = await writeStore.Waitlists.GetAsync(
             w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
@@ -41,7 +40,7 @@ internal sealed class PromoteWaitlistEntryHandler(
         var coupon = waitlist.IssueCouponToEntry(
             WaitlistEntryId.From(command.EntryId),
             ticketedEvent,
-            ticketType,
+            catalog,
             timeProvider.GetUtcNow());
 
         await writeStore.Coupons.AddAsync(coupon, cancellationToken);

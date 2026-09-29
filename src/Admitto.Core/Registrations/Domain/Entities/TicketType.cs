@@ -61,23 +61,41 @@ public class TicketType : Entity<TicketTypeId>
     public int ReservedUsedCapacity { get; private set; }
 
     /// <summary>
+    /// Seats held by outstanding waitlist offers (automatic or VIP). Taken when a waitlist coupon is issued and
+    /// given back when it lapses, or turned into a <see cref="ClaimMode.PublicUncapped"/> claim when redeemed. Kept
+    /// here rather than on the <see cref="Waitlist"/> so that every offer decision reads and writes one aggregate.
+    /// </summary>
+    public int WaitlistHeldCapacity { get; private set; }
+
+    /// <summary>
     /// Portion of <paramref name="reservedCapacity"/> not yet consumed by reserved claims, and
     /// therefore still held back from the public pool.
     /// </summary>
     private int HeldBack(int reservedCapacity) => Math.Max(0, reservedCapacity - ReservedUsedCapacity);
 
     /// <summary>
-    /// Slots available to the public pool for the given max/reserved capacity, independent of
-    /// which are currently configured on this instance. Used to compare before/after availability
-    /// when <see cref="MaxCapacity"/> or <see cref="ReservedCapacity"/> change (see
-    /// <see cref="Entities.TicketCatalog.UpdateTicketType"/>).
+    /// Seats not used, held back for reserved claims, or held by outstanding waitlist offers. Unclamped: it goes
+    /// negative while VIP offers are outstanding or organiser claims overbooked the ticket type, and that deficit is
+    /// paid back before anyone else in the queue gets an offer. <c>null</c> when capacity is unbounded. Drives the
+    /// waitlist offer decisions; public sales use <see cref="PublicAvailableCapacity"/>.
+    /// </summary>
+    public int? AvailableCapacity =>
+        MaxCapacity is null ? null : UnclampedAvailableCapacity(MaxCapacity.Value, ReservedCapacity);
+
+    private int UnclampedAvailableCapacity(int maxCapacity, int reservedCapacity) =>
+        maxCapacity - UsedCapacity - HeldBack(reservedCapacity) - WaitlistHeldCapacity;
+
+    /// <summary>
+    /// Slots available to the public pool for the given max/reserved capacity, clamped at zero. Seats held by
+    /// outstanding waitlist offers are not available to the public.
     /// </summary>
     public int PublicAvailableCapacity(int? maxCapacity, int reservedCapacity) =>
-        Math.Max(0, (maxCapacity ?? 0) - UsedCapacity - HeldBack(reservedCapacity));
+        Math.Max(0, UnclampedAvailableCapacity(maxCapacity ?? 0, reservedCapacity));
 
     /// <summary>
     /// Whether the ticket type is sold out for self-service/public purposes, i.e. no public slots
-    /// remain once the unconsumed reserved buffer is held back. Does not gate admin/coupon claims.
+    /// remain once the unconsumed reserved buffer and the waitlist holds are held back. Does not gate
+    /// admin/coupon claims.
     /// </summary>
     public bool IsSoldOut => MaxCapacity is not null && PublicAvailableCapacity(MaxCapacity, ReservedCapacity) <= 0;
 
@@ -132,11 +150,29 @@ public class TicketType : Entity<TicketTypeId>
     }
 
     /// <summary>
+    /// Holds a seat for a waitlist offer. Always allowed, even with no seat available: a VIP offer made while sold
+    /// out goes over, and the next seat that frees up covers it.
+    /// </summary>
+    internal void HoldForWaitlistOffer()
+    {
+        WaitlistHeldCapacity++;
+    }
+
+    /// <summary>
+    /// Gives back the seat held by a waitlist offer that lapsed. Clamped at zero.
+    /// </summary>
+    internal void ReleaseWaitlistHold()
+    {
+        WaitlistHeldCapacity = Math.Max(0, WaitlistHeldCapacity - 1);
+    }
+
+    /// <summary>
     /// Claims one slot under the given <see cref="ClaimMode"/>.
     /// <see cref="ClaimMode.Public"/> is enforced (throws if in WaitlistMode or sold out; self-service
     /// availability is checked upstream at catalog level). <see cref="ClaimMode.PublicUncapped"/> and
-    /// <see cref="ClaimMode.Reserved"/> are uncapped. Only <see cref="ClaimMode.Reserved"/> increments
-    /// <see cref="ReservedUsedCapacity"/>.
+    /// <see cref="ClaimMode.Reserved"/> are uncapped. <see cref="ClaimMode.PublicUncapped"/> redeems a waitlist
+    /// offer, so it turns the offer's hold into the claim (<see cref="WaitlistHeldCapacity"/> −1, clamped at zero).
+    /// Only <see cref="ClaimMode.Reserved"/> increments <see cref="ReservedUsedCapacity"/>.
     /// </summary>
     public void Claim(ClaimMode mode)
     {
@@ -150,6 +186,9 @@ public class TicketType : Entity<TicketTypeId>
         }
 
         UsedCapacity++;
+
+        if (mode == ClaimMode.PublicUncapped)
+            ReleaseWaitlistHold();
 
         if (mode == ClaimMode.Reserved)
             ReservedUsedCapacity++;

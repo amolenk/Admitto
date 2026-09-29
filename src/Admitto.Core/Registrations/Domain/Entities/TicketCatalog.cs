@@ -135,8 +135,6 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (removingCapacityLimit || disablingWaitlist)
         {
             var wasInWaitlistMode = ticketType.WaitlistMode;
-            var previousPublicAvailable = ticketType.PublicAvailableCapacity(
-                ticketType.MaxCapacity, ticketType.ReservedCapacity);
 
             ticketType.UpdateCapacity(maxCapacity);
             ticketType.UpdateReservedCapacity(reservedCapacity);
@@ -151,10 +149,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             }
             else
             {
-                // Slots freed by the same update go to the front of the queue before the rest is removed.
-                var freedSlots = wasInWaitlistMode
-                    ? Math.Max(0, ticketType.PublicAvailableCapacity(maxCapacity, reservedCapacity) - previousPublicAvailable)
-                    : 0;
+                // Seats available after the same update go to the front of the queue before the rest is removed.
+                var freedSlots = wasInWaitlistMode ? Math.Max(0, ticketType.AvailableCapacity ?? 0) : 0;
                 AddDomainEvent(new WaitlistDisabledDomainEvent(TeamId, Id, id, freedSlots));
             }
 
@@ -192,16 +188,11 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             ticketType.ActivateWaitlistMode();
             AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));
         }
-        // Public capacity increase while WaitlistMode active → notify waiting attendees.
-        // "Available" is measured against the public threshold (MaxCapacity - ReservedCapacity),
-        // so raising MaxCapacity or lowering ReservedCapacity can both free public slots.
-        else if (ticketType.WaitlistMode && ticketType.MaxCapacity.HasValue)
+        // Raising MaxCapacity or lowering ReservedCapacity while in WaitlistMode can make seats available to the
+        // people waiting, once any outstanding waitlist holds and overbooking are covered.
+        else if (ticketType.MaxCapacity != previousMaxCapacity || ticketType.ReservedCapacity != previousReservedCapacity)
         {
-            var oldAvailable = ticketType.PublicAvailableCapacity(previousMaxCapacity, previousReservedCapacity);
-            var newAvailable = ticketType.PublicAvailableCapacity(ticketType.MaxCapacity, ticketType.ReservedCapacity);
-            var freedSlots = newAvailable - oldAvailable;
-            if (freedSlots > 0)
-                AddDomainEvent(new WaitlistCapacityFreedDomainEvent(TeamId, Id, id, freedSlots));
+            RaiseWaitlistCapacityAvailable(ticketType);
         }
 
         var currentSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
@@ -216,10 +207,11 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     }
 
     /// <summary>
-    /// Re-evaluates WaitlistMode for the given ticket type. Clears WaitlistMode only when
-    /// all three conditions hold: available capacity, no active waitlist entries, and no issued coupons.
+    /// Re-evaluates WaitlistMode for the given ticket type. Clears WaitlistMode only when all three conditions
+    /// hold: available capacity, no active waitlist entries, and no outstanding waitlist offers
+    /// (<see cref="TicketType.WaitlistHeldCapacity"/>).
     /// </summary>
-    public void ReEvaluateWaitlistMode(TicketTypeId ticketTypeId, int activeEntryCount, int issuedCouponCount)
+    public void ReEvaluateWaitlistMode(TicketTypeId ticketTypeId, int activeEntryCount)
     {
         EnsureEventActive();
 
@@ -227,7 +219,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (ticketType is null || !ticketType.WaitlistMode) return;
 
         if (activeEntryCount == 0
-            && issuedCouponCount == 0
+            && ticketType.WaitlistHeldCapacity == 0
             && !ticketType.IsSoldOut)
         {
             ticketType.DeactivateWaitlistMode();
@@ -249,6 +241,30 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         {
             ticketType.DeactivateWaitlistMode();
         }
+    }
+
+    /// <summary>
+    /// Holds a seat on the ticket type for a waitlist offer (automatic or VIP), in the same unit of work as the
+    /// offer's coupon is issued. Always allowed, even with no seat available.
+    /// </summary>
+    public void HoldForWaitlistOffer(TicketTypeId ticketTypeId)
+    {
+        EnsureEventActive();
+
+        FindTicketType(ticketTypeId).HoldForWaitlistOffer();
+    }
+
+    /// <summary>
+    /// Gives back the seat held by a waitlist offer that lapsed unclaimed. Unknown IDs are silently skipped.
+    /// Raises <see cref="WaitlistCapacityAvailableDomainEvent"/> when that leaves a seat for the next person waiting.
+    /// </summary>
+    public void ReleaseWaitlistHold(TicketTypeId ticketTypeId)
+    {
+        var ticketType = GetTicketType(ticketTypeId);
+        if (ticketType is null) return;
+
+        ticketType.ReleaseWaitlistHold();
+        RaiseWaitlistCapacityAvailable(ticketType);
     }
 
     /// <summary>
@@ -319,6 +335,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// <see cref="ClaimMode.Public"/> enforces capacity and requires self-service to be enabled.
     /// <see cref="ClaimMode.PublicUncapped"/> and <see cref="ClaimMode.Reserved"/> are uncapped
     /// (admin/coupon paths) — see <see cref="ClaimMode"/> for which pool each consumes.
+    /// <see cref="ClaimMode.PublicUncapped"/> redeems a waitlist offer, turning its hold into the claim.
     /// Returns snapshots of the claimed ticket types, tagged with the mode used so a later
     /// <see cref="Release"/> credits the correct pool back.
     /// </summary>
@@ -377,14 +394,33 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// Releases capacity for the given ticket snapshots. Unknown IDs are silently skipped.
     /// Each snapshot's <see cref="TicketTypeSnapshot.Mode"/> determines which counter is
     /// credited back (see <see cref="TicketType.ReleaseCapacity"/>). UsedCapacity is clamped at zero.
+    /// Raises <see cref="WaitlistCapacityAvailableDomainEvent"/> for each ticket type left with a seat for the
+    /// people waiting.
     /// </summary>
     public void Release(IReadOnlyList<TicketTypeSnapshot> tickets)
     {
+        var released = new List<TicketType>();
         foreach (var ticket in tickets)
         {
             var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticket.Id);
-            ticketType?.ReleaseCapacity(ticket.Mode);
+            if (ticketType is null) continue;
+
+            ticketType.ReleaseCapacity(ticket.Mode);
+            released.Add(ticketType);
         }
+
+        foreach (var ticketType in released.Distinct())
+            RaiseWaitlistCapacityAvailable(ticketType);
+    }
+
+    /// <summary>
+    /// Raises <see cref="WaitlistCapacityAvailableDomainEvent"/> when the ticket type is in WaitlistMode and has
+    /// seats that are neither used, held back, nor held by an outstanding waitlist offer.
+    /// </summary>
+    private void RaiseWaitlistCapacityAvailable(TicketType ticketType)
+    {
+        if (ticketType.WaitlistMode && ticketType.AvailableCapacity is int available and > 0)
+            AddDomainEvent(new WaitlistCapacityAvailableDomainEvent(TeamId, Id, ticketType.Id, available));
     }
 
     public TicketType FindTicketType(TicketTypeId id)

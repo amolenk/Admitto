@@ -37,9 +37,7 @@ internal sealed class PromoteEntireWaitlistHandler(
         var catalog = await writeStore.TicketCatalogs.GetAsync(
             c => c.Id == eventId && c.TeamId == teamId,
             cancellationToken);
-        var ticketType = catalog.FindTicketType(ticketTypeId);
-
-        var coupons = waitlist.IssueCouponsToAllEntries(ticketedEvent, ticketType, timeProvider.GetUtcNow());
+        var coupons = waitlist.IssueCouponsToAllEntries(ticketedEvent, catalog, timeProvider.GetUtcNow());
 
         await writeStore.Coupons.AddRangeAsync(coupons, cancellationToken);
     }

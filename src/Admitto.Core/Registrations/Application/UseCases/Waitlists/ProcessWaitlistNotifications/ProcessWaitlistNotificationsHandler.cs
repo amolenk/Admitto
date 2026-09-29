@@ -7,11 +7,12 @@ using Amolenk.Admitto.Core.Shared.Application.Persistence;
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
 
 /// <summary>
-/// Issues waitlist coupons to the top-ranked attendees when capacity becomes available.
-/// Creates one <see cref="Coupon"/> per freed slot (up to the number of active waitlist entries),
-/// tracks each in the <see cref="Domain.Entities.Waitlist"/>, and emits
-/// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/> per recipient so the email
-/// notification is published via the outbox.
+/// Issues waitlist coupons to the top-ranked attendees while the ticket type has seats available. How many is decided
+/// by the <see cref="TicketCatalog"/> from real capacity (<see cref="TicketType.AvailableCapacity"/>), not by the
+/// change that triggered this: each coupon holds a seat, so offers stop once the seats are covered, and seats still
+/// owed to outstanding VIP offers or overbooking are paid back first. Each coupon raises
+/// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/> so the email notification is published via the
+/// outbox. Finally re-evaluates WaitlistMode.
 /// </summary>
 internal sealed class ProcessWaitlistNotificationsHandler(
     IRegistrationsWriteStore writeStore,
@@ -40,58 +41,20 @@ internal sealed class ProcessWaitlistNotificationsHandler(
         if (ticketType is null || !ticketType.WaitlistEnabled || !ticketType.WaitlistMode)
             return;
 
-        var waitlist = await writeStore.Waitlists.GetAsync(
+        var waitlist = await writeStore.Waitlists.FirstOrDefaultAsync(
             w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
             cancellationToken);
 
-        // var activeEntryCount = waitlist.Entries.Count(e => e.Status == WaitlistEntryStatus.Active);
-        var activeEntryCount = waitlist.ActiveEntryCount;
-        var slotsToProcess = Math.Min(command.FreedSlots, activeEntryCount);
-
-        if (activeEntryCount == 0 && waitlist.IssuedCouponCount == 0)
-        {
-            // Waitlist exhausted (no active entries, no outstanding coupons) — lift WaitlistMode
-            catalog.ForceDeactivateWaitlistMode(ticketTypeId);
+        if (waitlist is null)
             return;
-        }
 
         var utcNow = timeProvider.GetUtcNow();
-        // var couponExpiresAt = WaitlistClaimWindowCalculator.ComputeExpiresAt(
-        //     utcNow,
-        //     ticketedEvent.TimeZone,
-        //     ticketedEvent.QuietHoursStart,
-        //     ticketedEvent.QuietHoursEnd,
-        //     ticketType.ClaimWindowHours);
-
-
-        for (var i = 0; i < slotsToProcess; i++)
+        while (ticketType.AvailableCapacity > 0
+               && waitlist.IssueNextCoupon(ticketedEvent, catalog, utcNow) is { } coupon)
         {
-            var coupon = waitlist.IssueNextCoupon(ticketedEvent, ticketType, utcNow);
-
-            // var nextEntry = waitlist.Entries
-            //     .Where(e => e.Status == WaitlistEntryStatus.Active)
-            //     .MinBy(e => e.Position);
-
-            if (coupon is null)
-                break;
-
-            // var coupon = Coupon.Create(
-            //     eventId,
-            //     ticketedEvent.TeamId,
-            //     nextEntry.Email,
-            //     [ticketTypeId],
-            //     couponExpiresAt,
-            //     bypassRegistrationWindow: true,
-            //     ticketTypeInfos,
-            //     utcNow,
-            //     CouponSource.Waitlist);
-
             await writeStore.Coupons.AddAsync(coupon, cancellationToken);
-
-            // var coupon = waitlist.IssueNextCoupon(coupon.Id, coupon.Code, ticketType.Name.Value, couponExpiresAt, utcNow);
         }
 
-        var remainingActiveEntries = activeEntryCount - slotsToProcess;
-        catalog.ReEvaluateWaitlistMode(ticketTypeId, remainingActiveEntries, waitlist.IssuedCouponCount);
+        catalog.ReEvaluateWaitlistMode(ticketTypeId, waitlist.ActiveEntryCount);
     }
 }

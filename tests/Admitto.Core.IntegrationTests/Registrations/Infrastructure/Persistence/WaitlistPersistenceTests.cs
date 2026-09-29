@@ -15,8 +15,8 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
     public async ValueTask Load_CouponJsonWithoutOrigin_ReadsAsAutomatic()
     {
         // Arrange — persist a VIP coupon, then strip the origin key from the stored JSON
-        var (waitlist, ticketedEvent, ticketType) = CreateWaitlistWithOneEntry();
-        waitlist.IssueCouponToEntry(waitlist.Entries.Single().Id, ticketedEvent, ticketType, DateTimeOffset.UtcNow);
+        var (waitlist, ticketedEvent, catalog) = CreateWaitlistWithOneEntry();
+        waitlist.IssueCouponToEntry(waitlist.Entries.Single().Id, ticketedEvent, catalog, DateTimeOffset.UtcNow);
         var ticketTypeId = waitlist.Id;
 
         await Environment.RegistrationsDatabase.SeedAsync(
@@ -46,8 +46,8 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
     public async ValueTask Load_IssuedCoupon_RoundTripsExpiresAt()
     {
         // Arrange
-        var (waitlist, ticketedEvent, ticketType) = CreateWaitlistWithOneEntry();
-        var coupon = waitlist.IssueNextCoupon(ticketedEvent, ticketType, DateTimeOffset.UtcNow)!;
+        var (waitlist, ticketedEvent, catalog) = CreateWaitlistWithOneEntry();
+        var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
         var ticketTypeId = waitlist.Id;
 
         await Environment.RegistrationsDatabase.SeedAsync(
@@ -65,7 +65,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
     /// <summary>
     /// A waitlist for a fresh event and ticket type, holding one active entry.
     /// </summary>
-    private static (Waitlist Waitlist, TicketedEvent TicketedEvent, TicketType TicketType) CreateWaitlistWithOneEntry()
+    private static (Waitlist Waitlist, TicketedEvent TicketedEvent, TicketCatalog Catalog) CreateWaitlistWithOneEntry()
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
@@ -88,6 +88,6 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
         var waitlist = Waitlist.Create(eventId, ticketTypeId, teamId);
         waitlist.AddEntry(EmailAddress.From("attendee@example.com"), DateTimeOffset.UtcNow);
 
-        return (waitlist, ticketedEvent, catalog.GetTicketType(ticketTypeId)!);
+        return (waitlist, ticketedEvent, catalog);
     }
 }

@@ -129,13 +129,12 @@ public sealed class WithdrawWaitlistEntriesTests(TestContext testContext) : Aspi
 
             var catalog = TicketCatalog.Create(fixture.EventId, fixture.TeamId);
             catalog.AddTicketType(fixture.TicketTypeIds[0], TicketTypeName.From("General Admission"), [], 1);
-            var ticketType = catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeIds[0]);
 
             var waitlist = await dbContext.Waitlists
                 .FirstOrDefaultAsync(w => w.Id == fixture.TicketTypeIds[0], testContext.CancellationToken);
             waitlist.ShouldNotBeNull();
 
-            var coupon = waitlist.IssueNextCoupon(ticketedEvent, ticketType, DateTimeOffset.UtcNow);
+            var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow);
 
             coupon.ShouldBeNull();
         });

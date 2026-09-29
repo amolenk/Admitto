@@ -250,7 +250,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
                 .SingleAsync(w => w.Id == TicketTypeManagementFixture.ExistingTicketTypeId,
                     testContext.CancellationToken);
             waitlist.GetActivePosition(TicketTypeManagementFixture.WaitingEmail(2)).ShouldBe(1);
-            waitlist.IssuedCouponCount.ShouldBe(1);
+            waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(1);
         });
     }
 

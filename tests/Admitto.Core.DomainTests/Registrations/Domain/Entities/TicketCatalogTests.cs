@@ -227,9 +227,9 @@ public sealed class TicketCatalogTests
 
     // Given a ticket type that is publicly sold out and in waitlist mode because of reserved capacity
     // When reserved capacity is decreased via an update
-    // Then a WaitlistCapacityFreed event is raised reporting the newly freed public slots
+    // Then a WaitlistCapacityAvailable event is raised reporting the newly available seats
     [TestMethod]
-    public void UpdateTicketType_DecreaseReservedCapacityWhileInWaitlistMode_RaisesWaitlistCapacityFreedEvent()
+    public void UpdateTicketType_DecreaseReservedCapacityWhileInWaitlistMode_RaisesWaitlistCapacityAvailableEvent()
     {
         // Arrange — 8 of 10 used, 2 reserved → publicly sold out, waitlist mode on
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
@@ -244,10 +244,10 @@ public sealed class TicketCatalogTests
         sut.UpdateTicketType(id, name: null, maxCapacity: 10, reservedCapacity: 0);
 
         // Assert
-        var evt = sut.GetDomainEvents().OfType<WaitlistCapacityFreedDomainEvent>()
+        var evt = sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>()
             .ShouldHaveSingleItem();
         evt.TicketTypeId.ShouldBe(id);
-        evt.FreedSlots.ShouldBe(2);
+        evt.AvailableCapacity.ShouldBe(2);
     }
 
     // Given a ticket type with reserved capacity where an admin claims tickets before any public sales
@@ -875,7 +875,7 @@ public sealed class TicketCatalogTests
         sut.GetDomainEvents().OfType<WaitlistDisabledDomainEvent>()
             .ShouldHaveSingleItem()
             .FreedSlots.ShouldBe(2);
-        sut.GetDomainEvents().OfType<WaitlistCapacityFreedDomainEvent>().ShouldBeEmpty();
+        sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>().ShouldBeEmpty();
     }
 
     // Given a ticket type with waitlist enabled but not in waitlist mode
@@ -948,9 +948,9 @@ public sealed class TicketCatalogTests
 
     // Given a ticket type that is sold out and in waitlist mode
     // When its capacity is increased via an update
-    // Then a WaitlistCapacityFreed event is raised reporting the number of freed slots
+    // Then a WaitlistCapacityAvailable event is raised reporting the number of available seats
     [TestMethod]
-    public void UpdateTicketType_CapacityIncreaseWhileInWaitlistMode_RaisesWaitlistCapacityFreedEvent()
+    public void UpdateTicketType_CapacityIncreaseWhileInWaitlistMode_RaisesWaitlistCapacityAvailableEvent()
     {
         // Arrange — sold out and in WaitlistMode
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
@@ -962,11 +962,11 @@ public sealed class TicketCatalogTests
         // Act — add 3 more slots
         sut.UpdateTicketType(id, name: null, maxCapacity: 4);
 
-        // Assert — 3 freed slots
-        var evt = sut.GetDomainEvents().OfType<WaitlistCapacityFreedDomainEvent>()
+        // Assert — 3 available seats
+        var evt = sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>()
             .ShouldHaveSingleItem();
         evt.TicketTypeId.ShouldBe(id);
-        evt.FreedSlots.ShouldBe(3);
+        evt.AvailableCapacity.ShouldBe(3);
     }
 
     // When a ticket type is added with waitlist enabled but no maximum capacity
@@ -999,7 +999,7 @@ public sealed class TicketCatalogTests
         sut.Claim([id], ClaimMode.Public); // 1 of 2 used → publicly sold out (threshold 1) → WaitlistMode on
 
         // Act — no active entries, no issued coupons
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
 
         // Assert — a naive UsedCapacity < MaxCapacity check would wrongly clear WaitlistMode here
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
@@ -1020,7 +1020,7 @@ public sealed class TicketCatalogTests
         sut.Release(tickets); // one slot freed
 
         // Act — no active entries, no issued coupons
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
@@ -1039,7 +1039,7 @@ public sealed class TicketCatalogTests
         sut.Claim([id], ClaimMode.Public); // WaitlistMode on
 
         // Act
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
 
         // Assert — still at capacity → stays in WaitlistMode
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
@@ -1060,28 +1060,31 @@ public sealed class TicketCatalogTests
         sut.Release(tickets); // one slot freed
 
         // Act — entries still active
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 1, issuedCouponCount: 0);
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 1);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
-    // Given a ticket type in waitlist mode with a slot freed but a coupon still outstanding
+    // Given a ticket type in waitlist mode with a seat free but a waitlist offer still outstanding
     // When waitlist mode is re-evaluated
     // Then waitlist mode remains active
     [TestMethod]
-    public void ReEvaluateWaitlistMode_IssuedCouponsRemaining_KeepsWaitlistMode()
+    public void ReEvaluateWaitlistMode_WaitlistOfferOutstanding_KeepsWaitlistMode()
     {
-        // Arrange — capacity freed but coupon still outstanding
+        // Arrange — sold out at 3 seats, a VIP offer holds a 4th, then two tickets are released
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
-        sut.Claim([id], ClaimMode.Public);
-        var tickets = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
-        sut.Release(tickets); // one slot freed
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 3, waitlistEnabled: true);
+        var first = sut.Claim([id], ClaimMode.Public);
+        var second = sut.Claim([id], ClaimMode.Public);
+        sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.HoldForWaitlistOffer(id);
+        sut.Release(first);
+        sut.Release(second); // one seat free once the offer is covered
 
-        // Act — coupon still in flight
-        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 1);
+        // Act — the offer is still in flight
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0);
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
@@ -1144,5 +1147,326 @@ public sealed class TicketCatalogTests
 
         // Assert
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
+    // ─── Waitlist-held capacity ───────────────────────────────────────────────
+
+    /// <summary>
+    /// A waitlist-enabled ticket type with <paramref name="capacity"/> seats, all claimed publicly, so it is sold out
+    /// and in WaitlistMode. Returns the claimed tickets.
+    /// </summary>
+    private static List<IReadOnlyList<TicketTypeSnapshot>> SellOut(TicketCatalog sut, TicketTypeId id, int capacity)
+    {
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], capacity, waitlistEnabled: true);
+        var tickets = Enumerable.Range(0, capacity).Select(_ => sut.Claim([id], ClaimMode.Public)).ToList();
+        sut.ClearDomainEvents();
+        return tickets;
+    }
+
+    // Given a ticket type with seats available
+    // When a waitlist offer holds one of them
+    // Then that seat is no longer available to the public
+    [TestMethod]
+    public void HoldForWaitlistOffer_SeatAvailable_ReducesPublicAvailability()
+    {
+        // Arrange — 2 seats, 1 used
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.Claim([id], ClaimMode.Public);
+
+        // Act
+        sut.HoldForWaitlistOffer(id);
+
+        // Assert
+        var ticketType = sut.GetTicketType(id)!;
+        ticketType.WaitlistHeldCapacity.ShouldBe(1);
+        ticketType.AvailableCapacity.ShouldBe(0);
+        ticketType.PublicAvailableCapacity(ticketType.MaxCapacity, ticketType.ReservedCapacity).ShouldBe(0);
+        ticketType.IsSoldOut.ShouldBeTrue();
+    }
+
+    // Given a sold-out ticket type
+    // When a (VIP) waitlist offer holds a seat anyway
+    // Then the hold is taken, the unclamped availability goes negative and public availability stays at zero
+    [TestMethod]
+    public void HoldForWaitlistOffer_SoldOut_GoesOverCapacity()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        SellOut(sut, id, capacity: 1);
+
+        // Act
+        sut.HoldForWaitlistOffer(id);
+
+        // Assert
+        var ticketType = sut.GetTicketType(id)!;
+        ticketType.WaitlistHeldCapacity.ShouldBe(1);
+        ticketType.AvailableCapacity.ShouldBe(-1);
+        ticketType.PublicAvailableCapacity(ticketType.MaxCapacity, ticketType.ReservedCapacity).ShouldBe(0);
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    // Given a ticket type with reserved capacity partly consumed and a waitlist offer outstanding
+    // When its availability is read
+    // Then the unconsumed reserved buffer and the hold are both subtracted
+    [TestMethod]
+    public void AvailableCapacity_WithReservedBufferAndHold_SubtractsBoth()
+    {
+        // Arrange — 10 seats, 3 reserved (1 consumed), 4 public used, 1 held
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10, waitlistEnabled: true, reservedCapacity: 3);
+        sut.Claim([id], ClaimMode.Reserved);
+        for (var i = 0; i < 4; i++)
+            sut.Claim([id], ClaimMode.Public);
+
+        // Act
+        sut.HoldForWaitlistOffer(id);
+
+        // Assert — 10 − 5 used − 2 held back − 1 held
+        sut.GetTicketType(id)!.AvailableCapacity.ShouldBe(2);
+    }
+
+    // Given a ticket type without a capacity limit
+    // When its availability is read
+    // Then it is unbounded
+    [TestMethod]
+    public void AvailableCapacity_UnboundedCapacity_IsNull()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: null);
+
+        // Act
+        sut.HoldForWaitlistOffer(id);
+
+        // Assert
+        sut.GetTicketType(id)!.AvailableCapacity.ShouldBeNull();
+    }
+
+    // Given an outstanding waitlist offer
+    // When the offer is redeemed
+    // Then its hold turns into a used seat and the availability is unchanged
+    [TestMethod]
+    public void Claim_PublicUncapped_ConvertsWaitlistHoldIntoClaim()
+    {
+        // Arrange — 2 seats, 1 used, 1 held
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.Claim([id], ClaimMode.Public);
+        sut.HoldForWaitlistOffer(id);
+
+        // Act
+        var tickets = sut.Claim([id], ClaimMode.PublicUncapped);
+
+        // Assert
+        var ticketType = sut.GetTicketType(id)!;
+        ticketType.WaitlistHeldCapacity.ShouldBe(0);
+        ticketType.UsedCapacity.ShouldBe(2);
+        ticketType.AvailableCapacity.ShouldBe(0);
+        tickets.ShouldHaveSingleItem().Mode.ShouldBe(ClaimMode.PublicUncapped);
+    }
+
+    // Given a sold-out ticket type in waitlist mode with an automatic offer outstanding
+    // When the offer lapses and its hold is released
+    // Then a WaitlistCapacityAvailable event reports the seat for the next person waiting
+    [TestMethod]
+    public void ReleaseWaitlistHold_SeatLeftInWaitlistMode_RaisesWaitlistCapacityAvailableEvent()
+    {
+        // Arrange — 2 seats sold out, one released and immediately held by an offer
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        var tickets = SellOut(sut, id, capacity: 2);
+        sut.Release(tickets[0]);
+        sut.HoldForWaitlistOffer(id);
+        sut.ClearDomainEvents();
+
+        // Act
+        sut.ReleaseWaitlistHold(id);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistHeldCapacity.ShouldBe(0);
+        var evt = sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>().ShouldHaveSingleItem();
+        evt.TicketTypeId.ShouldBe(id);
+        evt.AvailableCapacity.ShouldBe(1);
+    }
+
+    // Given a sold-out ticket type in waitlist mode with a VIP offer outstanding beyond capacity
+    // When the offer lapses and its hold is released
+    // Then no seat becomes available, so no event is raised
+    [TestMethod]
+    public void ReleaseWaitlistHold_VipOfferOverCapacity_RaisesNoEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        SellOut(sut, id, capacity: 1);
+        sut.HoldForWaitlistOffer(id);
+
+        // Act
+        sut.ReleaseWaitlistHold(id);
+
+        // Assert
+        sut.GetTicketType(id)!.AvailableCapacity.ShouldBe(0);
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    // Given a ticket type without any outstanding waitlist offer
+    // When a hold is released
+    // Then the held capacity stays at zero
+    [TestMethod]
+    public void ReleaseWaitlistHold_NoHold_ClampsAtZero()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+
+        // Act
+        sut.ReleaseWaitlistHold(id);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistHeldCapacity.ShouldBe(0);
+    }
+
+    // Given a sold-out ticket type in waitlist mode
+    // When a ticket is released
+    // Then a WaitlistCapacityAvailable event reports the freed seat
+    [TestMethod]
+    public void Release_SeatLeftInWaitlistMode_RaisesWaitlistCapacityAvailableEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        var tickets = SellOut(sut, id, capacity: 2);
+
+        // Act
+        sut.Release(tickets[0]);
+
+        // Assert
+        sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>()
+            .ShouldHaveSingleItem().AvailableCapacity.ShouldBe(1);
+    }
+
+    // Given a sold-out ticket type in waitlist mode with a VIP offer outstanding beyond capacity
+    // When a ticket is released
+    // Then the freed seat covers the VIP offer, so no event is raised
+    [TestMethod]
+    public void Release_VipOfferOutstanding_RaisesNoEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        var tickets = SellOut(sut, id, capacity: 2);
+        sut.HoldForWaitlistOffer(id);
+
+        // Act
+        sut.Release(tickets[0]);
+
+        // Assert
+        sut.GetTicketType(id)!.AvailableCapacity.ShouldBe(0);
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    // Given a sold-out ticket type in waitlist mode overbooked by an organiser claim
+    // When a ticket is released
+    // Then the freed seat pays back the overbooking, so no event is raised
+    [TestMethod]
+    public void Release_OverbookedByOrganiserClaim_RaisesNoEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        var tickets = SellOut(sut, id, capacity: 2);
+        sut.Claim([id], ClaimMode.Reserved);
+
+        // Act
+        sut.Release(tickets[0]);
+
+        // Assert
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    // Given a ticket type with a waitlist that is not in waitlist mode
+    // When a ticket is released
+    // Then no event is raised
+    [TestMethod]
+    public void Release_NotInWaitlistMode_RaisesNoEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 3, waitlistEnabled: true);
+        var tickets = sut.Claim([id], ClaimMode.Public);
+        sut.ClearDomainEvents();
+
+        // Act
+        sut.Release(tickets);
+
+        // Assert
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    // Given a sold-out ticket type in waitlist mode with two VIP offers outstanding beyond capacity
+    // When its capacity is raised by three
+    // Then the event reports only the one seat left after covering the VIP offers
+    [TestMethod]
+    public void UpdateTicketType_CapacityRaisedWithVipOffersOutstanding_ReportsSeatsLeftAfterHolds()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        SellOut(sut, id, capacity: 1);
+        sut.HoldForWaitlistOffer(id);
+        sut.HoldForWaitlistOffer(id);
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: 4);
+
+        // Assert
+        sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>()
+            .ShouldHaveSingleItem().AvailableCapacity.ShouldBe(1);
+    }
+
+    // Given a sold-out ticket type in waitlist mode with two VIP offers outstanding beyond capacity
+    // When its capacity is raised by one
+    // Then the new seat only covers a VIP offer, so no event is raised
+    [TestMethod]
+    public void UpdateTicketType_CapacityRaisedLessThanVipOffers_RaisesNoEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        SellOut(sut, id, capacity: 1);
+        sut.HoldForWaitlistOffer(id);
+        sut.HoldForWaitlistOffer(id);
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: 2);
+
+        // Assert
+        sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a sold-out ticket type in waitlist mode
+    // When only its name changes
+    // Then no event is raised
+    [TestMethod]
+    public void UpdateTicketType_NameOnlyInWaitlistMode_RaisesNoWaitlistCapacityAvailableEvent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        SellOut(sut, id, capacity: 1);
+
+        // Act
+        sut.UpdateTicketType(id, TicketTypeName.From("Renamed"), maxCapacity: 1);
+
+        // Assert
+        sut.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>().ShouldBeEmpty();
     }
 }

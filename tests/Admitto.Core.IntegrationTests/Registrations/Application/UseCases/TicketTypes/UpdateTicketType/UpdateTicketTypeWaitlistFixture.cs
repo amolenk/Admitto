@@ -13,6 +13,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class UpdateTicketTypeWaitlistFixture
 {
     private int _waitingCount;
+    private int _vipOffers;
     private bool _withOutstandingCoupon;
     private bool _withWaitlistedRegistration;
     private bool _withMixedRegistration;
@@ -30,6 +31,10 @@ internal sealed class UpdateTicketTypeWaitlistFixture
 
     public static EmailAddress WaitingEmail(int position) => EmailAddress.From($"attendee{position}@example.com");
 
+    public static EmailAddress VipEmail(int index) => EmailAddress.From($"vip{index}@example.com");
+
+    public static IReadOnlyList<EmailAddress> VipEmails { get; } = Enumerable.Range(1, 5).Select(VipEmail).ToList();
+
     private UpdateTicketTypeWaitlistFixture()
     {
     }
@@ -45,6 +50,13 @@ internal sealed class UpdateTicketTypeWaitlistFixture
     /// </summary>
     public static UpdateTicketTypeWaitlistFixture WithWaitingEntriesAndOutstandingCoupon(int count) =>
         new() { _waitingCount = count, _withOutstandingCoupon = true };
+
+    /// <summary>
+    /// Attendees waiting, plus <paramref name="vipOffers"/> VIP offers (to <see cref="VipEmail"/>) made while the ticket
+    /// type was sold out, so each holds a seat beyond capacity.
+    /// </summary>
+    public static UpdateTicketTypeWaitlistFixture WithWaitingEntriesAndVipOffers(int waitingCount, int vipOffers) =>
+        new() { _waitingCount = waitingCount, _vipOffers = vipOffers };
 
     /// <summary>
     /// The first waiting attendee holds a <see cref="RegistrationStatus.Waitlisted"/> registration (no confirmed tickets).
@@ -98,7 +110,7 @@ internal sealed class UpdateTicketTypeWaitlistFixture
             if (_withOutstandingCoupon)
             {
                 waitlist.AddEntry(OfferedEmail, now.AddMinutes(-1));
-                var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog.GetTicketType(TicketTypeId)!, now)!;
+                var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, now)!;
                 coupon.ClearDomainEvents();
                 OutstandingCouponCode = coupon.Code.Value;
                 dbContext.Coupons.Add(coupon);
@@ -106,6 +118,15 @@ internal sealed class UpdateTicketTypeWaitlistFixture
 
             for (var i = 1; i <= _waitingCount; i++)
                 waitlist.AddEntry(WaitingEmail(i), now.AddMinutes(i));
+
+            for (var i = 1; i <= _vipOffers; i++)
+            {
+                waitlist.AddEntry(VipEmail(i), now.AddMinutes(_waitingCount + i));
+                var vipEntry = waitlist.Entries.Single(e => e.Email == VipEmail(i) && e.Status == WaitlistEntryStatus.Active);
+                var vipCoupon = waitlist.IssueCouponToEntry(vipEntry.Id, ticketedEvent, catalog, now);
+                vipCoupon.ClearDomainEvents();
+                dbContext.Coupons.Add(vipCoupon);
+            }
 
             waitlist.ClearDomainEvents();
             dbContext.Waitlists.Add(waitlist);
