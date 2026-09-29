@@ -16,6 +16,7 @@ internal sealed class GetRegistrationDetailsFixture
     public TeamId TeamId { get; } = TeamId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
     public TicketTypeId VipId { get; } = TicketTypeId.New();
+    public TicketTypeId WaitlistedTicketTypeId { get; } = TicketTypeId.New();
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public DateTimeOffset RegisteredAt { get; private set; }
     public DateTimeOffset ReconfirmedAt { get; private set; }
@@ -25,6 +26,7 @@ internal sealed class GetRegistrationDetailsFixture
     private bool _withCancelled;
     private bool _withAdditionalDetails;
     private bool _withMultipleTickets;
+    private bool _withWaitlistEntry;
     private bool _withRegisteredActivity;
     private bool _withReconfirmedActivity;
     private bool _withCancelledActivity;
@@ -67,6 +69,13 @@ internal sealed class GetRegistrationDetailsFixture
         _withRegisteredActivity = true,
     };
 
+    public static GetRegistrationDetailsFixture WithConfirmedAndWaitlistedTickets() => new()
+    {
+        _withRegistration = true,
+        _withRegisteredActivity = true,
+        _withWaitlistEntry = true,
+    };
+
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         RegisteredAt = DateTimeOffset.UtcNow.AddDays(-5);
@@ -105,6 +114,15 @@ internal sealed class GetRegistrationDetailsFixture
             registration.Cancel(CancellationReason.AttendeeRequest);
 
         await environment.RegistrationsDatabase.SeedAsync(db => db.Registrations.Add(registration));
+
+        if (_withWaitlistEntry)
+        {
+            var waitlist = Waitlist.Create(EventId, WaitlistedTicketTypeId, TeamId);
+            waitlist.AddEntry(EmailAddress.From("someone-else@example.com"), DateTimeOffset.UtcNow.AddDays(-1));
+            waitlist.AddEntry(registration.Email, DateTimeOffset.UtcNow);
+            waitlist.ClearDomainEvents();
+            await environment.RegistrationsDatabase.SeedAsync(db => db.Waitlists.Add(waitlist));
+        }
 
         if (_withRegisteredActivity)
         {

@@ -10,6 +10,9 @@ public sealed record PartnerRegistrationDetailDto(
     RegistrationStatus Status,
     IReadOnlyList<Guid> TicketTypeIds,
     IReadOnlyList<PartnerTicketDetailDto> Tickets,
+    IReadOnlyList<PartnerWaitlistedTicketTypeDto> WaitlistedTicketTypes,
     IReadOnlyDictionary<string, string> AdditionalDetails);
 
 public sealed record PartnerTicketDetailDto(Guid Id, string Name);
+
+public sealed record PartnerWaitlistedTicketTypeDto(Guid TicketTypeId, int Position);

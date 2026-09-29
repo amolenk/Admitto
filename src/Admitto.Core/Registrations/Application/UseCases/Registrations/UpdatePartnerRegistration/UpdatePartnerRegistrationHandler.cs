@@ -59,7 +59,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         var currentConfirmedIds = registration.Tickets.Select(t => t.Id).ToHashSet();
         var currentWaitlistIds = waitlists
-            .Where(w => w.Entries.Any(e => e.Email == registration.Email && e.Status == WaitlistEntryStatus.Active))
+            .Where(w => w.HasActiveEntry(registration.Email))
             .Select(w => w.Id)
             .ToHashSet();
 

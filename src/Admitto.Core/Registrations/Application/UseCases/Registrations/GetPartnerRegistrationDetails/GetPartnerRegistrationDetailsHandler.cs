@@ -21,6 +21,17 @@ internal sealed class GetPartnerRegistrationDetailsHandler(IRegistrationsWriteSt
         if (registration is null)
             return null;
 
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == query.EventId && w.TeamId == TeamId.From(query.TeamId))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var waitlistedTicketTypes = waitlists
+            .Select(w => (TicketTypeId: w.Id.Value, Position: w.GetActivePosition(registration.Email)))
+            .Where(x => x.Position is not null)
+            .Select(x => new PartnerWaitlistedTicketTypeDto(x.TicketTypeId, x.Position!.Value))
+            .ToList();
+
         return new PartnerRegistrationDetailDto(
             Id: registration.Id.Value,
             Email: registration.Email.Value,
@@ -33,6 +44,7 @@ internal sealed class GetPartnerRegistrationDetailsHandler(IRegistrationsWriteSt
             Tickets: registration.Tickets
                 .Select(t => new PartnerTicketDetailDto(t.Id.Value, t.Name.Value))
                 .ToList(),
+            WaitlistedTicketTypes: waitlistedTicketTypes,
             AdditionalDetails: registration.AdditionalDetails
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
     }

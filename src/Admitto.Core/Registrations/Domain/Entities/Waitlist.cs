@@ -37,6 +37,21 @@ public class Waitlist : Aggregate<TicketTypeId>
     public IReadOnlyList<WaitlistEntry> Entries => _entries.AsReadOnly();
     public IReadOnlyList<WaitlistCoupon> Coupons => _coupons.AsReadOnly();
 
+    /// <summary>
+    /// Returns the queue position of the active entry for the given email, if any.
+    /// </summary>
+    public int? GetActivePosition(EmailAddress email)
+        => _entries
+            .Where(e => e.Email == email && e.Status == WaitlistEntryStatus.Active)
+            .Select(e => (int?)e.Position)
+            .FirstOrDefault();
+
+    /// <summary>
+    /// Returns whether the given email currently holds an active entry on this waitlist.
+    /// </summary>
+    public bool HasActiveEntry(EmailAddress email)
+        => _entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Active);
+
     public static Waitlist Create(TicketedEventId eventId, TicketTypeId ticketTypeId, TeamId teamId)
         => new(eventId, ticketTypeId, teamId);
 

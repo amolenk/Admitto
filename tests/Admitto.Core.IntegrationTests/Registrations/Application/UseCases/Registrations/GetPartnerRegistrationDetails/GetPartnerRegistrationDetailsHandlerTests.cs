@@ -73,6 +73,49 @@ public sealed class GetPartnerRegistrationDetailsHandlerTests(TestContext testCo
         result.ShouldBeNull();
     }
 
+    // Given a registration confirmed for one ticket type and waitlisted (second in queue) for another
+    // When the partner registration details are queried
+    // Then the confirmed ticket and the waitlisted ticket type with its queue position both appear
+    [TestMethod]
+    public async ValueTask GetPartnerRegistrationDetails_ConfirmedAndWaitlistedTickets_ReturnsBoth()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithConfirmedAndWaitlistedTickets();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetPartnerRegistrationDetailsQuery(
+                fixture.TeamId.Value,
+                fixture.EventId,
+                fixture.RegistrationId.Value),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.TicketTypeIds.ShouldHaveSingleItem().ShouldBe(fixture.TicketTypeId.Value);
+        var waitlisted = result.WaitlistedTicketTypes.ShouldHaveSingleItem();
+        waitlisted.TicketTypeId.ShouldBe(fixture.WaitlistedTicketTypeId.Value);
+        waitlisted.Position.ShouldBe(2);
+    }
+
+    // Given a registration with no active waitlist entries
+    // When the partner registration details are queried
+    // Then the waitlisted ticket types list is empty
+    [TestMethod]
+    public async ValueTask GetPartnerRegistrationDetails_NoWaitlistEntries_ReturnsEmptyWaitlistedTicketTypes()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithRegisteredAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetPartnerRegistrationDetailsQuery(
+                fixture.TeamId.Value,
+                fixture.EventId,
+                fixture.RegistrationId.Value),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.WaitlistedTicketTypes.ShouldBeEmpty();
+    }
+
     private static GetPartnerRegistrationDetailsHandler NewHandler() =>
         new(Environment.RegistrationsDatabase.Context);
 }
