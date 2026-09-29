@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
-import { ArrowLeft, Clock, Trash2, ListOrdered } from "lucide-react";
+import { ArrowLeft, Clock, Crown, Trash2, ListOrdered } from "lucide-react";
 import { toast } from "sonner";
+import { FormError } from "@/components/form-error";
 import { WaitlistDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
@@ -39,6 +41,7 @@ export default function WaitlistPage() {
     }>();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const [promotingEntryId, setPromotingEntryId] = useState<string | null>(null);
 
     const { data: ticketTypes } = useQuery({
         queryKey: ["ticket-types", teamId, eventId],
@@ -48,23 +51,38 @@ export default function WaitlistPage() {
 
     const ticketType = ticketTypes?.find((t) => t.id === ticketTypeId);
 
+    const waitlistUrl = `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketTypeId}/waitlist`;
+    const waitlistQueryKey = ["waitlist", teamId, eventId, ticketTypeId];
+
     const { data: waitlist, isLoading } = useQuery({
-        queryKey: ["waitlist", teamId, eventId, ticketTypeId],
-        queryFn: () =>
-            apiClient.get<WaitlistDetailsDto>(
-                `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketTypeId}/waitlist`
-            ),
+        queryKey: waitlistQueryKey,
+        queryFn: () => apiClient.get<WaitlistDetailsDto>(waitlistUrl),
         throwOnError: false,
     });
 
     async function removeEntry(entryId: string) {
-        await apiClient.delete(
-            `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketTypeId}/waitlist/${entryId}`
-        );
-        await queryClient.invalidateQueries({
-            queryKey: ["waitlist", teamId, eventId, ticketTypeId],
-        });
+        await apiClient.delete(`${waitlistUrl}/${entryId}`);
+        await queryClient.invalidateQueries({ queryKey: waitlistQueryKey });
         toast.success("Entry removed from waitlist.");
+    }
+
+    // Issuing a VIP coupon takes the entry out of the queue immediately, so the refreshed
+    // list drops it and its coupon shows up under pending notifications instead.
+    async function promoteEntry(entryId: string) {
+        setPromotingEntryId(entryId);
+        try {
+            await apiClient.post(`${waitlistUrl}/${entryId}/promote`);
+            toast.success("VIP coupon issued. The attendee will be emailed their offer.");
+        } catch (err) {
+            toast.error(
+                err instanceof FormError
+                    ? err.detail
+                    : "Failed to issue VIP coupon. Please try again."
+            );
+        } finally {
+            setPromotingEntryId(null);
+            await queryClient.invalidateQueries({ queryKey: waitlistQueryKey });
+        }
     }
 
     const stats = waitlist?.stats;
@@ -129,7 +147,7 @@ export default function WaitlistPage() {
                                             <TableHead className="w-16">#</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Joined</TableHead>
-                                            <TableHead className="w-12" />
+                                            <TableHead className="w-48" />
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -145,14 +163,29 @@ export default function WaitlistPage() {
                                                     {format(new Date(entry.joinedAt), "d MMM yyyy")}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive hover:text-destructive"
-                                                        onClick={() => removeEntry(entry.entryId)}
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            disabled={promotingEntryId !== null}
+                                                            onClick={() => promoteEntry(entry.entryId)}
+                                                        >
+                                                            <Crown className="size-4" />
+                                                            {promotingEntryId === entry.entryId
+                                                                ? "Promoting…"
+                                                                : "Promote to VIP"}
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            aria-label="Remove from waitlist"
+                                                            disabled={promotingEntryId !== null}
+                                                            className="text-destructive hover:text-destructive"
+                                                            onClick={() => removeEntry(entry.entryId)}
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}

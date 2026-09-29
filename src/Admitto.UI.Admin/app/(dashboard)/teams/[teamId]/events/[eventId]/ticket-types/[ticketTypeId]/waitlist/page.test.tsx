@@ -1,6 +1,8 @@
 import { screen, waitFor, within } from "@testing-library/react";
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FormError } from "@/components/form-error";
 import { apiClient } from "@/lib/api-client";
 import {
     pendingNotificationRow,
@@ -14,13 +16,18 @@ import { setRoute } from "@/test-utils/router";
 import WaitlistPage from "./page";
 
 // Position shifting and coupon expiry are backend concerns; this page renders the supplied
-// snapshot, masks emails, and lets an organizer remove an active entry.
+// snapshot, masks emails, and lets an organizer remove or VIP-promote an active entry.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
 }));
 
+vi.mock("sonner", () => ({
+    toast: { success: vi.fn(), error: vi.fn() },
+}));
+
 const get = vi.mocked(apiClient.get);
+const post = vi.mocked(apiClient.post);
 const del = vi.mocked(apiClient.delete);
 
 const TEAM_ID = "11111111-1111-1111-1111-111111111111";
@@ -201,7 +208,7 @@ describe("WaitlistPage", () => {
         expect(within(initialAlice.closest("tr")!).getAllByRole("cell")[0]).toHaveTextContent("1");
 
         const row = initialAlice.closest("tr")!;
-        await user.click(within(row).getByRole("button"));
+        await user.click(within(row).getByRole("button", { name: "Remove from waitlist" }));
 
         await waitFor(() =>
             expect(del).toHaveBeenCalledWith(
@@ -224,5 +231,108 @@ describe("WaitlistPage", () => {
         expect(within(waitingStat).getByText("1")).toBeInTheDocument();
         expect(within(pendingStat).getByText("0")).toBeInTheDocument();
         expect(within(sentTodayStat).getByText("0")).toBeInTheDocument();
+    });
+
+    // Given two active entries and nobody with a pending claim notification
+    // When the organizer promotes the second entry to VIP
+    // Then a POST is sent to that entry's promote route, a success toast is shown, and the
+    // refreshed list no longer shows the entry — its coupon now appears as a pending notification
+    it("promotes an active entry to VIP and removes it from the list", async () => {
+        let waitlist = waitlistDetailsDto({
+            activeEntries: [
+                waitlistEntryRow({ entryId: "aaaa1111-0000-0000-0000-000000000001" }),
+                waitlistEntryRow({
+                    entryId: "aaaa1111-0000-0000-0000-000000000002",
+                    position: 2,
+                    maskedEmail: "bea***@example.com",
+                }),
+            ],
+            pendingNotifications: [],
+        });
+        get.mockImplementation((url: string) => {
+            if (url === WAITLIST_URL) return Promise.resolve(waitlist);
+            if (url === TICKET_TYPES_URL) return Promise.resolve([ticketType]);
+            return Promise.reject(new Error(`unexpected GET ${url}`));
+        });
+        post.mockImplementation(async () => {
+            waitlist = waitlistDetailsDto({
+                activeEntries: [waitlistEntryRow({ entryId: "aaaa1111-0000-0000-0000-000000000001" })],
+                pendingNotifications: [
+                    pendingNotificationRow({
+                        couponId: "bbbb2222-0000-0000-0000-000000000001",
+                        maskedEmail: "bea***@example.com",
+                    }),
+                ],
+                stats: { totalWaiting: 1, totalPending: 1, sentToday: 1 },
+            });
+            return { couponId: "bbbb2222-0000-0000-0000-000000000001" };
+        });
+
+        const { user } = renderPage();
+
+        const bea = await screen.findByText("bea***@example.com");
+        await user.click(
+            within(bea.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
+        );
+
+        await waitFor(() =>
+            expect(post).toHaveBeenCalledWith(
+                `${WAITLIST_URL}/aaaa1111-0000-0000-0000-000000000002/promote`,
+            ),
+        );
+        expect(toast.success).toHaveBeenCalledWith(
+            "VIP coupon issued. The attendee will be emailed their offer.",
+        );
+
+        const [activeTable, pendingTable] = screen.getAllByRole("table");
+        await waitFor(() =>
+            expect(within(activeTable!).queryByText("bea***@example.com")).not.toBeInTheDocument(),
+        );
+        expect(within(activeTable!).getByText("ali***@example.com")).toBeInTheDocument();
+        expect(within(pendingTable!).getByText("bea***@example.com")).toBeInTheDocument();
+        expect(
+            within(pendingTable!).queryByRole("button", { name: "Promote to VIP" }),
+        ).not.toBeInTheDocument();
+    });
+
+    // Given an active entry that was removed or promoted elsewhere after the page loaded
+    // When the organizer promotes it to VIP and the backend rejects it as no longer active
+    // Then the backend's reason is shown as an error toast and the list is refreshed
+    it("shows the rejection and refreshes the list when the entry is no longer active", async () => {
+        let waitlist = waitlistDetailsDto({
+            activeEntries: [waitlistEntryRow({ entryId: "aaaa1111-0000-0000-0000-000000000001" })],
+        });
+        get.mockImplementation((url: string) => {
+            if (url === WAITLIST_URL) return Promise.resolve(waitlist);
+            if (url === TICKET_TYPES_URL) return Promise.resolve([ticketType]);
+            return Promise.reject(new Error(`unexpected GET ${url}`));
+        });
+        post.mockImplementation(async () => {
+            waitlist = waitlistDetailsDto({
+                activeEntries: [],
+                stats: { totalWaiting: 0, totalPending: 0, sentToday: 0 },
+            });
+            throw new FormError({
+                status: 409,
+                title: "Conflict",
+                detail: "The waitlist entry is no longer active.",
+                errors: {},
+            });
+        });
+
+        const { user } = renderPage();
+
+        const ali = await screen.findByText("ali***@example.com");
+        await user.click(
+            within(ali.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
+        );
+
+        await waitFor(() =>
+            expect(toast.error).toHaveBeenCalledWith("The waitlist entry is no longer active."),
+        );
+        expect(toast.success).not.toHaveBeenCalled();
+        expect(
+            await screen.findByText("No one is currently on the waitlist."),
+        ).toBeInTheDocument();
     });
 });

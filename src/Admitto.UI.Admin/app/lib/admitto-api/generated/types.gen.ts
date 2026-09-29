@@ -331,6 +331,10 @@ export type ProblemDetails = {
     instance?: null | string;
 };
 
+export type PromoteWaitlistEntryHttpResponse = {
+    couponId: string;
+};
+
 export type PublicCouponDetailsDto = {
     status: CouponStatus;
     allowedTicketTypes: Array<AllowedTicketTypeDto>;
@@ -2691,6 +2695,52 @@ export type RemoveWaitlistEntryResponses = {
      */
     200: unknown;
 };
+
+export type PromoteWaitlistEntryData = {
+    body?: never;
+    path: {
+        teamId: string;
+        eventId: string;
+        ticketTypeId: string;
+        entryId: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}/promote';
+};
+
+export type PromoteWaitlistEntryErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PromoteWaitlistEntryError = PromoteWaitlistEntryErrors[keyof PromoteWaitlistEntryErrors];
+
+export type PromoteWaitlistEntryResponses = {
+    /**
+     * Created
+     */
+    201: PromoteWaitlistEntryHttpResponse;
+};
+
+export type PromoteWaitlistEntryResponse = PromoteWaitlistEntryResponses[keyof PromoteWaitlistEntryResponses];
 
 export type GetWaitlistDetailsData = {
     body?: never;
