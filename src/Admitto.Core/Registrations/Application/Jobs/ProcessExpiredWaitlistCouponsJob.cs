@@ -9,15 +9,15 @@ using Quartz;
 namespace Amolenk.Admitto.Core.Registrations.Application.Jobs;
 
 /// <summary>
-/// Polls for expired waitlist coupons (past the grace period) and processes each one:
-/// expires the coupon on the <see cref="Waitlist"/> aggregate (which raises
+/// Polls for waitlists holding issued coupons whose offer lapsed (past the grace period) and processes
+/// each one: expires the coupon on the <see cref="Waitlist"/> aggregate (which raises
 /// <see cref="Domain.DomainEvents.WaitlistCouponExpiredDomainEvent"/> so the recipient is told
 /// their offer lapsed), then fires
 /// <see cref="ProcessWaitlistNotificationsCommand"/> to cascade the freed slots to the next
 /// people in queue. Only <see cref="WaitlistCouponOrigin.Automatic"/> coupons free a slot: a
 /// manually issued (VIP) coupon was never backed by one, so its expiry cascades nothing. The command
 /// is fired even when no slot was freed, so WaitlistMode is still re-evaluated. If the waitlist is
-/// empty after revocation, the domain raises
+/// empty after expiry, the domain raises
 /// <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
 /// </summary>
 /// <remarks>
@@ -52,72 +52,51 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
             var now = timeProvider.GetUtcNow();
             var cutoff = now - GracePeriod;
 
-            var expiredCoupons = await writeStore.Coupons
-                .Where(c =>
-                    c.Source == CouponSource.Waitlist &&
-                    c.RedeemedAt == null &&
-                    c.RevokedAt == null &&
-                    c.ExpiresAt <= cutoff)
+            // Same lapsed-coupon rule as Waitlist.GetLapsedCouponIds, expressed so it runs in the database.
+            var waitlists = await writeStore.Waitlists
+                .Where(w => w.Coupons.Any(c => c.Status == WaitlistCouponStatus.Issued && c.ExpiresAt <= cutoff))
                 .ToListAsync(context.CancellationToken);
 
-            if (expiredCoupons.Count == 0)
+            if (waitlists.Count == 0)
                 return;
 
-            // Waitlist coupons always target exactly one ticket type — group to batch per type.
-            var groups = expiredCoupons
-                .GroupBy(c => (c.TeamId, EventId: c.EventId, TicketTypeId: c.AllowedTicketTypeIds[0]));
-
-            foreach (var group in groups)
+            foreach (var waitlist in waitlists)
             {
-                var (teamId, eventId, ticketTypeId) = group.Key;
-                var couponsToRevoke = group.ToList();
-
                 var catalog = await writeStore.TicketCatalogs
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == eventId && c.TeamId == teamId, context.CancellationToken);
+                    .FirstOrDefaultAsync(
+                        c => c.Id == waitlist.EventId && c.TeamId == waitlist.TeamId,
+                        context.CancellationToken);
 
                 if (catalog is null || catalog.EventStatus != EventLifecycleStatus.Active)
                     continue;
 
+                var lapsedCouponIds = waitlist.GetLapsedCouponIds(cutoff);
+
                 logger.LogInformation(
-                    "Revoking {Count} expired waitlist coupon(s) for ticket type {TicketTypeId}",
-                    couponsToRevoke.Count, ticketTypeId.Value);
+                    "Expiring {Count} lapsed waitlist coupon(s) for ticket type {TicketTypeId}",
+                    lapsedCouponIds.Count, waitlist.Id.Value);
 
-                var waitlist = await writeStore.Waitlists
-                    .Include(w => w.Entries)
-                    .Include(w => w.Coupons)
-                    .FirstOrDefaultAsync(
-                        w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
-                        context.CancellationToken);
+                // The coupons are only needed for the recipient and code in the expired-offer email.
+                var lapsedCoupons = await writeStore.Coupons
+                    .AsNoTracking()
+                    .Where(c => lapsedCouponIds.Contains(c.Id))
+                    .ToDictionaryAsync(c => c.Id, context.CancellationToken);
 
-                if (waitlist is null)
-                {
-                    logger.LogWarning(
-                        "Waitlist not found for ticket type {TicketTypeId} — skipping revocation",
-                        ticketTypeId.Value);
-                    continue;
-                }
-
-                var ticketType = catalog.GetTicketType(ticketTypeId);
+                // Without a coupon or ticket type there is nothing to put in the expired-offer email; the
+                // aggregate still expires the waitlist coupon so any freed slot cascades.
+                var ticketType = catalog.GetTicketType(waitlist.Id);
                 var freedSlots = 0;
 
-                foreach (var coupon in couponsToRevoke)
+                foreach (var couponId in lapsedCouponIds)
                 {
-                    // Without a ticket type there is nothing to name in the expired-offer email;
-                    // still revoke so any freed slot cascades.
-                    var freedSlot = ticketType is null
-                        ? waitlist.RevokeCoupon(coupon.Id)
-                        : waitlist.ExpireCoupon(coupon, ticketType);
-
-                    if (freedSlot)
+                    if (waitlist.ExpireCoupon(couponId, lapsedCoupons.GetValueOrDefault(couponId), ticketType))
                         freedSlots++;
-
-                    coupon.Revoke();
                 }
 
                 await notifyHandler.HandleAsync(
                     new ProcessWaitlistNotificationsCommand(
-                        eventId.Value, teamId.Value, ticketTypeId.Value, freedSlots),
+                        waitlist.EventId.Value, waitlist.TeamId.Value, waitlist.Id.Value, freedSlots),
                     context.CancellationToken);
             }
 

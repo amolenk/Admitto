@@ -82,25 +82,6 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(Coupon.Errors.AlreadyRedeemed);
     }
 
-    // Coupon rejected — revoked
-    // Given a coupon that has been revoked
-    // When an attendee registers using the coupon
-    // Then it fails with a coupon-revoked error
-    [TestMethod]
-    public async ValueTask RegisterWithCoupon_RevokedCoupon_ThrowsCouponRevokedError()
-    {
-        var fixture = RegisterAttendeeFixture.CouponRevoked();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCommand(fixture, fixture.CouponEmail.Value);
-        var sut = NewHandler();
-
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        result.Error.ShouldMatch(Coupon.Errors.Revoked);
-    }
-
     // Coupon rejected — ticket type not allowlisted
     // Given a coupon that only allows a specific ticket type
     // When an attendee registers requesting a different ticket type

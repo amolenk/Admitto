@@ -172,7 +172,7 @@ public class Waitlist : Aggregate<TicketTypeId>
             utcNow,
             CouponSource.Waitlist);
 
-        _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow, origin));
+        _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow, expiresAt, origin));
 
         AddDomainEvent(new WaitlistCouponIssuedDomainEvent(
             TeamId, EventId, ticketType.Id, entry.Email, coupon.Code, ticketType.Name.Value, expiresAt));
@@ -197,34 +197,38 @@ public class Waitlist : Aggregate<TicketTypeId>
     }
 
     /// <summary>
-    /// Marks the given waitlist coupon as revoked. Returns whether the coupon was backed by a freed slot
-    /// (<see cref="WaitlistCouponOrigin.Automatic"/>), which the caller should cascade to the next entry;
-    /// a manually issued (VIP) coupon frees nothing.
+    /// Returns the ids of the issued coupons whose offer lapsed at or before <paramref name="cutoff"/>.
     /// </summary>
-    public bool RevokeCoupon(CouponId couponId)
-    {
-        var coupon = FindActiveCoupon(couponId);
-        coupon.Revoke();
-        CheckExhausted();
-        return coupon.Origin == WaitlistCouponOrigin.Automatic;
-    }
+    public IReadOnlyList<CouponId> GetLapsedCouponIds(DateTimeOffset cutoff)
+        => _coupons
+            .Where(c => c.Status == WaitlistCouponStatus.Issued && c.ExpiresAt <= cutoff)
+            .Select(c => c.Id)
+            .ToList();
 
     /// <summary>
-    /// Marks the given waitlist coupon as revoked because it lapsed unclaimed, and raises
-    /// <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired.
-    /// Returns whether the lapsed coupon freed a slot to cascade (see <see cref="RevokeCoupon"/>).
+    /// Marks the given waitlist coupon as expired because it lapsed unclaimed, and raises
+    /// <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired. The
+    /// <paramref name="coupon"/> only supplies that email's recipient and code; when it or the ticket type
+    /// no longer exists there is nothing to send, so the coupon is expired without raising the event.
+    /// Returns whether the coupon was backed by a freed slot (<see cref="WaitlistCouponOrigin.Automatic"/>),
+    /// which the caller should cascade to the next entry; a manually issued (VIP) coupon frees nothing.
     /// </summary>
-    public bool ExpireCoupon(Coupon coupon, TicketType ticketType)
+    public bool ExpireCoupon(CouponId couponId, Coupon? coupon, TicketType? ticketType)
     {
-        var freedSlot = RevokeCoupon(coupon.Id);
+        var waitlistCoupon = FindCoupon(couponId);
+        waitlistCoupon.Expire();
 
-        AddDomainEvent(new WaitlistCouponExpiredDomainEvent(
-            TeamId, EventId, ticketType.Id, coupon.Email, coupon.Code, ticketType.Name.Value));
+        if (coupon is not null && ticketType is not null)
+        {
+            AddDomainEvent(new WaitlistCouponExpiredDomainEvent(
+                TeamId, EventId, ticketType.Id, coupon.Email, coupon.Code, ticketType.Name.Value));
+        }
 
-        return freedSlot;
+        CheckExhausted();
+        return waitlistCoupon.Origin == WaitlistCouponOrigin.Automatic;
     }
 
-    private WaitlistCoupon FindActiveCoupon(CouponId couponId)
+    private WaitlistCoupon FindCoupon(CouponId couponId)
     {
         var coupon = _coupons.FirstOrDefault(c => c.Id == couponId);
         if (coupon is null)

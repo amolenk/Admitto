@@ -42,10 +42,10 @@ public sealed class WaitlistTests
     /// <summary>
     /// Queues a fresh entry and issues it the next coupon, so the waitlist tracks one outstanding coupon.
     /// </summary>
-    private static CouponId IssueCoupon(Waitlist sut)
+    private static Coupon IssueCoupon(Waitlist sut)
     {
         sut.AddEntry(EmailAddress.From($"{Guid.NewGuid():N}@example.com"), DateTimeOffset.UtcNow);
-        return sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow)!.Id;
+        return sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow)!;
     }
 
     // Given an empty waitlist
@@ -235,7 +235,7 @@ public sealed class WaitlistTests
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = IssueCoupon(sut);
+        var couponId = IssueCoupon(sut).Id;
 
         // Act
         sut.ApplyCouponRedemption(couponId, RedeemerEmail);
@@ -244,21 +244,39 @@ public sealed class WaitlistTests
         sut.Coupons.Single().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
     }
 
-    // Given a waitlist with an issued coupon
-    // When the coupon is revoked
-    // Then its status becomes Revoked
+    // Given a waitlist with one active entry
+    // When the next coupon is issued
+    // Then the tracked waitlist coupon carries the coupon's expiry
     [TestMethod]
-    public void RevokeCoupon_TransitionsStatusToRevoked()
+    public void IssueNextCoupon_WhenActiveEntryExists_TracksCouponExpiry()
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = IssueCoupon(sut);
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
 
         // Act
-        sut.RevokeCoupon(couponId);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow)!;
 
         // Assert
-        sut.Coupons.Single().Status.ShouldBe(WaitlistCouponStatus.Revoked);
+        sut.Coupons.ShouldHaveSingleItem().ExpiresAt.ShouldBe(coupon.ExpiresAt);
+    }
+
+    // Given a waitlist with an active entry
+    // When an organizer promotes that entry directly
+    // Then the tracked waitlist coupon carries the coupon's expiry
+    [TestMethod]
+    public void IssueCouponToEntry_ActiveEntry_TracksCouponExpiry()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var entryId = sut.Entries.Single().Id;
+
+        // Act
+        var coupon = sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
+
+        // Assert
+        sut.Coupons.ShouldHaveSingleItem().ExpiresAt.ShouldBe(coupon.ExpiresAt);
     }
 
     // Given a waitlist with one active entry
@@ -314,9 +332,9 @@ public sealed class WaitlistTests
 
     // Given a waitlist coupon that was issued to the front-of-queue attendee
     // When that coupon expires unclaimed
-    // Then the waitlist coupon is revoked and a WaitlistCouponExpired event is raised for that attendee
+    // Then the waitlist coupon is expired and a WaitlistCouponExpired event is raised for that attendee
     [TestMethod]
-    public void ExpireCoupon_WhenCouponIssued_RevokesAndRaisesWaitlistCouponExpiredDomainEvent()
+    public void ExpireCoupon_WhenCouponIssued_ExpiresAndRaisesWaitlistCouponExpiredDomainEvent()
     {
         // Arrange
         var sut = CreateWaitlist();
@@ -327,10 +345,10 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        sut.ExpireCoupon(coupon, ticketType);
+        sut.ExpireCoupon(coupon.Id, coupon, ticketType);
 
         // Assert
-        sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Revoked);
+        sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Expired);
         sut.GetDomainEvents()
             .OfType<WaitlistCouponExpiredDomainEvent>()
             .ShouldHaveSingleItem()
@@ -345,7 +363,7 @@ public sealed class WaitlistTests
 
     // Given a waitlist coupon that has already been redeemed
     // When an expiry is attempted for that coupon
-    // Then it throws the coupon-not-revokable error and no expired event is raised
+    // Then it throws the coupon-not-expirable error and no expired event is raised
     [TestMethod]
     public void ExpireCoupon_WhenCouponAlreadyRedeemed_ThrowsAndRaisesNoExpiredEvent()
     {
@@ -358,11 +376,73 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon, ticketType));
+        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon.Id, coupon, ticketType));
 
         // Assert
-        result.Error.ShouldMatch(WaitlistCoupon.Errors.CouponNotRevokable);
+        result.Error.ShouldMatch(WaitlistCoupon.Errors.CouponNotExpirable);
         sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given an automatically issued waitlist coupon whose ticket type no longer exists
+    // When that coupon expires unclaimed
+    // Then the waitlist coupon is expired and still frees its slot, but no expired-offer event is raised
+    [TestMethod]
+    public void ExpireCoupon_TicketTypeMissing_ExpiresWithoutExpiredEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow)!;
+        sut.ClearDomainEvents();
+
+        // Act
+        var freedSlot = sut.ExpireCoupon(coupon.Id, coupon, ticketType: null);
+
+        // Assert
+        freedSlot.ShouldBeTrue();
+        sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Expired);
+        sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given an automatically issued waitlist coupon whose coupon record is missing
+    // When that coupon expires unclaimed
+    // Then the waitlist coupon is expired and still frees its slot, but no expired-offer event is raised
+    [TestMethod]
+    public void ExpireCoupon_CouponMissing_ExpiresWithoutExpiredEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var ticketType = CreateTicketType();
+        var couponId = IssueCoupon(sut).Id;
+        sut.ClearDomainEvents();
+
+        // Act
+        var freedSlot = sut.ExpireCoupon(couponId, coupon: null, ticketType);
+
+        // Assert
+        freedSlot.ShouldBeTrue();
+        sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Expired);
+        sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given the waitlist's only outstanding coupon, with nobody left in the queue
+    // When that coupon expires unclaimed
+    // Then a WaitlistExhausted event is raised
+    [TestMethod]
+    public void ExpireCoupon_LastOutstandingCoupon_RaisesWaitlistExhaustedDomainEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var ticketType = CreateTicketType();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow)!;
+        sut.ClearDomainEvents();
+
+        // Act
+        sut.ExpireCoupon(coupon.Id, coupon, ticketType);
+
+        // Assert
+        sut.GetDomainEvents().OfType<WaitlistExhaustedDomainEvent>().ShouldHaveSingleItem();
     }
 
     // Given a waitlist with an active entry
@@ -413,7 +493,7 @@ public sealed class WaitlistTests
         var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow)!;
 
         // Act
-        var freedSlot = sut.ExpireCoupon(coupon, ticketType);
+        var freedSlot = sut.ExpireCoupon(coupon.Id, coupon, ticketType);
 
         // Assert
         freedSlot.ShouldBeTrue();
@@ -433,7 +513,7 @@ public sealed class WaitlistTests
             sut.Entries.Single().Id, CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow);
 
         // Act
-        var freedSlot = sut.ExpireCoupon(coupon, ticketType);
+        var freedSlot = sut.ExpireCoupon(coupon.Id, coupon, ticketType);
 
         // Assert
         freedSlot.ShouldBeFalse();
@@ -610,57 +690,86 @@ public sealed class WaitlistTests
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = IssueCoupon(sut);
+        var couponId = IssueCoupon(sut).Id;
         sut.ApplyCouponRedemption(couponId, RedeemerEmail);
 
         // Act & Assert — second redemption attempt must fail, not silently overwrite
         Should.Throw<BusinessRuleViolationException>(() => sut.ApplyCouponRedemption(couponId, RedeemerEmail));
     }
 
-    // Given a coupon that was already revoked (e.g. by an expiry job)
+    // Given a coupon that was already expired by the expiry job
     // When an attendee then attempts to redeem it
     // Then it throws a business rule violation
     [TestMethod]
-    public void ApplyCouponRedemption_WhenCouponAlreadyRevoked_ThrowsConflictError()
+    public void ApplyCouponRedemption_WhenCouponAlreadyExpired_ThrowsConflictError()
     {
-        // Arrange — simulates the race-loser scenario: expiry job revoked first, attendee redeems second
+        // Arrange — simulates the race-loser scenario: expiry job expired first, attendee redeems second
         var sut = CreateWaitlist();
-        var couponId = IssueCoupon(sut);
-        sut.RevokeCoupon(couponId);
+        var coupon = IssueCoupon(sut);
+        var couponId = coupon.Id;
+        sut.ExpireCoupon(coupon.Id, coupon, CreateTicketType());
 
         // Act & Assert — the EF Core concurrency token (xmin) is the first guard; this is the
         // fallback guard for in-memory consistency.
         Should.Throw<BusinessRuleViolationException>(() => sut.ApplyCouponRedemption(couponId, RedeemerEmail));
     }
 
-    // Given a coupon that an attendee already redeemed
-    // When an expiry job then attempts to revoke it
-    // Then it throws a business rule violation
+    // Given one issued coupon past the cutoff, one issued coupon before it, and one lapsed coupon already redeemed
+    // When the lapsed coupons are requested for that cutoff
+    // Then only the issued coupon past the cutoff is returned
     [TestMethod]
-    public void RevokeCoupon_WhenCouponAlreadyRedeemed_ThrowsConflictError()
-    {
-        // Arrange — simulates the race-loser scenario: attendee redeemed first, expiry job revokes second
-        var sut = CreateWaitlist();
-        var couponId = IssueCoupon(sut);
-        sut.ApplyCouponRedemption(couponId, RedeemerEmail);
-
-        // Act & Assert
-        Should.Throw<BusinessRuleViolationException>(() => sut.RevokeCoupon(couponId));
-    }
-
-    // Given a coupon that has already been revoked
-    // When revocation is attempted again
-    // Then it throws a business rule violation
-    [TestMethod]
-    public void RevokeCoupon_WhenCouponAlreadyRevoked_ThrowsConflictError()
+    public void GetLapsedCouponIds_MixedCoupons_ReturnsOnlyIssuedCouponsPastCutoff()
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = IssueCoupon(sut);
-        sut.RevokeCoupon(couponId);
+        var lapsed = IssueCoupon(sut);
+        var redeemed = IssueCoupon(sut);
+        sut.ApplyCouponRedemption(redeemed.Id, RedeemerEmail);
+        var cutoff = lapsed.ExpiresAt;
+        sut.AddEntry(EmailAddress.From("late@example.com"), DateTimeOffset.UtcNow);
+        var notYetLapsed = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), cutoff)!;
 
-        // Act & Assert
-        Should.Throw<BusinessRuleViolationException>(() => sut.RevokeCoupon(couponId));
+        // Act
+        var result = sut.GetLapsedCouponIds(cutoff);
+
+        // Assert
+        notYetLapsed.ExpiresAt.ShouldBeGreaterThan(cutoff);
+        result.ShouldBe([lapsed.Id]);
+    }
+
+    // Given a coupon that has already been expired
+    // When expiry is attempted again
+    // Then it throws the coupon-not-expirable error
+    [TestMethod]
+    public void ExpireCoupon_WhenCouponAlreadyExpired_ThrowsCouponNotExpirableError()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var coupon = IssueCoupon(sut);
+        sut.ExpireCoupon(coupon.Id, coupon, CreateTicketType());
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon.Id, coupon, CreateTicketType()));
+
+        // Assert
+        result.Error.ShouldMatch(WaitlistCoupon.Errors.CouponNotExpirable);
+    }
+
+    // Given a coupon that this waitlist never issued
+    // When expiry is attempted for it
+    // Then it throws the coupon-not-found error
+    [TestMethod]
+    public void ExpireCoupon_UnknownCoupon_ThrowsCouponNotFoundError()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var foreignCoupon = IssueCoupon(CreateWaitlist());
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.ExpireCoupon(foreignCoupon.Id, foreignCoupon, CreateTicketType()));
+
+        // Assert
+        result.Error.ShouldMatch(Waitlist.Errors.CouponNotFound);
     }
 
     // Given a waitlist where the redeeming email is queued ahead of another attendee

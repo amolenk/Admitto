@@ -12,5 +12,4 @@ public sealed record CouponDetailsDto(
     DateTimeOffset ExpiresAt,
     bool BypassRegistrationWindow,
     DateTimeOffset? RedeemedAt,
-    DateTimeOffset? RevokedAt,
     DateTimeOffset CreatedAt);

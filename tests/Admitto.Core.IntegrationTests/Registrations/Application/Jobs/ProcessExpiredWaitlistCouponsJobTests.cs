@@ -8,7 +8,10 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessW
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -21,9 +24,9 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 {
     // Given a waitlist coupon expired past its grace period with another entry still waiting
     // When the process-expired-waitlist-coupons job runs
-    // Then the expired coupon is revoked and a fresh coupon is issued to the next waitlist entry
+    // Then the lapsed coupon is expired and a fresh coupon is issued to the next waitlist entry
     [TestMethod]
-    public async ValueTask Execute_WhenCouponIsExpiredAndWaitlistHasNextEntry_RevokesAndNotifiesNext()
+    public async ValueTask Execute_WhenCouponIsExpiredAndWaitlistHasNextEntry_ExpiresAndNotifiesNext()
     {
         // Arrange — expired coupon (10 min past grace), one more person waiting
         var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithTwoEntriesOnePendingCoupon();
@@ -36,24 +39,25 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         // Act
         await job.Execute(quartzContext);
 
-        // Assert — original coupon revoked, a fresh coupon issued to the next person
+        // Assert — original coupon expired, a fresh coupon issued to the next person
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var coupons = await ctx.Coupons.ToListAsync(testContext.CancellationToken);
-            coupons.Count.ShouldBe(2);
-            coupons.ShouldContain(c => c.RevokedAt != null, "original coupon should be revoked");
-            coupons.ShouldContain(c => c.RevokedAt == null && c.Email.Value == "attendee2@example.com",
-                "second attendee should have received a fresh coupon");
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldBe(new Dictionary<string, WaitlistCouponStatus>
+            {
+                ["attendee1@example.com"] = WaitlistCouponStatus.Expired,
+                ["attendee2@example.com"] = WaitlistCouponStatus.Issued,
+            }, ignoreOrder: true);
         });
     }
 
     // Given the last pending waitlist coupon expired past its grace period with no remaining waitlist entries
     // When the process-expired-waitlist-coupons job runs
-    // Then the coupon is revoked and the ticket type's waitlist mode is cleared
+    // Then the coupon is expired and the ticket type's waitlist mode is cleared
     [TestMethod]
     public async ValueTask Execute_WhenLastCouponExpiresAndWaitlistIsEmpty_LiftsWaitlistMode()
     {
-        // Arrange — one entry, one coupon, empty waitlist after revocation
+        // Arrange — one entry, one coupon, empty waitlist after expiry
         var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithOneEntryOnePendingCoupon();
         await fixture.SetupAsync(Environment, activeEntriesAfterCoupon: 0, testContext.CancellationToken);
         await fixture.BackdateCouponExpiryAsync(Environment, TimeSpan.FromMinutes(10), testContext.CancellationToken);
@@ -64,12 +68,11 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         // Act
         await job.Execute(quartzContext);
 
-        // Assert — coupon revoked, and WaitlistMode cleared on the catalog (no remaining entries or coupons)
+        // Assert — coupon expired, and WaitlistMode cleared on the catalog (no remaining entries or coupons)
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var coupon = await ctx.Coupons.SingleOrDefaultAsync(testContext.CancellationToken);
-            coupon.ShouldNotBeNull();
-            coupon.RevokedAt.ShouldNotBeNull("the expired coupon should have been revoked");
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldHaveSingleItem().Value.ShouldBe(WaitlistCouponStatus.Expired);
 
             var catalog = await ctx.TicketCatalogs
                 .FirstOrDefaultAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
@@ -84,9 +87,9 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 
     // Given a waitlist coupon that expired but is still within its grace period
     // When the process-expired-waitlist-coupons job runs
-    // Then the coupon is left unrevoked
+    // Then the coupon is left issued
     [TestMethod]
-    public async ValueTask Execute_WhenCouponIsWithinGracePeriod_DoesNotRevoke()
+    public async ValueTask Execute_WhenCouponIsWithinGracePeriod_DoesNotExpire()
     {
         // Arrange — coupon expired 1 min ago, still inside the 2-minute grace window
         var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithOneEntryOnePendingCoupon();
@@ -102,9 +105,9 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         // Assert — coupon untouched (grace period protection)
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var coupon = await ctx.Coupons.SingleOrDefaultAsync(testContext.CancellationToken);
-            coupon.ShouldNotBeNull();
-            coupon.RevokedAt.ShouldBeNull("coupon within the grace period must not be revoked");
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldHaveSingleItem().Value.ShouldBe(
+                WaitlistCouponStatus.Issued, "coupon within the grace period must not be expired");
         });
     }
 
@@ -211,9 +214,9 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 
     // Given an expired VIP coupon with another entry still waiting
     // When the process-expired-waitlist-coupons job runs
-    // Then the coupon is revoked and its recipient told, but no new offer goes out
+    // Then the coupon is expired and its recipient told, but no new offer goes out
     [TestMethod]
-    public async ValueTask Execute_WhenVipCouponExpires_RevokesWithoutNotifyingNext()
+    public async ValueTask Execute_WhenVipCouponExpires_ExpiresWithoutNotifyingNext()
     {
         // Arrange — attendee2 promoted as VIP past attendee1, who is still waiting
         var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithOnePendingVipCoupon();
@@ -231,12 +234,12 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
             .ShouldHaveSingleItem()
             .RecipientEmail.Value.ShouldBe("attendee2@example.com");
 
-        // Assert — the VIP coupon is revoked, no coupon went to the waiting attendee, WaitlistMode stays on
+        // Assert — the VIP coupon is expired, no coupon went to the waiting attendee, WaitlistMode stays on
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var coupon = await ctx.Coupons.SingleAsync(testContext.CancellationToken);
-            coupon.Email.Value.ShouldBe("attendee2@example.com");
-            coupon.RevokedAt.ShouldNotBeNull("the expired VIP coupon should have been revoked");
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldHaveSingleItem().ShouldBe(
+                new KeyValuePair<string, WaitlistCouponStatus>("attendee2@example.com", WaitlistCouponStatus.Expired));
 
             var catalog = await ctx.TicketCatalogs
                 .FirstAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
@@ -247,7 +250,7 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 
     // Given an automatic and a VIP coupon that both expired, with two more entries still waiting
     // When the process-expired-waitlist-coupons job runs
-    // Then both coupons are revoked but only one new offer goes out, for the automatic coupon's freed slot
+    // Then both coupons are expired but only one new offer goes out, for the automatic coupon's freed slot
     [TestMethod]
     public async ValueTask Execute_WhenAutomaticAndVipCouponsExpire_NotifiesOnlyForAutomaticCoupons()
     {
@@ -262,17 +265,19 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         // Assert — one fresh offer, to the front of the queue
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var coupons = await ctx.Coupons.ToListAsync(testContext.CancellationToken);
-            coupons.Where(c => c.RevokedAt != null).Select(c => c.Email.Value)
-                .ShouldBe(["attendee1@example.com", "attendee4@example.com"], ignoreOrder: true);
-            coupons.Where(c => c.RevokedAt == null).ShouldHaveSingleItem()
-                .Email.Value.ShouldBe("attendee2@example.com");
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldBe(new Dictionary<string, WaitlistCouponStatus>
+            {
+                ["attendee1@example.com"] = WaitlistCouponStatus.Expired,
+                ["attendee4@example.com"] = WaitlistCouponStatus.Expired,
+                ["attendee2@example.com"] = WaitlistCouponStatus.Issued,
+            }, ignoreOrder: true);
         });
     }
 
     // Given an expired VIP coupon with nobody left waiting and no other outstanding coupons
     // When the process-expired-waitlist-coupons job runs
-    // Then the coupon is revoked and the ticket type's waitlist mode is cleared
+    // Then the coupon is expired and the ticket type's waitlist mode is cleared
     [TestMethod]
     public async ValueTask Execute_WhenVipCouponExpiresAndWaitlistIsEmpty_LiftsWaitlistMode()
     {
@@ -287,8 +292,8 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         // Assert
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var coupon = await ctx.Coupons.SingleAsync(testContext.CancellationToken);
-            coupon.RevokedAt.ShouldNotBeNull("the expired VIP coupon should have been revoked");
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldHaveSingleItem().Value.ShouldBe(WaitlistCouponStatus.Expired);
 
             var catalog = await ctx.TicketCatalogs
                 .FirstAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
@@ -306,6 +311,18 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
             new DbContextUnitOfWork(Environment.RegistrationsDatabase.Context),
             TimeProvider.System,
             NullLogger<ProcessExpiredWaitlistCouponsJob>.Instance);
+
+    /// <summary>
+    /// The status of each coupon the waitlist tracks, keyed by the recipient's email.
+    /// </summary>
+    private async ValueTask<Dictionary<string, WaitlistCouponStatus>> WaitlistCouponStatusesByEmailAsync(
+        RegistrationsDbContext ctx,
+        TicketTypeId ticketTypeId)
+    {
+        var waitlist = await ctx.Waitlists.SingleAsync(w => w.Id == ticketTypeId, testContext.CancellationToken);
+        var emails = await ctx.Coupons.ToDictionaryAsync(c => c.Id, c => c.Email.Value, testContext.CancellationToken);
+        return waitlist.Coupons.ToDictionary(c => emails[c.Id], c => c.Status);
+    }
 
     private IJobExecutionContext QuartzContext()
     {

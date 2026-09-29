@@ -110,7 +110,7 @@ Architecture tests must be run and pass before any other suite, per this repo's 
 - The standalone waitlist join/leave endpoints are removed outright, not deprecated — this repo's only tenant has confirmed no dependency on them; a formal deprecation window is not needed.
 - Multi-tenant/other-team considerations: this change assumes a single active tenant and does not add any tenant-facing migration or communication plan.
 - Any change to how automatic (non-VIP) queue promotion decides how many people to promote or how claim-window/quiet-hours expiry is computed — the VIP path reuses this unchanged.
-- A UI/API way for an admin to un-promote or revert a manually-issued VIP coupon beyond the existing generic coupon-revoke capability.
+- A UI/API way for an admin to un-promote or revert a manually-issued VIP coupon. Coupons cannot be revoked; they end only by being redeemed or expiring.
 - Retroactively backfilling `Waitlisted` registrations for any waitlist entries that exist today from before this change ships (existing data migration strategy is not addressed here).
 
 ## Further Notes

@@ -27,7 +27,6 @@ internal sealed class GetCouponDetailsHandler(IRegistrationsWriteStore writeStor
             coupon.ExpiresAt,
             coupon.BypassRegistrationWindow,
             coupon.RedeemedAt,
-            coupon.RevokedAt,
             coupon.CreatedAt);
     }
 }

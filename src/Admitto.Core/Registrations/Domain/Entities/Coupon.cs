@@ -51,12 +51,10 @@ public class Coupon : Aggregate<CouponId>
     public bool BypassRegistrationWindow { get; private set; }
     public CouponSource Source { get; private set; }
     public DateTimeOffset? RedeemedAt { get; private set; }
-    public DateTimeOffset? RevokedAt { get; private set; }
 
     public CouponStatus GetStatus(DateTimeOffset now)
     {
         if (RedeemedAt.HasValue) return CouponStatus.Redeemed;
-        if (RevokedAt.HasValue) return CouponStatus.Revoked;
         if (ExpiresAt < now) return CouponStatus.Expired;
         return CouponStatus.Active;
     }
@@ -144,8 +142,6 @@ public class Coupon : Aggregate<CouponId>
             throw new BusinessRuleViolationException(Errors.Expired);
         if (status == CouponStatus.Redeemed)
             throw new BusinessRuleViolationException(Errors.AlreadyRedeemed);
-        if (status == CouponStatus.Revoked)
-            throw new BusinessRuleViolationException(Errors.Revoked);
 
         if (Email != email)
             throw new BusinessRuleViolationException(Errors.EmailMismatch);
@@ -176,17 +172,6 @@ public class Coupon : Aggregate<CouponId>
             throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
     }
 
-    public void Revoke()
-    {
-        if (RedeemedAt.HasValue)
-        {
-            throw new BusinessRuleViolationException(Errors.CouponAlreadyRedeemed);
-        }
-
-        // Revoking an already-revoked or expired coupon is idempotent.
-        RevokedAt ??= DateTimeOffset.UtcNow;
-    }
-
     internal static class Errors
     {
         public static readonly Error NoTicketTypes = new(
@@ -202,11 +187,6 @@ public class Coupon : Aggregate<CouponId>
             "coupon.expiry_must_be_in_future",
             "Expiry must be in the future.");
 
-        public static readonly Error CouponAlreadyRedeemed = new(
-            "coupon.already_redeemed",
-            "Cannot revoke a coupon that has already been redeemed.",
-            Type: ErrorType.Conflict);
-
         public static readonly Error Expired = new(
             "coupon.expired",
             "This coupon has expired.",
@@ -215,11 +195,6 @@ public class Coupon : Aggregate<CouponId>
         public static readonly Error AlreadyRedeemed = new(
             "coupon.already_redeemed",
             "This coupon has already been used.",
-            Type: ErrorType.Conflict);
-
-        public static readonly Error Revoked = new(
-            "coupon.revoked",
-            "This coupon has been revoked.",
             Type: ErrorType.Conflict);
 
         public static Error TicketTypeNotAllowlisted(Guid[] ids) => new(

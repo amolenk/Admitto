@@ -6,7 +6,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.CreateCoup
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetPublicCouponDetails.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.ListCoupons.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.RevokeCoupon.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CheckIn.AdminApi;
@@ -99,8 +98,7 @@ public static class RegistrationsModule
             .WithTags("Admin - Coupons")
             .MapCreateCoupon()
             .MapListCoupons()
-            .MapGetCouponDetails()
-            .MapRevokeCoupon();
+            .MapGetCouponDetails();
 
         eventGroup
             .MapGroup("/ticket-types")

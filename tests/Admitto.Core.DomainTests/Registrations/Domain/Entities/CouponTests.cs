@@ -159,9 +159,9 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.NoTicketTypes);
     }
 
-    // Given coupons that are active, revoked, or past their expiry date
+    // Given coupons that are active, redeemed, or past their expiry date
     // When their status is queried at the relevant time
-    // Then each returns the matching status (Active, Revoked, or Expired)
+    // Then each returns the matching status (Active, Redeemed, or Expired)
     [TestMethod]
     public void GetStatus_VariousCouponStates_ReturnsCorrectStatus()
     {
@@ -170,16 +170,18 @@ public sealed class CouponTests
 
         var activeCoupon = new CouponBuilder().Build();
 
-        var revokedCoupon = new CouponBuilder().Build();
-        revokedCoupon.Revoke();
+        var redeemedCoupon = new CouponBuilder()
+            .WithExpiresAt(now.AddHours(1))
+            .Build();
+        SetRedeemedAt(redeemedCoupon, now);
 
         var expiredCoupon = new CouponBuilder()
             .WithExpiresAt(now.AddHours(1))
             .Build();
 
-        // Assert
+        // Assert — a redeemed coupon stays Redeemed after its expiry passes
         activeCoupon.GetStatus(now).ShouldBe(CouponStatus.Active);
-        revokedCoupon.GetStatus(now).ShouldBe(CouponStatus.Revoked);
+        redeemedCoupon.GetStatus(now.AddHours(2)).ShouldBe(CouponStatus.Redeemed);
         expiredCoupon.GetStatus(now.AddHours(2)).ShouldBe(CouponStatus.Expired);
     }
 
@@ -216,86 +218,7 @@ public sealed class CouponTests
             () => sut.AllowedTicketTypeIds.ShouldContain(id2),
             () => sut.ExpiresAt.ShouldBe(expiresAt),
             () => sut.BypassRegistrationWindow.ShouldBeTrue(),
-            () => sut.RedeemedAt.ShouldBeNull(),
-            () => sut.RevokedAt.ShouldBeNull());
-    }
-
-    // Given an active coupon
-    // When the coupon is revoked
-    // Then its revoked-at timestamp is set and its status becomes Revoked
-    [TestMethod]
-    public void Revoke_ActiveCoupon_SetsRevokedAt()
-    {
-        // Arrange
-        var sut = new CouponBuilder().Build();
-
-        // Act
-        sut.Revoke();
-
-        // Assert
-        sut.RevokedAt.ShouldNotBeNull();
-        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Revoked);
-    }
-
-    // Given a coupon that has already expired
-    // When the coupon is revoked
-    // Then its revoked-at timestamp is set and its status becomes Revoked instead of Expired
-    [TestMethod]
-    public void Revoke_ExpiredCoupon_SetsRevokedAt()
-    {
-        // Arrange
-        var now = CouponBuilder.DefaultNow;
-
-        var sut = new CouponBuilder()
-            .WithExpiresAt(now.AddHours(1))
-            .Build();
-
-        var afterExpiry = now.AddHours(2);
-        sut.GetStatus(afterExpiry).ShouldBe(CouponStatus.Expired);
-
-        // Act
-        sut.Revoke();
-
-        // Assert
-        sut.RevokedAt.ShouldNotBeNull();
-        sut.GetStatus(afterExpiry).ShouldBe(CouponStatus.Revoked);
-    }
-
-    // Given a coupon that has already been redeemed
-    // When revocation is attempted
-    // Then it returns a CouponAlreadyRedeemed error
-    [TestMethod]
-    public void Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError()
-    {
-        // Arrange — we need a redeemed coupon. Since Redeem isn't implemented yet,
-        // we simulate by setting RedeemedAt via reflection (this is a domain-level test concern).
-        var sut = new CouponBuilder().Build();
-        SetRedeemedAt(sut, DateTimeOffset.UtcNow);
-        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Redeemed);
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.Revoke());
-
-        // Assert
-        result.Error.ShouldMatch(Coupon.Errors.CouponAlreadyRedeemed);
-    }
-
-    // Given a coupon that has already been revoked
-    // When the coupon is revoked again
-    // Then the original revoked-at timestamp is kept
-    [TestMethod]
-    public void Revoke_AlreadyRevokedCoupon_IsIdempotent()
-    {
-        // Arrange
-        var sut = new CouponBuilder().Build();
-        sut.Revoke();
-        var firstRevokedAt = sut.RevokedAt;
-
-        // Act
-        sut.Revoke();
-
-        // Assert
-        sut.RevokedAt.ShouldBe(firstRevokedAt);
+            () => sut.RedeemedAt.ShouldBeNull());
     }
 
     // Given a coupon allowing two ticket types

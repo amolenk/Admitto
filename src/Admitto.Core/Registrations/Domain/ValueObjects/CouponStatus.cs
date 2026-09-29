@@ -4,6 +4,5 @@ public enum CouponStatus
 {
     Active,
     Redeemed,
-    Revoked,
     Expired
 }

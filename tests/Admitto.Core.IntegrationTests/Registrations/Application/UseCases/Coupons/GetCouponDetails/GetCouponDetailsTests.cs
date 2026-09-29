@@ -34,8 +34,7 @@ public sealed class GetCouponDetailsTests(TestContext testContext) : AspireInteg
             () => result.Status.ShouldBe(CouponStatus.Active),
             () => result.AllowedTicketTypeIds.ShouldContain(fixture.TicketTypeId.Value),
             () => result.BypassRegistrationWindow.ShouldBeTrue(),
-            () => result.RedeemedAt.ShouldBeNull(),
-            () => result.RevokedAt.ShouldBeNull());
+            () => result.RedeemedAt.ShouldBeNull());
     }
 
     // Given no coupon exists with the requested id

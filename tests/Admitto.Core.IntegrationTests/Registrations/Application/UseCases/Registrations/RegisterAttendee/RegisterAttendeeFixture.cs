@@ -283,17 +283,6 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
-    public static RegisterAttendeeFixture CouponRevoked()
-    {
-        var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
-        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 5, 5));
-        f._coupon = f.BuildCoupon();
-        f._coupon.Revoke();
-        f.CouponCode = f._coupon.Code.Value;
-        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        return f;
-    }
-
     public static RegisterAttendeeFixture CouponTicketTypeNotAllowlisted()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };

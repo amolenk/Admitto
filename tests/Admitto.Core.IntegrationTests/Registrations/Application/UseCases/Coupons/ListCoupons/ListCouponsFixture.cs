@@ -53,21 +53,21 @@ internal sealed class ListCouponsFixture
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .Build();
 
-        // Seed a revoked coupon.
-        var revokedCoupon = new CouponBuilder()
+        // Seed a redeemed coupon.
+        var redeemedCoupon = new CouponBuilder()
             .WithEventId(EventId)
             .WithTeamId(TeamId)
-            .WithEmail(EmailAddress.From("revoked@example.com"))
+            .WithEmail(EmailAddress.From("redeemed@example.com"))
             .WithRequestedTicketTypeIds(TicketTypeId)
             .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .Build();
-        revokedCoupon.Revoke();
+        redeemedCoupon.Redeem(redeemedCoupon.Email, [TicketTypeId], DateTimeOffset.UtcNow);
 
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
             dbContext.Coupons.Add(activeCoupon);
-            dbContext.Coupons.Add(revokedCoupon);
+            dbContext.Coupons.Add(redeemedCoupon);
         });
     }
 

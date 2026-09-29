@@ -6,7 +6,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ListCouponsTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // Given an event with both an active and a revoked coupon
+    // Given an event with both an active and a redeemed coupon
     // When the coupons are listed for the event
     // Then both coupons are returned with their correct status
     [TestMethod]
@@ -28,8 +28,8 @@ public sealed class ListCouponsTests(TestContext testContext) : AspireIntegratio
         var active = result.Coupons.SingleOrDefault(c => c.Email == "active@example.com");
         active.ShouldNotBeNull().Status.ShouldBe(CouponStatus.Active);
 
-        var revoked = result.Coupons.SingleOrDefault(c => c.Email == "revoked@example.com");
-        revoked.ShouldNotBeNull().Status.ShouldBe(CouponStatus.Revoked);
+        var redeemed = result.Coupons.SingleOrDefault(c => c.Email == "redeemed@example.com");
+        redeemed.ShouldNotBeNull().Status.ShouldBe(CouponStatus.Redeemed);
     }
 
     // Given an event with no coupons

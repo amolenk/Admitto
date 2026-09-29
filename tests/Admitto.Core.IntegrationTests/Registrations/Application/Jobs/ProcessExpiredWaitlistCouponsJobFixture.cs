@@ -19,12 +19,12 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     }
 
     /// <summary>
-    /// Two waitlist entries, one issued coupon — room for a second notification after revocation.
+    /// Two waitlist entries, one issued coupon — room for a second notification after expiry.
     /// </summary>
     public static ProcessExpiredWaitlistCouponsJobFixture WithTwoEntriesOnePendingCoupon() => new();
 
     /// <summary>
-    /// One waitlist entry, one issued coupon — no further entries after revocation.
+    /// One waitlist entry, one issued coupon — no further entries after expiry.
     /// </summary>
     public static ProcessExpiredWaitlistCouponsJobFixture WithOneEntryOnePendingCoupon() => new();
 
@@ -146,8 +146,9 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     }
 
     /// <summary>
-    /// Backdates the <c>expires_at</c> of all unredeemed, unrevoked waitlist coupons to be
-    /// <paramref name="offsetFromNow"/> before now, bypassing the domain model.
+    /// Backdates the expiry of all outstanding waitlist coupons to be <paramref name="offsetFromNow"/>
+    /// before now, bypassing the domain model: both the coupon rows and the issued coupons tracked in the
+    /// waitlist's <c>waitlist_coupons</c> JSON (which is what the expiry job looks at).
     /// </summary>
     public async ValueTask BackdateCouponExpiryAsync(
         IntegrationTestEnvironment environment,
@@ -156,8 +157,24 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     {
         var cutoff = DateTimeOffset.UtcNow - offsetFromNow;
 
-        await environment.RegistrationsDatabase.Context.Database.ExecuteSqlAsync(
-            $"UPDATE registrations.coupons SET expires_at = {cutoff} WHERE source = {nameof(CouponSource.Waitlist)} AND redeemed_at IS NULL AND revoked_at IS NULL",
+        var database = environment.RegistrationsDatabase.Context.Database;
+
+        await database.ExecuteSqlAsync(
+            $"UPDATE registrations.coupons SET expires_at = {cutoff} WHERE source = {nameof(CouponSource.Waitlist)} AND redeemed_at IS NULL",
+            cancellationToken);
+
+        await database.ExecuteSqlAsync(
+            $$"""
+             UPDATE registrations.waitlists
+             SET waitlist_coupons = (
+                 SELECT jsonb_agg(
+                     CASE WHEN c->>'status' = {{nameof(WaitlistCouponStatus.Issued)}}
+                          THEN jsonb_set(c, '{expires_at}', to_jsonb({{cutoff}}))
+                          ELSE c
+                     END)
+                 FROM jsonb_array_elements(waitlist_coupons) AS c)
+             WHERE ticket_type_id = {{TicketTypeId.Value}}
+             """,
             cancellationToken);
 
         environment.RegistrationsDatabase.Context.ChangeTracker.Clear();

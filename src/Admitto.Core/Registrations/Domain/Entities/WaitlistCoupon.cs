@@ -12,17 +12,27 @@ public class WaitlistCoupon : Entity<CouponId>
     {
     }
 
-    internal WaitlistCoupon(CouponId id, DateTimeOffset issuedAt, WaitlistCouponOrigin origin)
+    internal WaitlistCoupon(
+        CouponId id,
+        DateTimeOffset issuedAt,
+        DateTimeOffset expiresAt,
+        WaitlistCouponOrigin origin)
         : base(id)
     {
         Status = WaitlistCouponStatus.Issued;
         IssuedAt = issuedAt;
+        ExpiresAt = expiresAt;
         Origin = origin;
     }
 
     public WaitlistCouponStatus Status { get; private set; }
 
     public DateTimeOffset IssuedAt { get; private set; }
+
+    /// <summary>
+    /// When the offer lapses; copied from the <see cref="Coupon"/> at issuance.
+    /// </summary>
+    public DateTimeOffset ExpiresAt { get; private set; }
 
     public WaitlistCouponOrigin Origin { get; private set; }
 
@@ -34,24 +44,24 @@ public class WaitlistCoupon : Entity<CouponId>
         Status = WaitlistCouponStatus.Redeemed;
     }
 
-    internal void Revoke()
+    internal void Expire()
     {
         if (Status != WaitlistCouponStatus.Issued)
-            throw new BusinessRuleViolationException(Errors.CouponNotRevokable);
+            throw new BusinessRuleViolationException(Errors.CouponNotExpirable);
 
-        Status = WaitlistCouponStatus.Revoked;
+        Status = WaitlistCouponStatus.Expired;
     }
 
     internal static class Errors
     {
         public static readonly Error CouponNotRedeemable = new(
             "waitlist.coupon_not_redeemable",
-            "The waitlist coupon cannot be redeemed because it has already been redeemed or revoked.",
+            "The waitlist coupon cannot be redeemed because it has already been redeemed or has expired.",
             Type: ErrorType.Conflict);
 
-        public static readonly Error CouponNotRevokable = new(
-            "waitlist.coupon_not_revokable",
-            "The waitlist coupon cannot be revoked because it has already been redeemed or revoked.",
+        public static readonly Error CouponNotExpirable = new(
+            "waitlist.coupon_not_expirable",
+            "The waitlist coupon cannot be expired because it has already been redeemed or has expired.",
             Type: ErrorType.Conflict);
     }
 }

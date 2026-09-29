@@ -188,13 +188,12 @@ export type CouponDetailsDto = {
     expiresAt: string;
     bypassRegistrationWindow: boolean;
     redeemedAt: null | string;
-    revokedAt: null | string;
     createdAt: string;
 };
 
 export type CouponSource = 'organiser' | 'waitlist';
 
-export type CouponStatus = 'active' | 'redeemed' | 'revoked' | 'expired';
+export type CouponStatus = 'active' | 'redeemed' | 'expired';
 
 export type CouponSummaryDto = {
     id: string;
@@ -2475,49 +2474,6 @@ export type GetCouponDetailsResponses = {
 };
 
 export type GetCouponDetailsResponse = GetCouponDetailsResponses[keyof GetCouponDetailsResponses];
-
-export type RevokeCouponData = {
-    body?: never;
-    path: {
-        couponId: string;
-        teamId: string;
-        eventId: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke';
-};
-
-export type RevokeCouponErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type RevokeCouponError = RevokeCouponErrors[keyof RevokeCouponErrors];
-
-export type RevokeCouponResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
 
 export type GetTicketTypesData = {
     body?: never;

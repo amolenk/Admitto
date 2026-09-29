@@ -220,7 +220,7 @@ Errors are defined as close as possible to the code that throws them. Three tier
 **Rules:**
 
 1. An error is defined in the same class that throws it.
-2. Entity-nested errors are for rules the entity validates inside its own methods (`Create`, `Revoke`, etc.).
+2. Entity-nested errors are for rules the entity validates inside its own methods (`Create`, `Redeem`, etc.).
 3. Handler-local errors are for application-level checks the handler performs (e.g., cross-module lookups, precondition checks via facades).
 4. If a pattern repeats across multiple entities or handlers (not-found, already-exists, concurrency), promote it to a shared helper in the kernel.
 5. Visibility is `internal`, not `public`, so errors stay testable via `InternalsVisibleTo` without leaking to other modules.

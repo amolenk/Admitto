@@ -46,9 +46,6 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
         builder.Property(e => e.RedeemedAt)
             .HasColumnName("redeemed_at");
 
-        builder.Property(e => e.RevokedAt)
-            .HasColumnName("revoked_at");
-
         builder.Property(e => e.Source)
             .HasColumnName("source")
             .IsRequired()
