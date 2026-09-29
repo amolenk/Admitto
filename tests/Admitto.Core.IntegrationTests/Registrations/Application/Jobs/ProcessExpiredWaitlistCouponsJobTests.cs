@@ -138,7 +138,7 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         var outbox = Substitute.For<IOutbox>();
         var integrationEvents = new List<IIntegrationEvent>();
         outbox.When(o => o.Enqueue(Arg.Any<IIntegrationEvent>()))
-            .Do(ci => integrationEvents.Add(ci.Arg<IIntegrationEvent>()));
+            .Do(ci => integrationEvents.Add(ci.Arg<IIntegrationEvent>()!));
         var publisher = new RegistrationsIntegrationEventPublisher(outbox);
         foreach (var expiredEvent in expiredEvents)
             await publisher.HandleAsync(expiredEvent, testContext.CancellationToken);
