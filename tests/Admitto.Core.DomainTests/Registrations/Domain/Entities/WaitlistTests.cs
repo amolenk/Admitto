@@ -39,6 +39,15 @@ public sealed class WaitlistTests
         return catalog.TicketTypes.Single(tt => tt.Id == DefaultTicketTypeId);
     }
 
+    /// <summary>
+    /// Queues a fresh entry and issues it the next coupon, so the waitlist tracks one outstanding coupon.
+    /// </summary>
+    private static CouponId IssueCoupon(Waitlist sut)
+    {
+        sut.AddEntry(EmailAddress.From($"{Guid.NewGuid():N}@example.com"), DateTimeOffset.UtcNow);
+        return sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow)!.Id;
+    }
+
     // Given an empty waitlist
     // When an entry is added for a new email
     // Then it succeeds, adding a single active entry, without raising domain events
@@ -206,9 +215,9 @@ public sealed class WaitlistTests
     {
         // Arrange
         var sut = CreateWaitlist();
+        IssueCoupon(sut);
         var email = EmailAddress.From("alice@example.com");
         sut.AddEntry(email, DateTimeOffset.UtcNow);
-        sut.TrackIssuedCoupon(CouponId.New(), DateTimeOffset.UtcNow);
         sut.ClearDomainEvents();
 
         // Act
@@ -226,8 +235,7 @@ public sealed class WaitlistTests
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = CouponId.New();
-        sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
+        var couponId = IssueCoupon(sut);
 
         // Act
         sut.ApplyCouponRedemption(couponId, RedeemerEmail);
@@ -244,8 +252,7 @@ public sealed class WaitlistTests
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = CouponId.New();
-        sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
+        var couponId = IssueCoupon(sut);
 
         // Act
         sut.RevokeCoupon(couponId);
@@ -356,6 +363,81 @@ public sealed class WaitlistTests
         // Assert
         result.Error.ShouldMatch(WaitlistCoupon.Errors.CouponNotRevokable);
         sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a waitlist with an active entry
+    // When the next coupon is issued from the front of the queue
+    // Then the tracked coupon is marked as automatically issued
+    [TestMethod]
+    public void IssueNextCoupon_WhenActiveEntryExists_TracksCouponAsAutomatic()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+
+        // Act
+        sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
+
+        // Assert
+        sut.Coupons.ShouldHaveSingleItem().Origin.ShouldBe(WaitlistCouponOrigin.Automatic);
+    }
+
+    // Given a waitlist with an active entry
+    // When an organizer promotes that entry directly
+    // Then the tracked coupon is marked as manually issued
+    [TestMethod]
+    public void IssueCouponToEntry_ActiveEntry_TracksCouponAsManual()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var entryId = sut.Entries.Single().Id;
+
+        // Act
+        sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
+
+        // Assert
+        sut.Coupons.ShouldHaveSingleItem().Origin.ShouldBe(WaitlistCouponOrigin.Manual);
+    }
+
+    // Given an automatically issued waitlist coupon
+    // When it expires unclaimed
+    // Then it reports a freed slot to cascade
+    [TestMethod]
+    public void ExpireCoupon_AutomaticCoupon_ReturnsFreedSlot()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var ticketType = CreateTicketType();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow)!;
+
+        // Act
+        var freedSlot = sut.ExpireCoupon(coupon, ticketType);
+
+        // Assert
+        freedSlot.ShouldBeTrue();
+    }
+
+    // Given a manually issued (VIP) waitlist coupon
+    // When it expires unclaimed
+    // Then it reports no freed slot, since it was never backed by one
+    [TestMethod]
+    public void ExpireCoupon_ManualCoupon_ReturnsNoFreedSlot()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var ticketType = CreateTicketType();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var coupon = sut.IssueCouponToEntry(
+            sut.Entries.Single().Id, CreateTicketedEvent(), ticketType, DateTimeOffset.UtcNow);
+
+        // Act
+        var freedSlot = sut.ExpireCoupon(coupon, ticketType);
+
+        // Assert
+        freedSlot.ShouldBeFalse();
+        sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldHaveSingleItem();
     }
 
     // Given a waitlist with two active entries added at different times
@@ -528,8 +610,7 @@ public sealed class WaitlistTests
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = CouponId.New();
-        sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
+        var couponId = IssueCoupon(sut);
         sut.ApplyCouponRedemption(couponId, RedeemerEmail);
 
         // Act & Assert — second redemption attempt must fail, not silently overwrite
@@ -544,8 +625,7 @@ public sealed class WaitlistTests
     {
         // Arrange — simulates the race-loser scenario: expiry job revoked first, attendee redeems second
         var sut = CreateWaitlist();
-        var couponId = CouponId.New();
-        sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
+        var couponId = IssueCoupon(sut);
         sut.RevokeCoupon(couponId);
 
         // Act & Assert — the EF Core concurrency token (xmin) is the first guard; this is the
@@ -561,8 +641,7 @@ public sealed class WaitlistTests
     {
         // Arrange — simulates the race-loser scenario: attendee redeemed first, expiry job revokes second
         var sut = CreateWaitlist();
-        var couponId = CouponId.New();
-        sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
+        var couponId = IssueCoupon(sut);
         sut.ApplyCouponRedemption(couponId, RedeemerEmail);
 
         // Act & Assert
@@ -577,8 +656,7 @@ public sealed class WaitlistTests
     {
         // Arrange
         var sut = CreateWaitlist();
-        var couponId = CouponId.New();
-        sut.TrackIssuedCoupon(couponId, DateTimeOffset.UtcNow);
+        var couponId = IssueCoupon(sut);
         sut.RevokeCoupon(couponId);
 
         // Act & Assert

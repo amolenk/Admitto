@@ -111,6 +111,36 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         });
     }
 
+    // Given a sold-out ticket type with an attendee still waiting and no outstanding coupons
+    // When waitlist notifications are processed without any freed slots
+    // Then no coupon is issued and waitlist mode stays on
+    [TestMethod]
+    public async ValueTask ProcessWaitlistNotifications_NoFreedSlotsWithActiveEntries_KeepsWaitlistMode()
+    {
+        // Arrange
+        var fixture = ProcessWaitlistNotificationsFixture.WithOneEntryNoSlots();
+        await fixture.SetupAsync(Environment, activeEntries: 1);
+
+        var sut = new ProcessWaitlistNotificationsHandler(
+            Environment.RegistrationsDatabase.Context, TimeProvider.System);
+
+        // Act
+        await sut.HandleAsync(
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 0),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Coupons.AnyAsync(testContext.CancellationToken)).ShouldBeFalse();
+
+            var catalog = await dbContext.TicketCatalogs
+                .FirstAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.GetTicketType(fixture.TicketTypeId)!.WaitlistMode.ShouldBeTrue();
+        });
+    }
+
     // Given the current time falls inside the event's quiet hours window
     // When waitlist notifications are processed
     // Then the issued coupon's expiry is extended to after the quiet hours end

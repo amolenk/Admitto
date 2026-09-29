@@ -12,16 +12,19 @@ public class WaitlistCoupon : Entity<CouponId>
     {
     }
 
-    internal WaitlistCoupon(CouponId id, DateTimeOffset issuedAt)
+    internal WaitlistCoupon(CouponId id, DateTimeOffset issuedAt, WaitlistCouponOrigin origin)
         : base(id)
     {
         Status = WaitlistCouponStatus.Issued;
         IssuedAt = issuedAt;
+        Origin = origin;
     }
 
     public WaitlistCouponStatus Status { get; private set; }
 
     public DateTimeOffset IssuedAt { get; private set; }
+
+    public WaitlistCouponOrigin Origin { get; private set; }
 
     internal void Redeem()
     {

@@ -33,6 +33,12 @@ internal sealed class ProcessWaitlistNotificationsFixture
     public static ProcessWaitlistNotificationsFixture WithOneEntryTwoSlots() =>
         new();
 
+    /// <summary>
+    /// One waitlist entry, no freed slots — e.g. only a VIP coupon lapsed.
+    /// </summary>
+    public static ProcessWaitlistNotificationsFixture WithOneEntryNoSlots() =>
+        new();
+
     public async ValueTask SetupAsync(
         IntegrationTestEnvironment environment,
         int activeEntries = 1,

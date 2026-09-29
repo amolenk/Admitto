@@ -122,7 +122,9 @@ public class Waitlist : Aggregate<TicketTypeId>
             .Where(e => e.Status == WaitlistEntryStatus.Active)
             .MinBy(e => e.Position);
 
-        return entry is null ? null : IssueCoupon(entry, ticketedEvent, ticketType, utcNow);
+        return entry is null
+            ? null
+            : IssueCoupon(entry, ticketedEvent, ticketType, utcNow, WaitlistCouponOrigin.Automatic);
     }
 
     /// <summary>
@@ -139,14 +141,15 @@ public class Waitlist : Aggregate<TicketTypeId>
         if (entry is null)
             throw new BusinessRuleViolationException(Errors.EntryNotActive);
 
-        return IssueCoupon(entry, ticketedEvent, ticketType, utcNow);
+        return IssueCoupon(entry, ticketedEvent, ticketType, utcNow, WaitlistCouponOrigin.Manual);
     }
 
     private Coupon IssueCoupon(
         WaitlistEntry entry,
         TicketedEvent ticketedEvent,
         TicketType ticketType,
-        DateTimeOffset utcNow)
+        DateTimeOffset utcNow,
+        WaitlistCouponOrigin origin)
     {
         entry.Remove();
         RenumberPositions();
@@ -169,20 +172,12 @@ public class Waitlist : Aggregate<TicketTypeId>
             utcNow,
             CouponSource.Waitlist);
 
-        _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow));
+        _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow, origin));
 
         AddDomainEvent(new WaitlistCouponIssuedDomainEvent(
             TeamId, EventId, ticketType.Id, entry.Email, coupon.Code, ticketType.Name.Value, expiresAt));
 
         return coupon;
-    }
-
-    /// <summary>
-    /// Tracks a coupon issued to an attendee from this waitlist.
-    /// </summary>
-    public void TrackIssuedCoupon(CouponId couponId, DateTimeOffset issuedAt)
-    {
-        _coupons.Add(new WaitlistCoupon(couponId, issuedAt));
     }
 
     /// <summary>
@@ -202,25 +197,31 @@ public class Waitlist : Aggregate<TicketTypeId>
     }
 
     /// <summary>
-    /// Marks the given waitlist coupon as revoked.
+    /// Marks the given waitlist coupon as revoked. Returns whether the coupon was backed by a freed slot
+    /// (<see cref="WaitlistCouponOrigin.Automatic"/>), which the caller should cascade to the next entry;
+    /// a manually issued (VIP) coupon frees nothing.
     /// </summary>
-    public void RevokeCoupon(CouponId couponId)
+    public bool RevokeCoupon(CouponId couponId)
     {
         var coupon = FindActiveCoupon(couponId);
         coupon.Revoke();
         CheckExhausted();
+        return coupon.Origin == WaitlistCouponOrigin.Automatic;
     }
 
     /// <summary>
     /// Marks the given waitlist coupon as revoked because it lapsed unclaimed, and raises
     /// <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired.
+    /// Returns whether the lapsed coupon freed a slot to cascade (see <see cref="RevokeCoupon"/>).
     /// </summary>
-    public void ExpireCoupon(Coupon coupon, TicketType ticketType)
+    public bool ExpireCoupon(Coupon coupon, TicketType ticketType)
     {
-        RevokeCoupon(coupon.Id);
+        var freedSlot = RevokeCoupon(coupon.Id);
 
         AddDomainEvent(new WaitlistCouponExpiredDomainEvent(
             TeamId, EventId, ticketType.Id, coupon.Email, coupon.Code, ticketType.Name.Value));
+
+        return freedSlot;
     }
 
     private WaitlistCoupon FindActiveCoupon(CouponId couponId)

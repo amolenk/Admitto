@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteWaitlistEntry;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -34,15 +35,33 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
         new() { CouponsToIssue = 2 };
 
     /// <summary>
+    /// One VIP coupon promoted from the back of the queue, one more entry waiting behind it.
+    /// </summary>
+    public static ProcessExpiredWaitlistCouponsJobFixture WithOnePendingVipCoupon() =>
+        new() { CouponsToIssue = 0, VipCouponsToIssue = 1 };
+
+    /// <summary>
+    /// One automatic coupon and one VIP coupon outstanding at the same time.
+    /// </summary>
+    public static ProcessExpiredWaitlistCouponsJobFixture WithOnePendingCouponAndOnePendingVipCoupon() =>
+        new() { VipCouponsToIssue = 1 };
+
+    /// <summary>
     /// Number of coupons issued (to the front-of-queue entries) during setup.
     /// </summary>
     public int CouponsToIssue { get; private init; } = 1;
 
     /// <summary>
+    /// Number of VIP coupons issued during setup by promoting the entries at the back of the queue.
+    /// </summary>
+    public int VipCouponsToIssue { get; private init; }
+
+    /// <summary>
     /// Seeds the database with a TicketedEvent, TicketCatalog in WaitlistMode, a Waitlist with
     /// <paramref name="activeEntries"/> entries, and then issues a coupon to the first entry using
     /// the real handler so the coupon row exists in the DB with a real <c>expires_at</c>.
-    /// Issues <see cref="CouponsToIssue"/> coupons to the front-of-queue entries.
+    /// Issues <see cref="CouponsToIssue"/> coupons to the front-of-queue entries, then promotes the last
+    /// <see cref="VipCouponsToIssue"/> entries as VIPs.
     /// </summary>
     /// <param name="activeEntriesAfterCoupon">
     /// Number of active entries that should remain in the waitlist AFTER the coupons are issued.
@@ -54,7 +73,9 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
         CancellationToken cancellationToken = default)
     {
         // Total entries = the ones that will receive a coupon + the remaining active ones.
-        var totalEntries = CouponsToIssue + activeEntriesAfterCoupon;
+        var totalEntries = CouponsToIssue + VipCouponsToIssue + activeEntriesAfterCoupon;
+        // Always at least one seat, filled, so WaitlistMode is on even when only VIP coupons are issued.
+        var capacity = Math.Max(CouponsToIssue, 1);
 
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
@@ -71,9 +92,9 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             dbContext.TicketedEvents.Add(ticketedEvent);
 
             var catalog = TicketCatalog.Create(EventId, TeamId);
-            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: CouponsToIssue,
+            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: capacity,
                 waitlistEnabled: true, claimWindowHours: 8);
-            for (var i = 0; i < CouponsToIssue; i++)
+            for (var i = 0; i < capacity; i++)
                 catalog.Claim([TicketTypeId], ClaimMode.Public);   // fill to capacity → WaitlistMode activates
             dbContext.TicketCatalogs.Add(catalog);
 
@@ -87,15 +108,41 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
 
         // Issue coupons to the front entries using the real handler, so proper coupon rows are
         // persisted before we backdate expires_at via raw SQL.
-        var handler = new ProcessWaitlistNotificationsHandler(
-            environment.RegistrationsDatabase.Context, TimeProvider.System);
+        var context = environment.RegistrationsDatabase.Context;
+        if (CouponsToIssue > 0)
+        {
+            var handler = new ProcessWaitlistNotificationsHandler(context, TimeProvider.System);
 
-        await handler.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: CouponsToIssue),
-            cancellationToken);
+            await handler.HandleAsync(
+                new ProcessWaitlistNotificationsCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: CouponsToIssue),
+                cancellationToken);
 
-        await environment.RegistrationsDatabase.Context.SaveChangesAsync(cancellationToken);
-        environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
+            await context.SaveChangesAsync(cancellationToken);
+            context.ChangeTracker.Clear();
+        }
+
+        if (VipCouponsToIssue > 0)
+        {
+            var waitlist = await context.Waitlists.AsNoTracking()
+                .FirstAsync(w => w.Id == TicketTypeId, cancellationToken);
+            var vipEntryIds = waitlist.Entries
+                .Where(e => e.Status == WaitlistEntryStatus.Active)
+                .OrderByDescending(e => e.Position)
+                .Take(VipCouponsToIssue)
+                .Select(e => e.Id.Value)
+                .ToList();
+
+            var promoteHandler = new PromoteWaitlistEntryHandler(context, TimeProvider.System);
+            foreach (var entryId in vipEntryIds)
+            {
+                await promoteHandler.HandleAsync(
+                    new PromoteWaitlistEntryCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, entryId),
+                    cancellationToken);
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+            context.ChangeTracker.Clear();
+        }
     }
 
     /// <summary>

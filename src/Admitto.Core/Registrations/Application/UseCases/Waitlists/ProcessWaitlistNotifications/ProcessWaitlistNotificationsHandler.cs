@@ -48,7 +48,7 @@ internal sealed class ProcessWaitlistNotificationsHandler(
         var activeEntryCount = waitlist.ActiveEntryCount;
         var slotsToProcess = Math.Min(command.FreedSlots, activeEntryCount);
 
-        if (slotsToProcess <= 0 && waitlist.IssuedCouponCount == 0)
+        if (activeEntryCount == 0 && waitlist.IssuedCouponCount == 0)
         {
             // Waitlist exhausted (no active entries, no outstanding coupons) — lift WaitlistMode
             catalog.ForceDeactivateWaitlistMode(ticketTypeId);

@@ -13,8 +13,11 @@ namespace Amolenk.Admitto.Core.Registrations.Application.Jobs;
 /// expires the coupon on the <see cref="Waitlist"/> aggregate (which raises
 /// <see cref="Domain.DomainEvents.WaitlistCouponExpiredDomainEvent"/> so the recipient is told
 /// their offer lapsed), then fires
-/// <see cref="ProcessWaitlistNotificationsCommand"/> to cascade the freed slot to the next
-/// person in queue. If the waitlist is empty after revocation, the domain raises
+/// <see cref="ProcessWaitlistNotificationsCommand"/> to cascade the freed slots to the next
+/// people in queue. Only <see cref="WaitlistCouponOrigin.Automatic"/> coupons free a slot: a
+/// manually issued (VIP) coupon was never backed by one, so its expiry cascades nothing. The command
+/// is fired even when no slot was freed, so WaitlistMode is still re-evaluated. If the waitlist is
+/// empty after revocation, the domain raises
 /// <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
 /// </summary>
 /// <remarks>
@@ -96,22 +99,25 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                 }
 
                 var ticketType = catalog.GetTicketType(ticketTypeId);
+                var freedSlots = 0;
 
                 foreach (var coupon in couponsToRevoke)
                 {
                     // Without a ticket type there is nothing to name in the expired-offer email;
-                    // still revoke so the freed slot cascades.
-                    if (ticketType is null)
-                        waitlist.RevokeCoupon(coupon.Id);
-                    else
-                        waitlist.ExpireCoupon(coupon, ticketType);
+                    // still revoke so any freed slot cascades.
+                    var freedSlot = ticketType is null
+                        ? waitlist.RevokeCoupon(coupon.Id)
+                        : waitlist.ExpireCoupon(coupon, ticketType);
+
+                    if (freedSlot)
+                        freedSlots++;
 
                     coupon.Revoke();
                 }
 
                 await notifyHandler.HandleAsync(
                     new ProcessWaitlistNotificationsCommand(
-                        eventId.Value, teamId.Value, ticketTypeId.Value, couponsToRevoke.Count),
+                        eventId.Value, teamId.Value, ticketTypeId.Value, freedSlots),
                     context.CancellationToken);
             }
 

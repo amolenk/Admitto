@@ -443,19 +443,12 @@ internal sealed class RegisterAttendeeFixture
         f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", max: 2, preFill: 1);
         var ticketTypeId = f.GetTicketTypeId("general-admission");
 
-        f._coupon = new CouponBuilder()
-            .WithEventId(f.EventId)
-            .WithTeamId(f.TeamId)
-            .WithEmail(f.CouponEmail)
-            .WithRequestedTicketTypeIds(ticketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
-            .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
-            .WithSource(CouponSource.Waitlist)
-            .Build();
-        f.CouponCode = f._coupon.Code.Value;
-
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, ticketTypeId, f.TeamId);
-        waitlist.TrackIssuedCoupon(f._coupon.Id, DateTimeOffset.UtcNow);
+        waitlist.AddEntry(f.CouponEmail, DateTimeOffset.UtcNow);
+        f._coupon = waitlist.IssueNextCoupon(
+            f._ticketedEvent, f._catalog.GetTicketType(ticketTypeId)!, DateTimeOffset.UtcNow)!;
+        f._coupon.ClearDomainEvents();
+        f.CouponCode = f._coupon.Code.Value;
         waitlist.ClearDomainEvents();
         f._waitlists.Add(waitlist);
 

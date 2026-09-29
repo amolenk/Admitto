@@ -74,6 +74,12 @@ public class WaitlistEntityConfiguration : IEntityTypeConfiguration<Waitlist>
             b.Property(e => e.IssuedAt)
                 .HasJsonPropertyName("issued_at")
                 .IsRequired();
+
+            // Rows written before origins were tracked lack this key and read back as Automatic.
+            b.Property(e => e.Origin)
+                .HasJsonPropertyName("origin")
+                .HasConversion<string>()
+                .IsRequired();
         });
     }
 }
