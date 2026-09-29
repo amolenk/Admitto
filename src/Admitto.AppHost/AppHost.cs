@@ -136,6 +136,29 @@ if (builder.ExecutionContext.IsRunMode &&
                 .WithLifetime(ContainerLifetime.Persistent);
         }
     });
+
+    // Optionally point the emulator at an externally hosted SQL Server instead of its mssql sidecar
+    // (whose image is amd64-only), e.g. ServiceBusEmulator__SqlServer=host.docker.internal.
+    var externalSqlServer = builder.Configuration["ServiceBusEmulator:SqlServer"];
+    if (!string.IsNullOrEmpty(externalSqlServer))
+    {
+        var sqlSidecar = builder.Resources.Single(r => r.Name == $"{serviceBus.Resource.Name}-mssql");
+        builder.Resources.Remove(sqlSidecar);
+
+        foreach (var wait in serviceBus.Resource.Annotations.OfType<WaitAnnotation>()
+                     .Where(w => w.Resource == sqlSidecar).ToList())
+        {
+            serviceBus.Resource.Annotations.Remove(wait);
+        }
+
+        // Added after the emulator's own environment callback, so these values win.
+        serviceBus.Resource.Annotations.Add(new EnvironmentCallbackAnnotation(context =>
+        {
+            context.EnvironmentVariables["SQL_SERVER"] = externalSqlServer;
+            context.EnvironmentVariables["MSSQL_SA_PASSWORD"] =
+                builder.Configuration["ServiceBusEmulator:SqlPassword"] ?? string.Empty;
+        }));
+    }
 }
 
 serviceBus.AddServiceBusQueue("queue");
