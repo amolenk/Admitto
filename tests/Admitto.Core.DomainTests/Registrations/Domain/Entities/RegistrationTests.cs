@@ -208,7 +208,7 @@ public sealed class RegistrationTests
         };
         var changedAt = DateTimeOffset.UtcNow;
 
-        sut.ChangeTickets(newTickets, changedAt);
+        sut.ChangeTickets(newTickets, [], [], changedAt);
 
         sut.Tickets.Count.ShouldBe(2);
         sut.Tickets.ShouldContain(t => t.Id == workshopId);
@@ -231,7 +231,7 @@ public sealed class RegistrationTests
             new(generalId, TicketTypeName.From("General Admission"), [])
         };
 
-        sut.ChangeTickets(sameTickets, DateTimeOffset.UtcNow);
+        sut.ChangeTickets(sameTickets, [], [], DateTimeOffset.UtcNow);
 
         sut.Tickets.Count.ShouldBe(1);
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
@@ -252,6 +252,8 @@ public sealed class RegistrationTests
             LastName.From("Anderson"),
             AdditionalDetails.From(new Dictionary<string, string> { ["dietary"] = "vegan" }),
             [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From("morning")])],
+            [],
+            [],
             DateTimeOffset.UtcNow);
 
         sut.FirstName.ShouldBe(FirstName.From("Alice"));
@@ -277,11 +279,82 @@ public sealed class RegistrationTests
             LastName.From("Anderson"),
             AdditionalDetails.From(new Dictionary<string, string> { ["dietary"] = "vegan" }),
             [new TicketTypeSnapshot(generalId, TicketTypeName.From("General Admission"), [])],
+            [],
+            [],
             DateTimeOffset.UtcNow);
 
         sut.LastName.ShouldBe(LastName.From("Anderson"));
         sut.AdditionalDetails["dietary"].ShouldBe("vegan");
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a registration with a confirmed ticket that is also on one ticket type's waitlist
+    // When the attendee keeps the confirmed ticket but switches to a different ticket type's waitlist
+    // Then a TicketsChanged event is raised describing both the unchanged confirmed and the new waitlisted tickets
+    [TestMethod]
+    public void Registration_ReplaceAttendeeEditableState_WaitlistSelectionChangedOnly_RaisesTicketsChangedEvent()
+    {
+        var general = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("General Admission"), []);
+        var workshopA = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop A"), []);
+        var workshopB = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop B"), []);
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName,
+            [general]);
+        ClearEvents(sut);
+
+        sut.ReplaceAttendeeEditableState(
+            DefaultFirstName,
+            DefaultLastName,
+            AdditionalDetails.Empty,
+            [general],
+            [workshopA],
+            [workshopB],
+            DateTimeOffset.UtcNow);
+
+        var domainEvent = sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
+        domainEvent.NewTickets.ShouldBe([general]);
+        domainEvent.OldWaitlistedTickets.ShouldBe([workshopA]);
+        domainEvent.NewWaitlistedTickets.ShouldBe([workshopB]);
+    }
+
+    // Given a registration with a confirmed ticket that is also on a ticket type's waitlist
+    // When the attendee keeps both the confirmed ticket and the waitlist entry unchanged
+    // Then no TicketsChanged event is raised
+    [TestMethod]
+    public void Registration_ReplaceAttendeeEditableState_ConfirmedAndWaitlistUnchanged_DoesNotRaiseTicketChangeEvent()
+    {
+        var general = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("General Admission"), []);
+        var workshop = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), []);
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName,
+            [general]);
+        ClearEvents(sut);
+
+        sut.ReplaceAttendeeEditableState(
+            DefaultFirstName,
+            DefaultLastName,
+            AdditionalDetails.Empty,
+            [general],
+            [workshop],
+            [workshop],
+            DateTimeOffset.UtcNow);
+
+        sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given a signup holding one confirmed ticket and joining another ticket type's waitlist
+    // When the registration is created
+    // Then the AttendeeRegistered event describes the confirmed and waitlisted tickets separately
+    [TestMethod]
+    public void Registration_Create_WithWaitlistedTickets_RaisesAttendeeRegisteredEventWithBoth()
+    {
+        var general = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("General Admission"), []);
+        var workshop = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), []);
+
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName,
+            [general], waitlistedTickets: [workshop]);
+
+        var domainEvent = sut.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().ShouldHaveSingleItem();
+        domainEvent.Tickets.ShouldBe([general]);
+        domainEvent.WaitlistedTickets.ShouldBe([workshop]);
     }
 
     // Given a registration that has been cancelled
@@ -298,6 +371,8 @@ public sealed class RegistrationTests
             LastName.From("Anderson"),
             AdditionalDetails.Empty,
             [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            [],
+            [],
             DateTimeOffset.UtcNow));
 
         result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
@@ -313,7 +388,7 @@ public sealed class RegistrationTests
         sut.Cancel(CancellationReason.AttendeeRequest);
 
         var result = ErrorResult.Capture(() =>
-            sut.ChangeTickets([new(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])], DateTimeOffset.UtcNow));
+            sut.ChangeTickets([new(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])], [], [], DateTimeOffset.UtcNow));
 
         result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
     }
@@ -565,6 +640,8 @@ public sealed class RegistrationTests
 
         sut.ChangeTickets(
             [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            [],
+            [],
             DateTimeOffset.UtcNow);
 
         sut.Status.ShouldBe(RegistrationStatus.Registered);
@@ -579,7 +656,7 @@ public sealed class RegistrationTests
         var sut = NewRegistration();
         sut.Status.ShouldBe(RegistrationStatus.Registered);
 
-        sut.ChangeTickets([], DateTimeOffset.UtcNow);
+        sut.ChangeTickets([], [], [], DateTimeOffset.UtcNow);
 
         sut.Status.ShouldBe(RegistrationStatus.Waitlisted);
     }

@@ -107,15 +107,24 @@ internal sealed class ChangeAttendeeTicketsHandler(
             })
             .ToList();
 
-        // 10. Apply the change to the registration.
-        registration.ChangeTickets(newTickets, timeProvider.GetUtcNow());
+        // 10. Apply the change to the registration. Waitlist entries are untouched by this change,
+        // except that a coupon redemption clears the entries for the ticket types it granted.
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == eventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+        var currentWaitlistIds = waitlists
+            .Where(w => w.HasActiveEntry(registration.Email))
+            .Select(w => w.Id)
+            .ToList();
+        registration.ChangeTickets(
+            newTickets,
+            catalog.DescribeTicketTypes(currentWaitlistIds),
+            catalog.DescribeTicketTypes(currentWaitlistIds.Except(couponGrantedIds)),
+            timeProvider.GetUtcNow());
 
         if (coupon is null)
             return;
 
-        var waitlists = await writeStore.Waitlists
-            .Where(w => w.EventId == eventId && w.TeamId == teamId)
-            .ToListAsync(cancellationToken);
         RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlists(
             waitlists, coupon, registration.Email, couponGrantedIds);
     }

@@ -7,7 +7,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 /// <summary>
-/// Sends a new TicketConfirmation email when an attendee's tickets have changed.
+/// Sends a new TicketConfirmation email when an attendee's confirmed or waitlisted tickets have changed.
 /// </summary>
 internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
     ITransactionalEmailComposer composer,
@@ -27,7 +27,9 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
             TicketedEventId.From(integrationEvent.TicketedEventId),
             RegistrationId.From(integrationEvent.RegistrationId),
             integrationEvent.FirstName,
-            integrationEvent.NewTickets.Select(t => t.Name).ToArray());
+            integrationEvent.NewTickets.Select(t => t.Name).ToArray(),
+            // Events enqueued before waitlisted ticket types were published deserialize without them.
+            (integrationEvent.NewWaitlistedTickets ?? []).Select(t => t.Name).ToArray());
         var rendered = await composer.ComposeAsync(intent, cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,

@@ -23,7 +23,8 @@ public class Registration : Aggregate<RegistrationId>
         LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails additionalDetails,
-        DateTimeOffset registeredAt)
+        DateTimeOffset registeredAt,
+        IReadOnlyList<TicketTypeSnapshot> waitlistedTickets)
         : base(id)
     {
         CreatedAt = registeredAt;
@@ -41,7 +42,8 @@ public class Registration : Aggregate<RegistrationId>
         AdditionalDetails = additionalDetails;
         SearchText = BuildSearchText(email, firstName, lastName);
 
-        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, firstName, lastName, tickets, registeredAt));
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(
+            teamId, eventId, id, email, firstName, lastName, tickets, waitlistedTickets, registeredAt));
     }
 
     public TeamId TeamId { get; private set; }
@@ -68,7 +70,8 @@ public class Registration : Aggregate<RegistrationId>
         LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails? additionalDetails = null,
-        DateTimeOffset? registeredAt = null)
+        DateTimeOffset? registeredAt = null,
+        IReadOnlyList<TicketTypeSnapshot>? waitlistedTickets = null)
     {
         return new Registration(
             RegistrationId.New(),
@@ -80,7 +83,8 @@ public class Registration : Aggregate<RegistrationId>
             lastName,
             tickets,
             additionalDetails ?? AdditionalDetails.Empty,
-            registeredAt ?? DateTimeOffset.UtcNow);
+            registeredAt ?? DateTimeOffset.UtcNow,
+            waitlistedTickets ?? []);
     }
 
     public void Cancel(CancellationReason reason)
@@ -106,7 +110,8 @@ public class Registration : Aggregate<RegistrationId>
         LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails additionalDetails,
-        DateTimeOffset registeredAt)
+        DateTimeOffset registeredAt,
+        IReadOnlyList<TicketTypeSnapshot>? waitlistedTickets = null)
     {
         if (Status != RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.CannotResetActive);
@@ -136,10 +141,20 @@ public class Registration : Aggregate<RegistrationId>
             FirstName,
             LastName,
             newTickets,
+            waitlistedTickets ?? [],
             registeredAt));
     }
 
-    public void ChangeTickets(IReadOnlyList<TicketTypeSnapshot> newTickets, DateTimeOffset changedAt)
+    /// <remarks>
+    /// Waitlist entries are owned by the <see cref="Waitlist"/> aggregates, so the caller supplies the
+    /// attendee's waitlisted ticket types before and after the change. A change to either the confirmed
+    /// or the waitlisted selection raises <see cref="TicketsChangedDomainEvent"/>.
+    /// </remarks>
+    public void ChangeTickets(
+        IReadOnlyList<TicketTypeSnapshot> newTickets,
+        IReadOnlyList<TicketTypeSnapshot> oldWaitlistedTickets,
+        IReadOnlyList<TicketTypeSnapshot> newWaitlistedTickets,
+        DateTimeOffset changedAt)
     {
         if (Status == RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.RegistrationIsCancelled);
@@ -149,19 +164,18 @@ public class Registration : Aggregate<RegistrationId>
         _tickets.AddRange(newTickets);
         Status = DeriveStatus(_tickets);
 
-        if (HasSameTicketSelection(oldTickets, newTickets))
-            return;
-
-        AddDomainEvent(new TicketsChangedDomainEvent(
-            TeamId, EventId, Id, Email, FirstName, LastName,
-            oldTickets, newTickets, changedAt));
+        RaiseTicketsChangedIfSelectionChanged(
+            oldTickets, newTickets, oldWaitlistedTickets, newWaitlistedTickets, changedAt);
     }
 
+    /// <remarks>Waitlisted ticket types are supplied as for <see cref="ChangeTickets"/>.</remarks>
     public void ReplaceAttendeeEditableState(
         FirstName firstName,
         LastName lastName,
         AdditionalDetails additionalDetails,
         IReadOnlyList<TicketTypeSnapshot> newTickets,
+        IReadOnlyList<TicketTypeSnapshot> oldWaitlistedTickets,
+        IReadOnlyList<TicketTypeSnapshot> newWaitlistedTickets,
         DateTimeOffset changedAt)
     {
         if (Status == RegistrationStatus.Cancelled)
@@ -177,12 +191,8 @@ public class Registration : Aggregate<RegistrationId>
         _tickets.AddRange(newTickets);
         Status = DeriveStatus(_tickets);
 
-        if (HasSameTicketSelection(oldTickets, newTickets))
-            return;
-
-        AddDomainEvent(new TicketsChangedDomainEvent(
-            TeamId, EventId, Id, Email, FirstName, LastName,
-            oldTickets, newTickets, changedAt));
+        RaiseTicketsChangedIfSelectionChanged(
+            oldTickets, newTickets, oldWaitlistedTickets, newWaitlistedTickets, changedAt);
     }
 
     public void Reconfirm(DateTimeOffset now)
@@ -215,6 +225,22 @@ public class Registration : Aggregate<RegistrationId>
 
         CheckedInAt = serverNow;
         AddDomainEvent(new RegistrationCheckedInDomainEvent(TeamId, EventId, Id, serverNow, source));
+    }
+
+    private void RaiseTicketsChangedIfSelectionChanged(
+        IReadOnlyList<TicketTypeSnapshot> oldTickets,
+        IReadOnlyList<TicketTypeSnapshot> newTickets,
+        IReadOnlyList<TicketTypeSnapshot> oldWaitlistedTickets,
+        IReadOnlyList<TicketTypeSnapshot> newWaitlistedTickets,
+        DateTimeOffset changedAt)
+    {
+        if (HasSameTicketSelection(oldTickets, newTickets)
+            && HasSameTicketSelection(oldWaitlistedTickets, newWaitlistedTickets))
+            return;
+
+        AddDomainEvent(new TicketsChangedDomainEvent(
+            TeamId, EventId, Id, Email, FirstName, LastName,
+            oldTickets, newTickets, oldWaitlistedTickets, newWaitlistedTickets, changedAt));
     }
 
     private static RegistrationStatus DeriveStatus(IReadOnlyList<TicketTypeSnapshot> tickets) =>

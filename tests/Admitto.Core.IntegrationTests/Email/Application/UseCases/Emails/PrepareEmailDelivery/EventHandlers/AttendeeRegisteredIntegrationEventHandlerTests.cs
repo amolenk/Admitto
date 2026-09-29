@@ -26,6 +26,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             "Alice",
             "Anderson",
             [],
+            [],
             DateTimeOffset.UtcNow);
 
     // Given an attendee has completed registration

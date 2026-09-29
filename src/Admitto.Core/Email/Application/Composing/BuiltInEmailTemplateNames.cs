@@ -8,6 +8,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Composing;
 public static class BuiltInEmailTemplateNames
 {
     public const string TicketConfirmation = "Ticket confirmation";
+    public const string WaitlistConfirmation = "Waitlist confirmation";
     public const string Reconfirmation     = "Reconfirmation";
     public const string Cancellation       = "Cancellation";
     public const string ReconfirmCancelled = "Reconfirm cancelled";

@@ -59,6 +59,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
         EnsureRequestedTicketStatesMatch(catalog, registerTicketTypeIds, waitlistTicketTypeIds);
         ValidateWaitlistRequests(catalog, waitlistTicketTypeIds);
         var tickets = catalog.Claim(registerTicketTypeIds, ClaimMode.Public);
+        var waitlistedTickets = catalog.DescribeTicketTypes(waitlistTicketTypeIds);
 
         Registration? registration = null;
         if (existingRegistration is null)
@@ -71,13 +72,14 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
                 lastName,
                 tickets,
                 additionalDetails,
-                now);
+                now,
+                waitlistedTickets);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
         else if (registerTicketTypeIds.Count > 0)
         {
             registration = existingRegistration;
-            registration.Reset(firstName, lastName, tickets, additionalDetails, now);
+            registration.Reset(firstName, lastName, tickets, additionalDetails, now, waitlistedTickets);
         }
 
         foreach (var waitlistTicketTypeId in waitlistTicketTypeIds)

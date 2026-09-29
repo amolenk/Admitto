@@ -12,4 +12,5 @@ public record AttendeeRegisteredDomainEvent(
     FirstName FirstName,
     LastName LastName,
     IReadOnlyList<TicketTypeSnapshot> Tickets,
+    IReadOnlyList<TicketTypeSnapshot> WaitlistedTickets,
     DateTimeOffset RegisteredAt) : DomainEvent;

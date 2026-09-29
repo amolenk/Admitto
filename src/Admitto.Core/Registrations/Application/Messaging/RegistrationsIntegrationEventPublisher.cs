@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Messaging;
@@ -29,7 +30,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.Tickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList(),
+            ToTicketTypeItems(domainEvent.Tickets),
+            ToTicketTypeItems(domainEvent.WaitlistedTickets),
             domainEvent.RegisteredAt));
 
         return ValueTask.CompletedTask;
@@ -170,7 +172,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.NewTickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList(),
+            ToTicketTypeItems(domainEvent.NewTickets),
+            ToTicketTypeItems(domainEvent.NewWaitlistedTickets),
             domainEvent.ChangedAt));
 
         return ValueTask.CompletedTask;
@@ -200,4 +203,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
 
         return ValueTask.CompletedTask;
     }
+
+    private static List<TicketTypeItem> ToTicketTypeItems(IEnumerable<TicketTypeSnapshot> tickets) =>
+        tickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList();
 }

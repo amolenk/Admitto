@@ -22,7 +22,7 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
 
         var rendered = await fixture.BuildComposer(Environment)
             .ComposeAsync(new TicketConfirmationIntent(
-                teamId, eventId, RegistrationId.New(), "Alice", ["General Admission"]),
+                teamId, eventId, RegistrationId.New(), "Alice", ["General Admission"], []),
                 testContext.CancellationToken);
 
         rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
@@ -34,6 +34,66 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
         rendered.HtmlBody.ShouldContain("#2563eb");
         (await Environment.EmailDatabase.Context.EmailLog.CountAsync(testContext.CancellationToken)).ShouldBe(0);
         (await Environment.EmailDatabase.Context.OutboxMessages.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+    }
+
+    // Given an attendee holds a confirmed ticket type and is on another ticket type's waitlist
+    // When a ticket confirmation email is created
+    // Then the confirmed and waitlisted ticket types are listed in separate sections
+    [TestMethod]
+    public async ValueTask ComposeAsync_TicketConfirmationWithWaitlistedTicketTypes_RendersSeparateSections()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var fixture = TransactionalEmailComposerFixture.CompleteEventContext();
+        await fixture.SetupAsync(Environment, teamId, eventId);
+
+        var rendered = await fixture.BuildComposer(Environment)
+            .ComposeAsync(new TicketConfirmationIntent(
+                teamId, eventId, RegistrationId.New(), "Alice", ["General Admission"], ["Workshop"]),
+                testContext.CancellationToken);
+
+        rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        var text = rendered.TextBody;
+        text.IndexOf("Your confirmed ticket type(s):", StringComparison.Ordinal).ShouldBeLessThan(
+            text.IndexOf("- General Admission", StringComparison.Ordinal));
+        text.IndexOf("- General Admission", StringComparison.Ordinal).ShouldBeLessThan(
+            text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal));
+        text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal).ShouldBeLessThan(
+            text.IndexOf("- Workshop", StringComparison.Ordinal));
+        rendered.TextBody.ShouldContain("not a confirmed ticket");
+        rendered.HtmlBody.ShouldContain("Your confirmed ticket type(s)");
+        rendered.HtmlBody.ShouldContain("You're on the waitlist for");
+        rendered.HtmlBody.ShouldContain("<li>Workshop</li>");
+    }
+
+    // Given an attendee holds no confirmed ticket type and is only on a waitlist
+    // When a ticket confirmation email is created
+    // Then a waitlist confirmation is rendered with no confirmed-ticket language or QR code
+    [TestMethod]
+    public async ValueTask ComposeAsync_TicketConfirmationWithOnlyWaitlistedTicketTypes_RendersWaitlistConfirmation()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var registrationId = RegistrationId.New();
+        var fixture = TransactionalEmailComposerFixture.CompleteEventContext();
+        await fixture.SetupAsync(Environment, teamId, eventId);
+
+        var rendered = await fixture.BuildComposer(Environment)
+            .ComposeAsync(new TicketConfirmationIntent(
+                teamId, eventId, registrationId, "Alice", [], ["Workshop"]),
+                testContext.CancellationToken);
+
+        rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistConfirmation);
+        rendered.Subject.ShouldBe("Admitto: You're on the DevConf waitlist");
+        rendered.TextBody.ShouldContain("You're on the waitlist for:");
+        rendered.TextBody.ShouldContain("- Workshop");
+        rendered.TextBody.ShouldContain("don't have a confirmed ticket for DevConf yet");
+        rendered.TextBody.ShouldNotContain("Your registration has been confirmed");
+        rendered.TextBody.ShouldNotContain("QR code");
+        rendered.HtmlBody.ShouldContain("<li>Workshop</li>");
+        rendered.HtmlBody.ShouldNotContain("Your registration has been confirmed");
+        rendered.HtmlBody.ShouldNotContain("QR");
+        rendered.HtmlBody.ShouldNotContain("qr-code");
     }
 
     // Given an event is ready to accept registrations

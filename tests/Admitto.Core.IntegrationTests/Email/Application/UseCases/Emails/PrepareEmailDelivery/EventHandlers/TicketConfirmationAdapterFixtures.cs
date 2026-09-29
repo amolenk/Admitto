@@ -22,6 +22,7 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandlerFixture
             "Alice",
             "Anderson",
             [new TicketTypeItem(Guid.NewGuid(), "General Admission")],
+            [new TicketTypeItem(Guid.NewGuid(), "Workshop")],
             ChangedAt);
     }
 

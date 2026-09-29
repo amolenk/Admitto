@@ -119,7 +119,14 @@ internal sealed class UpdatePartnerRegistrationHandler(
             })
             .ToList();
 
-        registration.ReplaceAttendeeEditableState(firstName, lastName, additionalDetails, newTickets, now);
+        registration.ReplaceAttendeeEditableState(
+            firstName,
+            lastName,
+            additionalDetails,
+            newTickets,
+            catalog.DescribeTicketTypes(currentWaitlistIds),
+            catalog.DescribeTicketTypes(waitlistTicketTypeIds),
+            now);
 
         var waitlistsById = waitlists.ToDictionary(w => w.Id);
 

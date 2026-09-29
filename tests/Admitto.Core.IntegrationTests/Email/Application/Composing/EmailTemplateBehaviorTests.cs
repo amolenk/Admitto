@@ -73,6 +73,7 @@ public sealed class EmailTemplateBehaviorTests
         ["register_link"] = "https://example.com/register",
         ["reconfirm_link"] = "https://example.com/reconfirm",
         ["ticket_types"] = new[] { "Conference Pass" },
+        ["waitlisted_ticket_types"] = new[] { "Workshop" },
         ["plain_code"] = "123456",
         ["coupon_code"] = "WAITLIST-ABC123",
         ["ticket_type_name"] = "Conference Pass",

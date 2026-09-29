@@ -11,12 +11,18 @@ internal abstract record TransactionalEmailIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId);
 
+/// <summary>
+/// Describes a registration's confirmed <see cref="TicketTypes"/> and the ticket types it is only
+/// waitlisted for. A registration holding no confirmed ticket type gets a waitlist confirmation
+/// instead of a ticket.
+/// </summary>
 internal sealed record TicketConfirmationIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     RegistrationId RegistrationId,
     string FirstName,
-    IReadOnlyList<string> TicketTypes)
+    IReadOnlyList<string> TicketTypes,
+    IReadOnlyList<string> WaitlistedTicketTypes)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal sealed record CouponInvitationIntent(

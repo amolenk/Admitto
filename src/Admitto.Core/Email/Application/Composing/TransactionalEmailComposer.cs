@@ -38,7 +38,9 @@ internal sealed class TransactionalEmailComposer(
         var (emailType, parameters) = intent switch
         {
             TicketConfirmationIntent value => (
-                BuiltInEmailTemplateNames.TicketConfirmation,
+                value.TicketTypes.Count > 0
+                    ? BuiltInEmailTemplateNames.TicketConfirmation
+                    : BuiltInEmailTemplateNames.WaitlistConfirmation,
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["first_name"] = value.FirstName,
@@ -47,7 +49,8 @@ internal sealed class TransactionalEmailComposer(
                     ["public_event_link"] = context.GetLinks(value.RegistrationId).PublicEventLink,
                     ["qrcode_link"] = context.GetLinks(value.RegistrationId).QRCodeLink,
                     ["edit_registration_link"] = context.GetLinks(value.RegistrationId).EditRegistrationLink,
-                    ["ticket_types"] = value.TicketTypes
+                    ["ticket_types"] = value.TicketTypes,
+                    ["waitlisted_ticket_types"] = value.WaitlistedTicketTypes
                 }),
             CouponInvitationIntent value => (
                 BuiltInEmailTemplateNames.CouponInvitation,

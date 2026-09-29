@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReleaseTickets;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
@@ -534,6 +536,46 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var registration = await Environment.RegistrationsDatabase.Context.Registrations
             .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
         registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("early-bird"));
+    }
+
+    // Given a confirmed early-bird ticket and an active entry on the sold-out workshop's waitlist
+    // When the attendee keeps the early-bird ticket but switches to the sold-out masterclass's waitlist
+    // Then a ticket-changed email is sent listing the early-bird ticket as confirmed and the masterclass as waitlisted
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_WaitlistToWaitlist_SendsTicketChangedEmail()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithTwoWaitlistModeWorkshops();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Test",
+            [fixture.GetTicketTypeId("early-bird").Value],
+            [fixture.GetTicketTypeId("masterclass").Value],
+            new Dictionary<string, string> { ["dietary"] = "old" });
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        var registration = await Environment.RegistrationsDatabase.Context.Registrations
+            .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<TicketsChangedDomainEvent>()
+            .ShouldHaveSingleItem();
+
+        var delivery = await TicketConfirmationEmailPipeline.PrepareAsync(
+            Environment, fixture.TeamId, fixture.EventId, domainEvent, testContext.CancellationToken);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.RecipientAddress.ShouldBe(UpdatePartnerRegistrationFixture.AttendeeEmail.Value);
+        var text = delivery.TextBody;
+        text.IndexOf("- Early Bird", StringComparison.Ordinal).ShouldBeLessThan(
+            text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal));
+        text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal).ShouldBeLessThan(
+            text.IndexOf("- Masterclass", StringComparison.Ordinal));
+        text.ShouldNotContain("- Workshop");
     }
 
     private static UpdatePartnerRegistrationCommand ValidWorkshopCommand(UpdatePartnerRegistrationFixture fixture) =>

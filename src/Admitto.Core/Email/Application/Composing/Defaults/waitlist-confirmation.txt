@@ -1,0 +1,22 @@
+{{ team_name }}: You're on the {{ event_name }} waitlist
+
+Hi {{ first_name }},
+
+You don't have a confirmed ticket for {{ event_name }} yet, but you're on the waitlist.
+
+{{ if waitlisted_ticket_types && waitlisted_ticket_types.size > 0 }}
+You're on the waitlist for:
+{{ for ticket_type in waitlisted_ticket_types }}
+- {{ ticket_type }}
+{{ end }}
+{{ end }}
+If a spot opens up, we'll email you an offer you can claim within a limited time.
+
+Modify/Cancel your Registration
+Need to make changes or leave the waitlist? Manage your registration on the event website:
+{{ edit_registration_link }}
+
+For more details about the event, visit our website: {{ public_event_link }}
+
+Best regards,
+The {{ team_name }} Team

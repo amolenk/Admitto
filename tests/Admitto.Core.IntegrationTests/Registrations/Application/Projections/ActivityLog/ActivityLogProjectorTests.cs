@@ -29,6 +29,7 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             FirstName.From("Alice"),
             LastName.From("Doe"),
             [],
+            [],
             occurredOn) with { OccurredOn = occurredOn };
 
         var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context);
@@ -137,6 +138,8 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             LastName.From("Doe"),
             OldTickets: [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])],
             NewTickets: [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [])],
+            OldWaitlistedTickets: [],
+            NewWaitlistedTickets: [],
             ChangedAt: changedAt);
 
         var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context);
@@ -157,6 +160,37 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             var to = doc.RootElement.GetProperty("to").EnumerateArray().Select(e => e.GetString()).ToArray();
             from.ShouldBe(["Early Bird"]);
             to.ShouldBe(["Workshop"]);
+        });
+    }
+
+    // Given a registration's confirmed tickets stay the same while it moves from one waitlist to another
+    // When the change is recorded
+    // Then no tickets-changed activity log entry is created
+    [TestMethod]
+    public async ValueTask HandleAsync_TicketsChangedWaitlistOnly_CreatesNoEntry()
+    {
+        var registrationId = RegistrationId.New();
+        var earlyBird = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Early Bird"), []);
+        var domainEvent = new TicketsChangedDomainEvent(
+            TeamId.New(),
+            TicketedEventId.New(),
+            registrationId,
+            EmailAddress.From("alice@example.com"),
+            FirstName.From("Alice"),
+            LastName.From("Doe"),
+            OldTickets: [earlyBird],
+            NewTickets: [earlyBird],
+            OldWaitlistedTickets: [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop A"), [])],
+            NewWaitlistedTickets: [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop B"), [])],
+            ChangedAt: DateTimeOffset.UtcNow);
+
+        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context);
+        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            (await db.ActivityLog.CountAsync(a => a.RegistrationId == registrationId.Value, testContext.CancellationToken))
+                .ShouldBe(0);
         });
     }
 
@@ -243,6 +277,7 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Doe"),
+                [],
                 [],
                 now.AddMinutes(-10)) with { OccurredOn = now.AddMinutes(-10) },
             testContext.CancellationToken);

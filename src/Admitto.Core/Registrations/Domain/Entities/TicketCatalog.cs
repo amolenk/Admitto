@@ -254,6 +254,16 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     }
 
     /// <summary>
+    /// Returns snapshots of the given ticket types without claiming any capacity, e.g. to describe
+    /// the ticket types an attendee is waitlisted for. IDs not in the catalog are skipped.
+    /// </summary>
+    public IReadOnlyList<TicketTypeSnapshot> DescribeTicketTypes(IEnumerable<TicketTypeId> ids) =>
+        ids.Select(GetTicketType)
+            .OfType<TicketType>()
+            .Select(ticketType => new TicketTypeSnapshot(ticketType.Id, ticketType.Name, ticketType.TimeSlots))
+            .ToList();
+
+    /// <summary>
     /// Validates that the given ID selection has no duplicates, unknown IDs,
     /// or overlapping time slots. Does not modify capacity.
     /// Use this before delta-based claim/release operations to enforce invariants

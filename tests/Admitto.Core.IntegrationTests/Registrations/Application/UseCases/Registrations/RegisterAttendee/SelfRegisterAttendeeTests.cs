@@ -1,5 +1,9 @@
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -516,6 +520,50 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a ticket type only available via waitlist
+    // When an attendee signs up for only that ticket type's waitlist
+    // Then their confirmation email lists the waitlisted ticket type and has no confirmed-ticket language or QR code
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnly_SendsWaitlistConfirmationEmail()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await RegisterAndPrepareEmailAsync(
+            fixture, [], [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistConfirmation);
+        delivery.Subject.ShouldBe("Admitto: You're on the DevConf waitlist");
+        delivery.TextBody.ShouldContain("You're on the waitlist for:");
+        delivery.TextBody.ShouldContain("- Workshop B");
+        delivery.TextBody.ShouldNotContain("Your registration has been confirmed");
+        delivery.HtmlBody.ShouldNotContain("QR");
+    }
+
+    // Given one ticket type available for registration and another only available via waitlist
+    // When an attendee registers for the first and joins the waitlist for the second
+    // Then one confirmation email lists the confirmed and the waitlisted ticket type in separate sections
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_MixedRegistrationAndWaitlist_SendsConfirmationDescribingBoth()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await RegisterAndPrepareEmailAsync(
+            fixture, [fixture.GetTicketTypeId("workshop-a").Value], [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.Subject.ShouldBe("Admitto: Your DevConf Ticket");
+        var text = delivery.TextBody;
+        var confirmedHeader = text.IndexOf("Your confirmed ticket type(s):", StringComparison.Ordinal);
+        var waitlistHeader = text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal);
+        confirmedHeader.ShouldBeGreaterThanOrEqualTo(0);
+        confirmedHeader.ShouldBeLessThan(text.IndexOf("- Workshop A", StringComparison.Ordinal));
+        text.IndexOf("- Workshop A", StringComparison.Ordinal).ShouldBeLessThan(waitlistHeader);
+        waitlistHeader.ShouldBeLessThan(text.IndexOf("- Workshop B", StringComparison.Ordinal));
+        delivery.HtmlBody.ShouldContain("QR");
+    }
+
     // Given a ticket type that was in waitlist mode but has since become directly registerable
     // When an attendee submits a request based on the stale split between registered and waitlisted tickets
     // Then a ticket-state conflict listing both ticket types as registerable is returned and nothing is persisted
@@ -710,6 +758,30 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
                 unavailableTicketTypeIds ?? [],
                 unknownTicketTypeIds ?? [],
                 invalidForRequestedActionTicketTypeIds ?? [])));
+    }
+
+    /// <summary>
+    /// Self-registers the fixture's attendee, then drives the raised AttendeeRegistered domain event through
+    /// the real publisher, confirmation email adapter, and composer, returning the prepared email delivery.
+    /// </summary>
+    private async ValueTask<PrepareEmailDeliveryCommand> RegisterAndPrepareEmailAsync(
+        RegisterAttendeeFixture fixture,
+        Guid[] registerTicketTypeIds,
+        Guid[] waitlistTicketTypeIds)
+    {
+        var result = await NewHandler().HandleAsync(
+            NewCommand(fixture, "dave@example.com", registerTicketTypeIds, waitlistTicketTypeIds),
+            testContext.CancellationToken);
+
+        // The endpoint owns the commit, so the new registration is still only tracked, not persisted.
+        var registration = Environment.RegistrationsDatabase.Context.Registrations.Local
+            .Single(r => r.Id == RegistrationId.From(result.RegistrationId!.Value));
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem();
+
+        return await TicketConfirmationEmailPipeline.PrepareAsync(
+            Environment, fixture.TeamId, fixture.EventId, domainEvent, testContext.CancellationToken);
     }
 
     private static RegisterAttendeeSelfServiceHandler NewHandler(TimeProvider? timeProvider = null)

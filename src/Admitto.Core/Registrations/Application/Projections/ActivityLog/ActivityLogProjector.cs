@@ -61,6 +61,12 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
         TicketsChangedDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
+        // The activity entry records the confirmed ticket change only; a change that merely moves the
+        // attendee between waitlists leaves the confirmed tickets as they were.
+        if (domainEvent.OldTickets.Select(t => t.Id).ToHashSet()
+            .SetEquals(domainEvent.NewTickets.Select(t => t.Id)))
+            return ValueTask.CompletedTask;
+
         var metadata = JsonSerializer.Serialize(new
         {
             from = domainEvent.OldTickets.Select(t => t.Name.Value).ToArray(),

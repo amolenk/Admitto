@@ -226,6 +226,42 @@ internal sealed class UpdatePartnerRegistrationFixture
 
     /// <summary>
     /// Catalog with a registerable "early-bird" type (the registration's existing confirmed
+    /// ticket) and two waitlist-enabled types, "workshop" and "masterclass", that are both
+    /// genuinely sold out (WaitlistMode active). The registration's email holds an active
+    /// "workshop" waitlist entry.
+    /// </summary>
+    public static UpdatePartnerRegistrationFixture WithTwoWaitlistModeWorkshops()
+    {
+        var f = new UpdatePartnerRegistrationFixture();
+        f._ticketedEvent = f.MakeActiveEventWithSchema();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var earlyBirdId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
+        var masterclassId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["early-bird"] = earlyBirdId;
+        f._ticketTypeIdsBySlug["workshop"] = workshopId;
+        f._ticketTypeIdsBySlug["masterclass"] = masterclassId;
+
+        catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], 100);
+        catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [], 1, waitlistEnabled: true);
+        catalog.AddTicketType(masterclassId, TicketTypeName.From("Masterclass"), [], 1, waitlistEnabled: true);
+        catalog.Claim([workshopId], ClaimMode.Public); // fills the last slot -> activates WaitlistMode
+        catalog.Claim([masterclassId], ClaimMode.Public);
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+
+        var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+            f.EventId, workshopId, f.TeamId);
+        waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow);
+        waitlist.ClearDomainEvents();
+        f._waitlists.Add(waitlist);
+
+        return f;
+    }
+
+    /// <summary>
+    /// Catalog with a registerable "early-bird" type (the registration's existing confirmed
     /// ticket) and a waitlist-enabled "workshop" type that currently has available public
     /// capacity (WaitlistMode inactive). Optionally seeds an active waitlist entry for the
     /// registration's email, representing a stale waitlist membership.

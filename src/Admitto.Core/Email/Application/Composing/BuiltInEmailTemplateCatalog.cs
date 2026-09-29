@@ -35,6 +35,8 @@ internal static class BuiltInEmailTemplateCatalog
         [
             Build(BuiltInEmailTemplateNames.TicketConfirmation,
                 resourceKey:  "ticket"),
+            Build(BuiltInEmailTemplateNames.WaitlistConfirmation,
+                resourceKey:  "waitlist-confirmation"),
             Build(BuiltInEmailTemplateNames.Reconfirmation,
                 resourceKey:  "reconfirm"),
             Build(BuiltInEmailTemplateNames.Cancellation,

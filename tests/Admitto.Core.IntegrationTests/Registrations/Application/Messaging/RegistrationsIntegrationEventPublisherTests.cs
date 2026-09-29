@@ -35,6 +35,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var registrationId = RegistrationId.New();
 
         var earlyBirdId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
         var domainEvent = new AttendeeRegisteredDomainEvent(
             teamId,
             eventId,
@@ -43,6 +44,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             FirstName.From("Bob"),
             LastName.From("Smith"),
             [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])],
+            [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [])],
             DateTimeOffset.UtcNow);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
@@ -55,6 +57,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.FirstName.ShouldBe("Bob");
         evt.LastName.ShouldBe("Smith");
         evt.Tickets.ShouldHaveSingleItem().Id.ShouldBe(earlyBirdId.Value);
+        evt.WaitlistedTickets.ShouldHaveSingleItem().ShouldBe(new TicketTypeItem(workshopId.Value, "Workshop"));
     }
 
     // Given an OtpCodeRequested domain event
@@ -293,6 +296,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var changedAt = DateTimeOffset.UtcNow;
 
         var vipId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
         var domainEvent = new TicketsChangedDomainEvent(
             teamId,
             eventId,
@@ -302,6 +306,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             LastName.From("Adams"),
             [],
             [new TicketTypeSnapshot(vipId, TicketTypeName.From("VIP"), [])],
+            [],
+            [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [])],
             changedAt);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
@@ -315,6 +321,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.FirstName.ShouldBe("Eve");
         evt.LastName.ShouldBe("Adams");
         evt.NewTickets.ShouldHaveSingleItem().Id.ShouldBe(vipId.Value);
+        evt.NewWaitlistedTickets.ShouldHaveSingleItem().ShouldBe(new TicketTypeItem(workshopId.Value, "Workshop"));
         evt.ChangedAt.ShouldBe(changedAt);
     }
 

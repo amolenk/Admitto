@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your {{ event_name }} Ticket</title>
+    <title>You're on the {{ event_name }} waitlist</title>
 </head>
 
 <body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: {{ font_family }};">
@@ -11,29 +11,12 @@
 <div style="width: 560px; line-height: 1.5; background-color: #ffffff; margin: 20px auto; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 
     <div>
-        <h1 style="font-size: 24px; font-weight: bold; color: {{ accent_color }}; margin-top: 0; padding-bottom: 10px;">Your {{ event_name }}
-            Ticket</h1>
+        <h1 style="font-size: 24px; font-weight: bold; color: {{ accent_color }}; margin-top: 0; padding-bottom: 10px;">You're on the {{ event_name }} waitlist</h1>
 
         <p style="margin-top: 0;">Hi {{ first_name }},</p>
-        <p>Your registration has been confirmed. Here's your ticket for <strong>{{ event_name }}</strong>!</p>
+        <p>You don't have a confirmed ticket for <strong>{{ event_name }}</strong> yet, but you're on the waitlist.</p>
     </div>
 
-    <div style="text-align: center; margin: 30px 0;">
-        <img src="{{ qrcode_link }}" alt="Your QR Code Ticket"
-             style="width: 200px; height: 200px; border: 2px solid #ddd; border-radius: 10px; padding: 10px; background: #ffffff;"/>
-        <p style="margin-top: 10px; font-size: 14px; color: #666;">Show this QR code at the entrance</p>
-    </div>
-
-    {{ if ticket_types && ticket_types.size > 0 }}
-    <div style="margin-bottom: 20px;">
-        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Your confirmed ticket type(s)</h2>
-        <ul style="margin: 0; padding-left: 20px;">
-            {{ for ticket_type in ticket_types }}
-            <li>{{ ticket_type }}</li>
-            {{ end }}
-        </ul>
-    </div>
-    {{ end }}
     {{ if waitlisted_ticket_types && waitlisted_ticket_types.size > 0 }}
     <div style="margin-bottom: 20px;">
         <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">You're on the waitlist for</h2>
@@ -42,14 +25,13 @@
             <li>{{ ticket_type }}</li>
             {{ end }}
         </ul>
-        <p style="font-size: 14px; color: #666;">Your place on a waitlist is not a confirmed ticket. We'll email you if a spot opens up.</p>
     </div>
     {{ end }}
-        <p>You can present this QR code on your mobile device or bring a printed copy to the event.</p>
+    <p>If a spot opens up, we'll email you an offer you can claim within a limited time.</p>
 
     <div style="border-top: 1px solid #ddd; margin-top: 20px;">
         <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Modify/Cancel your Registration</h2>
-        <p>Need to make changes or cancel? Manage your registration on the event website.</p>
+        <p>Need to make changes or leave the waitlist? Manage your registration on the event website.</p>
         <p style="margin-top: 10px;">
             <a href="{{ edit_registration_link }}"
                style="background-color: {{ accent_color }}; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">
@@ -67,7 +49,6 @@
                 href="{{ public_event_link }}" target="_blank" rel="noopener noreferrer"
                 style="color: {{ accent_color }}; text-decoration: underline;">our website</a>.</p>
 
-        <p>We look forward to seeing you there!</p>
         <p>Best regards,<br>The {{ team_name }} Team</p>
     </div>
 

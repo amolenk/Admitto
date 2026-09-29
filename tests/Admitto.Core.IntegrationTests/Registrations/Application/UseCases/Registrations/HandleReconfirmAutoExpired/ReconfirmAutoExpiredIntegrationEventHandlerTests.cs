@@ -213,6 +213,8 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
                 LastName.From("Attendee"),
                 registration.AdditionalDetails,
                 [new TicketTypeSnapshot(fixture.TicketTypeId, TicketTypeName.From("General"), [])],
+                [],
+                [],
                 DateTimeOffset.UtcNow);
         });
 
@@ -329,6 +331,8 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
             var registration = db.Registrations.First(r => r.Id == fixture.RegistrationId);
             registration.ChangeTickets(
                 [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Changed"), [])],
+                [],
+                [],
                 DateTimeOffset.UtcNow);
         });
 
