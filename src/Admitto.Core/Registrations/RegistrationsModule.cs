@@ -47,8 +47,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetPub
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetTicketTypes.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.GetWaitlistDetails.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.JoinWaitlist.PartnerApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.LeaveWaitlist.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.RemoveWaitlistEntry.AdminApi;
 
 namespace Amolenk.Admitto.Core.Registrations;
@@ -136,8 +134,6 @@ public static class RegistrationsModule
             .MapUpdatePartnerRegistration()
             .MapPartnerRequestTicketConfirmationResend()
             .MapGetPublicTicketTypes()
-            .MapJoinWaitlist()
-            .MapLeaveWaitlist()
             .MapGetPublicCouponDetails();
 
         return group;
