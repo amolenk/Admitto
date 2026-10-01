@@ -159,17 +159,39 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
         await fixture.SetupAsync(Environment, teamId, eventId);
 
         var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
-            new WaitlistOfferExpiredIntent(teamId, eventId, "Conference Pass"),
+            new WaitlistOfferExpiredIntent(teamId, eventId, "Conference Pass", RegistrationClosed: false),
             testContext.CancellationToken);
 
         rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistOfferExpired);
         rendered.Subject.ShouldBe("Your waitlist offer for DevConf has expired");
         rendered.TextBody.ShouldContain("Ticket type: Conference Pass");
         rendered.TextBody.ShouldContain("was not claimed in time");
+        rendered.TextBody.ShouldContain("register again");
         rendered.TextBody.ShouldNotContain("coupon code:");
         rendered.HtmlBody.ShouldContain("Your waitlist offer for DevConf has expired");
         rendered.HtmlBody.ShouldContain("Conference Pass");
         rendered.HtmlBody.ShouldNotContain("Your spot at DevConf is ready");
+    }
+
+    // Given an attendee whose waitlist offer lapsed after registration closed
+    // When a waitlist-offer-expired email is created
+    // Then it says registration has closed instead of inviting them to register again
+    [TestMethod]
+    public async ValueTask ComposeAsync_WaitlistOfferExpiredAfterClose_DoesNotInviteToRegisterAgain()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var fixture = TransactionalEmailComposerFixture.CompleteEventContext();
+        await fixture.SetupAsync(Environment, teamId, eventId);
+
+        var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
+            new WaitlistOfferExpiredIntent(teamId, eventId, "Conference Pass", RegistrationClosed: true),
+            testContext.CancellationToken);
+
+        rendered.TextBody.ShouldContain("Registration for this event has closed.");
+        rendered.TextBody.ShouldNotContain("register again");
+        rendered.HtmlBody.ShouldContain("Registration for this event has closed.");
+        rendered.HtmlBody.ShouldNotContain("register again");
     }
 
     // Given an attendee who was only on a waitlist has cancelled their registration

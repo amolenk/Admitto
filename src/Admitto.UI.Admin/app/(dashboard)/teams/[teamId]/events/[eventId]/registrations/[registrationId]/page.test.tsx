@@ -296,6 +296,37 @@ describe("AttendeeDetailPage", () => {
         expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
     });
 
+    // Given a registration that is only on a waitlist
+    // When the detail page renders
+    // Then the hero badge and the Status row both say "Waitlisted"
+    it("shows the Waitlisted badge and status for a waitlisted attendee", async () => {
+        mockApi({ detail: registrationDetail({ status: "waitlisted", tickets: [] }) });
+
+        renderPage();
+
+        const heading = await screen.findByRole("heading", { level: 1 });
+        const badgeRow = heading.parentElement!;
+        expect(within(badgeRow).getByText("Waitlisted")).toBeInTheDocument();
+        expect(within(badgeRow).queryByText("Registered")).not.toBeInTheDocument();
+        const statusRow = screen.getByText("Status", { selector: "dt" }).parentElement!;
+        expect(within(statusRow).getByText("Waitlisted")).toBeInTheDocument();
+    });
+
+    // Given a registration that is only on a waitlist
+    // When an organizer views it
+    // Then they can cancel it and change its tickets, but there is no ticket to check in, reconfirm or resend
+    it("offers cancel and change tickets for a waitlisted attendee, but no ticket actions", async () => {
+        mockApi({ detail: registrationDetail({ status: "waitlisted", tickets: [] }) });
+
+        renderPage();
+
+        expect(await screen.findByRole("button", { name: "Cancel registration" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Change" })).toBeEnabled();
+        expect(screen.queryByRole("button", { name: "Check in" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Resend ticket email" })).not.toBeInTheDocument();
+    });
+
     // Given a cancelled registration that had previously been reconfirmed
     // When the status badge renders
     // Then only the "Cancelled" badge is shown, not "Reconfirmed"

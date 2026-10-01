@@ -199,7 +199,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.TicketedEventId.Value,
             domainEvent.RecipientEmail.Value,
             domainEvent.CouponCode.Value.ToString(),
-            domainEvent.TicketTypeName));
+            domainEvent.TicketTypeName,
+            domainEvent.RegistrationClosed));
 
         return ValueTask.CompletedTask;
     }

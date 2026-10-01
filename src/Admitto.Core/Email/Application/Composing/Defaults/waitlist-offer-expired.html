@@ -23,7 +23,11 @@
         <p style="margin: 0; font-size: 13px; color: #555;">Ticket type: <strong>{{ ticket_type_name }}</strong></p>
     </div>
 
+    {{ if registration_closed }}
+    <p>Your coupon can no longer be used. Registration for this event has closed.</p>
+    {{ else }}
     <p>Your coupon can no longer be used. If you'd still like to attend, you're welcome to register again while spots are available.</p>
+    {{ end }}
 
     <div style="border-top: 1px solid #ddd; margin-top: 20px; padding-top: 16px; font-size: 13px; color: #666;">
         <p>For more details about the event, visit <a

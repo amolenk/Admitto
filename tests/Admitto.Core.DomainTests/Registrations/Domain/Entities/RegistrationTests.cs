@@ -471,6 +471,31 @@ public sealed class RegistrationTests
         result.Error.ShouldMatch(Registration.Errors.CannotResetActive);
     }
 
+    // Given a waitlisted registration holding no confirmed tickets
+    // When it is reset with confirmed tickets
+    // Then it becomes Registered on a new registration cycle and raises an attendee-registered event
+    [TestMethod]
+    public void Reset_WaitlistedRegistration_BecomesRegistered()
+    {
+        var waitlisted = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Masterclass"), []);
+        var sut = Registration.Create(
+            DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, [],
+            waitlistedTickets: [waitlisted]);
+        var cycleId = sut.RegistrationCycleId;
+        ClearEvents(sut);
+        var ticket = new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), []);
+
+        sut.Reset(
+            FirstName.From("Reset"), LastName.From("User"), [ticket], AdditionalDetails.Empty, DateTimeOffset.UtcNow,
+            [waitlisted]);
+
+        sut.Status.ShouldBe(RegistrationStatus.Registered);
+        sut.Tickets.ShouldHaveSingleItem().Id.ShouldBe(ticket.Id);
+        sut.RegistrationCycleId.ShouldNotBe(cycleId);
+        var registered = sut.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().ShouldHaveSingleItem();
+        registered.WaitlistedTickets.ShouldHaveSingleItem().Id.ShouldBe(waitlisted.Id);
+    }
+
     // Given a registration that was reconfirmed and then cancelled
     // When it is reset
     // Then its cancellation reason and reconfirmation state are cleared

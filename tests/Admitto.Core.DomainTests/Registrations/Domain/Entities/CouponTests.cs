@@ -396,4 +396,36 @@ public sealed class CouponTests
         var property = typeof(Coupon).GetProperty(nameof(Coupon.RedeemedAt))!;
         property.SetValue(coupon, redeemedAt);
     }
+
+    // Given an active coupon
+    // When it is expired early
+    // Then it is Expired from then on and can no longer be redeemed
+    [TestMethod]
+    public void Expire_ActiveCoupon_CannotBeRedeemed()
+    {
+        var sut = new CouponBuilder().Build();
+        var now = CouponBuilder.DefaultNow.AddDays(1);
+
+        sut.Expire(now);
+
+        sut.GetStatus(now).ShouldBe(CouponStatus.Expired);
+        var result = ErrorResult.Capture(() =>
+            sut.Redeem(CouponBuilder.DefaultEmail, [CouponBuilder.DefaultTicketTypeId], now));
+        result.Error.ShouldMatch(Coupon.Errors.Expired);
+    }
+
+    // Given a coupon that has already been redeemed
+    // When it is expired
+    // Then it stays redeemed
+    [TestMethod]
+    public void Expire_RedeemedCoupon_StaysRedeemed()
+    {
+        var sut = new CouponBuilder().Build();
+        sut.Redeem(CouponBuilder.DefaultEmail, [CouponBuilder.DefaultTicketTypeId], CouponBuilder.DefaultNow);
+
+        sut.Expire(CouponBuilder.DefaultNow.AddDays(1));
+
+        sut.GetStatus(CouponBuilder.DefaultNow.AddDays(1)).ShouldBe(CouponStatus.Redeemed);
+    }
+
 }

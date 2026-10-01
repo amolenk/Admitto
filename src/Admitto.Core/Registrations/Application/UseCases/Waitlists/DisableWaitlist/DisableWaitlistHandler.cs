@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.Disa
 
 /// <summary>
 /// Applies an explicit disable of a ticket type's waitlist to its <see cref="Domain.Entities.Waitlist"/>: slots
-/// freed by the same update are offered to the front of the queue first, then everyone still waiting is removed
+/// freed by the same update are offered to the front of the queue first (unless registration has closed), then everyone still waiting is removed
 /// without an email. Outstanding coupons stay valid until they are redeemed or expire.
 /// </summary>
 internal sealed class DisableWaitlistHandler(
@@ -36,7 +36,10 @@ internal sealed class DisableWaitlistHandler(
         var catalog = await writeStore.TicketCatalogs.GetAsync(
             c => c.Id == eventId && c.TeamId == teamId,
             cancellationToken);
-        var coupons = waitlist.Disable(command.FreedSlots, ticketedEvent, catalog, timeProvider.GetUtcNow());
+        // Once registration has closed, the freed slots aren't offered to anyone.
+        var utcNow = timeProvider.GetUtcNow();
+        var freedSlots = ticketedEvent.HasRegistrationClosed(utcNow) ? 0 : command.FreedSlots;
+        var coupons = waitlist.Disable(freedSlots, ticketedEvent, catalog, utcNow);
 
         await writeStore.Coupons.AddRangeAsync(coupons, cancellationToken);
     }

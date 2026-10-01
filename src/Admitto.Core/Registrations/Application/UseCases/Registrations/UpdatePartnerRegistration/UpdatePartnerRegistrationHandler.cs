@@ -44,7 +44,6 @@ internal sealed class UpdatePartnerRegistrationHandler(
             throw new BusinessRuleViolationException(TicketedEvent.Errors.EventNotActive);
 
         var now = timeProvider.GetUtcNow();
-        ticketedEvent.EnsureRegistrationOpen(now);
         var additionalDetails = AdditionalDetails.Validate(
             command.AdditionalDetails,
             ticketedEvent.AdditionalDetailSchema);
@@ -87,6 +86,17 @@ internal sealed class UpdatePartnerRegistrationHandler(
         }
 
         var toConfirmPublicly = toConfirm.Except(couponGrantedIds).ToList();
+
+        // A coupon that bypasses the registration window (e.g. a waitlist offer issued before registration closed)
+        // can still be claimed after close, but only for what it grants: any other ticket or waitlist change in the
+        // same request still needs the window to be open.
+        var windowBypassed = coupon?.BypassRegistrationWindow == true
+                             && toConfirmPublicly.Count == 0
+                             && toReleaseConfirmed.Count == 0
+                             && toWaitlistJoin.Count == 0
+                             && toWaitlistLeave.Count == 0;
+        if (!windowBypassed)
+            ticketedEvent.EnsureRegistrationOpen(now);
 
         RegisterAttendeeSelfServiceHandler.EnsureRequestedTicketStatesMatch(catalog, toConfirmPublicly, toWaitlistJoin);
         RegisterAttendeeSelfServiceHandler.ValidateWaitlistRequests(catalog, toWaitlistJoin);

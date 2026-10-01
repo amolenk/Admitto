@@ -13,7 +13,7 @@ const get = vi.mocked(apiClient.get);
 const props = { teamId: "team", eventId: "event", startsAt: "2027-06-12T18:00:00Z", timeZone: "UTC" };
 const SUMMARY_URL = "/api/teams/team/events/event/registrations/check-in/summary";
 
-function response(outcome: "success" | "alreadyCheckedIn" | "cancelled" | "invalidForEvent" | "eventNotActive") {
+function response(outcome: "success" | "alreadyCheckedIn" | "cancelled" | "waitlisted" | "invalidForEvent" | "eventNotActive") {
     return { outcome, registrationId: "r1", name: "Jane Doe", ticketSelections: [{ id: "t1", name: "General" }], checkedInAt: "2027-06-12T18:01:00Z" };
 }
 
@@ -150,6 +150,7 @@ describe("check-in scanner", () => {
     it.each([
         ["alreadyCheckedIn", /Already checked in/],
         ["cancelled", /cancelled/i],
+        ["waitlisted", /on the waitlist/],
         ["invalidForEvent", /not valid for this event/],
         ["eventNotActive", /not active/],
     ] as const)("submit_%s_outcomeRemainsUntilDismissed", async (outcome, message) => {
@@ -202,6 +203,34 @@ describe("check-in scanner", () => {
             "href",
             "/teams/team/events/event/registrations?create=1",
         );
+    });
+
+    // Given a registration that is only on a waitlist is scanned
+    // When the waitlisted outcome is displayed
+    // Then the operator sees that the attendee has no ticket, not a network error to retry
+    it("submit_waitlistedOutcome_showsNoTicketMessage", async () => {
+        post.mockResolvedValueOnce({ ...response("waitlisted"), ticketSelections: [], checkedInAt: null });
+        const fake = fakeDecoder();
+        renderWithProviders(<CheckInScanner {...props} decoder={fake.decoder} />);
+
+        await act(async () => fake.scan("waitlisted-credential"));
+
+        expect(screen.getByRole("alert")).toHaveTextContent("Jane Doe is on the waitlist and has no ticket to check in.");
+        expect(screen.queryByText(/Network error/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    });
+
+    // Given manual lookup returns a registration that is only on a waitlist
+    // When the candidates are listed
+    // Then it is labelled Waitlisted and cannot be selected for check-in
+    it("lookup_waitlistedCandidate_isLabelledAndNotSelectable", async () => {
+        get.mockResolvedValueOnce([{ registrationId: "r-waiting", name: "Wait Person", email: "wait@example.com", state: "waitlisted", checkedInAt: null }]);
+        const { user } = renderWithProviders(<CheckInScanner {...props} decoder={fakeDecoder().decoder} />);
+        await user.type(screen.getByRole("textbox", { name: "Manual search" }), "wait");
+
+        const candidate = await screen.findByRole("button", { name: /Wait Person/ });
+        expect(candidate).toHaveTextContent("wait@example.com · Waitlisted");
+        expect(candidate).toBeDisabled();
     });
 
     // Given a matching registration returned by manual lookup

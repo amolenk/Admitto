@@ -42,7 +42,8 @@ internal sealed record WaitlistOfferIntent(
 internal sealed record WaitlistOfferExpiredIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
-    string TicketTypeName)
+    string TicketTypeName,
+    bool RegistrationClosed)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal abstract record RegistrationCancellationIntent(

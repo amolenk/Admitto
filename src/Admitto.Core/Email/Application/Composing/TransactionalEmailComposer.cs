@@ -79,7 +79,8 @@ internal sealed class TransactionalEmailComposer(
                 {
                     ["event_name"] = context.EventName,
                     ["event_website"] = context.WebsiteUrl,
-                    ["ticket_type_name"] = value.TicketTypeName
+                    ["ticket_type_name"] = value.TicketTypeName,
+                    ["registration_closed"] = value.RegistrationClosed
                 }),
             AttendeeRequestCancellationIntent value => (
                 BuiltInEmailTemplateNames.Cancellation,

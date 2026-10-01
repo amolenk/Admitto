@@ -352,7 +352,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        sut.ExpireCoupon(coupon.Id, coupon, catalog);
+        sut.ExpireCoupon(coupon.Id, coupon, catalog, registrationClosed: false);
 
         // Assert
         sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Expired);
@@ -383,7 +383,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon.Id, coupon, catalog));
+        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon.Id, coupon, catalog, registrationClosed: false));
 
         // Assert
         result.Error.ShouldMatch(WaitlistCoupon.Errors.CouponNotExpirable);
@@ -404,7 +404,7 @@ public sealed class WaitlistTests
         var catalogWithoutTicketType = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
 
         // Act
-        sut.ExpireCoupon(coupon.Id, coupon, catalogWithoutTicketType);
+        sut.ExpireCoupon(coupon.Id, coupon, catalogWithoutTicketType, registrationClosed: false);
 
         // Assert
         sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Expired);
@@ -425,7 +425,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        sut.ExpireCoupon(couponId, coupon: null, catalog);
+        sut.ExpireCoupon(couponId, coupon: null, catalog, registrationClosed: false);
 
         // Assert
         TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(0);
@@ -447,7 +447,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        sut.ExpireCoupon(coupon.Id, coupon, catalog);
+        sut.ExpireCoupon(coupon.Id, coupon, catalog, registrationClosed: false);
 
         // Assert
         sut.GetDomainEvents().OfType<WaitlistExhaustedDomainEvent>().ShouldHaveSingleItem();
@@ -547,14 +547,77 @@ public sealed class WaitlistTests
         TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(1);
 
         // Act
-        sut.ExpireCoupon(manual.Id, manual, catalog);
+        sut.ExpireCoupon(manual.Id, manual, catalog, registrationClosed: false);
         var heldAfterVipExpiry = TicketTypeOf(catalog).WaitlistHeldCapacity;
-        sut.ExpireCoupon(automatic.Id, automatic, catalog);
+        sut.ExpireCoupon(automatic.Id, automatic, catalog, registrationClosed: false);
 
         // Assert
         heldAfterVipExpiry.ShouldBe(1);
         TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(0);
         sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().Count().ShouldBe(2);
+    }
+
+    // Given an outstanding automatic offer on a ticket type in waitlist mode
+    // When the offer is withdrawn
+    // Then it expires and gives back its hold without telling the recipient
+    [TestMethod]
+    public void WithdrawCoupon_AutomaticOffer_ExpiresAndReleasesHoldWithoutExpiredEvent()
+    {
+        // Arrange — one public seat, sold out, then freed and offered
+        var catalog = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        catalog.AddTicketType(DefaultTicketTypeId, TicketTypeName.From("Conference Pass"), [], 1, waitlistEnabled: true);
+        var tickets = catalog.Claim([DefaultTicketTypeId], ClaimMode.Public);
+        catalog.Release(tickets);
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, catalog);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow)!;
+        sut.ClearDomainEvents();
+        catalog.ClearDomainEvents();
+
+        // Act
+        var withdrawn = sut.WithdrawCoupon(coupon.Id, catalog);
+
+        // Assert
+        withdrawn.ShouldBeTrue();
+        sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Expired);
+        TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(0);
+        sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldBeEmpty();
+        catalog.GetDomainEvents().OfType<WaitlistCapacityAvailableDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    // Given a waitlist coupon that has already been redeemed
+    // When it is withdrawn
+    // Then nothing changes
+    [TestMethod]
+    public void WithdrawCoupon_AlreadyRedeemed_ReturnsFalse()
+    {
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        sut.ApplyCouponRedemption(coupon.Id, RedeemerEmail, _catalog);
+
+        var withdrawn = sut.WithdrawCoupon(coupon.Id, _catalog);
+
+        withdrawn.ShouldBeFalse();
+        sut.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
+    }
+
+    // Given an outstanding waitlist offer
+    // When it lapses after registration has closed
+    // Then the expired-offer event says registration has closed
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void ExpireCoupon_RegistrationClosedOrNot_FlagsExpiredEvent(bool registrationClosed)
+    {
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+
+        sut.ExpireCoupon(coupon.Id, coupon, _catalog, registrationClosed);
+
+        sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>()
+            .ShouldHaveSingleItem().RegistrationClosed.ShouldBe(registrationClosed);
     }
 
     // Given a waitlist with two active entries added at different times
@@ -744,7 +807,7 @@ public sealed class WaitlistTests
         var sut = CreateWaitlist();
         var coupon = IssueCoupon(sut);
         var couponId = coupon.Id;
-        sut.ExpireCoupon(coupon.Id, coupon, _catalog);
+        sut.ExpireCoupon(coupon.Id, coupon, _catalog, registrationClosed: false);
 
         // Act & Assert — the EF Core concurrency token (xmin) is the first guard; this is the
         // fallback guard for in-memory consistency.
@@ -783,10 +846,10 @@ public sealed class WaitlistTests
         // Arrange
         var sut = CreateWaitlist();
         var coupon = IssueCoupon(sut);
-        sut.ExpireCoupon(coupon.Id, coupon, _catalog);
+        sut.ExpireCoupon(coupon.Id, coupon, _catalog, registrationClosed: false);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon.Id, coupon, _catalog));
+        var result = ErrorResult.Capture(() => sut.ExpireCoupon(coupon.Id, coupon, _catalog, registrationClosed: false));
 
         // Assert
         result.Error.ShouldMatch(WaitlistCoupon.Errors.CouponNotExpirable);
@@ -803,7 +866,7 @@ public sealed class WaitlistTests
         var foreignCoupon = IssueCoupon(CreateWaitlist());
 
         // Act
-        var result = ErrorResult.Capture(() => sut.ExpireCoupon(foreignCoupon.Id, foreignCoupon, _catalog));
+        var result = ErrorResult.Capture(() => sut.ExpireCoupon(foreignCoupon.Id, foreignCoupon, _catalog, registrationClosed: false));
 
         // Assert
         result.Error.ShouldMatch(Waitlist.Errors.CouponNotFound);

@@ -22,6 +22,7 @@ internal sealed class CheckInFixture
     public Guid OtherEventId { get; private set; }
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public RegistrationId CancelledRegistrationId { get; private set; } = RegistrationId.New();
+    public RegistrationId WaitlistedRegistrationId { get; private set; } = RegistrationId.New();
     public RegistrationId OtherEventRegistrationId { get; private set; } = RegistrationId.New();
 
     private CheckInFixture(
@@ -68,6 +69,13 @@ internal sealed class CheckInFixture
         var registration = CreateRegistration(team.Id, eventId, "alice@example.com", "Alice", "Attendee", ticketTypeId);
         var cancelled = CreateRegistration(team.Id, eventId, "cancelled@example.com", "Cancelled", "Attendee", ticketTypeId);
         cancelled.Cancel(CancellationReason.AttendeeRequest);
+        var waitlisted = Registration.Create(
+            team.Id,
+            eventId,
+            EmailAddress.From("waitlisted@example.com"),
+            FirstName.From("Waiting"),
+            LastName.From("Attendee"),
+            []);
         var otherRegistration = CreateRegistration(team.Id, otherEventId, "other@example.com", "Other", "Event", ticketTypeId);
 
         if (_summary)
@@ -103,7 +111,7 @@ internal sealed class CheckInFixture
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.AddRange(ticketedEvent, otherEvent);
-            db.Registrations.AddRange(registration, cancelled, otherRegistration);
+            db.Registrations.AddRange(registration, cancelled, waitlisted, otherRegistration);
 
             if (_summary)
             {
@@ -129,6 +137,7 @@ internal sealed class CheckInFixture
 
         RegistrationId = registration.Id;
         CancelledRegistrationId = cancelled.Id;
+        WaitlistedRegistrationId = waitlisted.Id;
         OtherEventRegistrationId = otherRegistration.Id;
     }
 

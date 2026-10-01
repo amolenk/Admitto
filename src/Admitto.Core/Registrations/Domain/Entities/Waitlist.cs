@@ -259,21 +259,45 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// <paramref name="coupon"/> only supplies that email's recipient and code; when it or the ticket type
     /// no longer exists there is nothing to send, so the coupon is expired without raising the event.
     /// </summary>
-    public void ExpireCoupon(CouponId couponId, Coupon? coupon, TicketCatalog catalog)
+    /// <remarks>
+    /// <paramref name="registrationClosed"/> tells the recipient's email not to invite them to register again.
+    /// </remarks>
+    public void ExpireCoupon(CouponId couponId, Coupon? coupon, TicketCatalog catalog, bool registrationClosed)
     {
         var waitlistCoupon = FindCoupon(couponId);
-        waitlistCoupon.Expire();
-        if (waitlistCoupon.Origin == WaitlistCouponOrigin.Automatic)
-            catalog.ReleaseWaitlistHold(Id);
+        ExpireAndReleaseHold(waitlistCoupon, catalog);
 
         var ticketType = catalog.GetTicketType(Id);
         if (coupon is not null && ticketType is not null)
         {
             AddDomainEvent(new WaitlistCouponExpiredDomainEvent(
-                TeamId, EventId, ticketType.Id, coupon.Email, coupon.Code, ticketType.Name.Value));
+                TeamId, EventId, ticketType.Id, coupon.Email, coupon.Code, ticketType.Name.Value, registrationClosed));
         }
 
         CheckExhausted();
+    }
+
+    /// <summary>
+    /// Withdraws an outstanding offer without telling its recipient, e.g. because an admin registered them for this
+    /// ticket type: the coupon expires and an automatic offer gives back its hold on the <paramref name="catalog"/>,
+    /// so the seat can go to the next person waiting. Returns <c>false</c> when the coupon is not outstanding.
+    /// </summary>
+    public bool WithdrawCoupon(CouponId couponId, TicketCatalog catalog)
+    {
+        var waitlistCoupon = _coupons.FirstOrDefault(c => c.Id == couponId);
+        if (waitlistCoupon?.Status != WaitlistCouponStatus.Issued)
+            return false;
+
+        ExpireAndReleaseHold(waitlistCoupon, catalog);
+        CheckExhausted();
+        return true;
+    }
+
+    private void ExpireAndReleaseHold(WaitlistCoupon waitlistCoupon, TicketCatalog catalog)
+    {
+        waitlistCoupon.Expire();
+        if (waitlistCoupon.Origin == WaitlistCouponOrigin.Automatic)
+            catalog.ReleaseWaitlistHold(Id);
     }
 
     private WaitlistCoupon FindCoupon(CouponId couponId)

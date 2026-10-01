@@ -25,7 +25,8 @@ internal sealed class WaitlistCouponExpiredIntegrationEventHandler(
         var rendered = await composer.ComposeAsync(new WaitlistOfferExpiredIntent(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            integrationEvent.TicketTypeName), cancellationToken);
+            integrationEvent.TicketTypeName,
+            integrationEvent.RegistrationClosed), cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,
             new TransactionalEmailDelivery(

@@ -59,6 +59,14 @@ internal sealed class RegisterAttendeeWithCouponHandler(
 
         var tickets = catalog.ClaimWithCoupon(ticketTypeIds, coupon);
 
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == eventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+        ApplyRedemptionToWaitlists(waitlists, catalog, coupon, email, couponGrantedIds);
+
+        // A waitlisted attendee claiming their offer keeps their other waitlist entries.
+        var waitlistedTickets = DescribeActiveWaitlistEntries(waitlists, catalog, email);
+
         Registration registration;
         if (existingRegistration is null)
         {
@@ -70,22 +78,27 @@ internal sealed class RegisterAttendeeWithCouponHandler(
                 lastName,
                 tickets,
                 additionalDetails,
-                now);
+                now,
+                waitlistedTickets);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
         else
         {
             registration = existingRegistration;
-            registration.Reset(firstName, lastName, tickets, additionalDetails, now);
+            registration.Reset(firstName, lastName, tickets, additionalDetails, now, waitlistedTickets);
         }
-
-        var waitlists = await writeStore.Waitlists
-            .Where(w => w.EventId == eventId && w.TeamId == teamId)
-            .ToListAsync(cancellationToken);
-        ApplyRedemptionToWaitlists(waitlists, catalog, coupon, email, couponGrantedIds);
 
         return registration.Id.Value;
     }
+
+    /// <summary>
+    /// Describes the ticket types the email currently holds an active waitlist entry for.
+    /// </summary>
+    internal static IReadOnlyList<TicketTypeSnapshot> DescribeActiveWaitlistEntries(
+        IEnumerable<Waitlist> eventWaitlists,
+        TicketCatalog catalog,
+        EmailAddress email) =>
+        catalog.DescribeTicketTypes(eventWaitlists.Where(w => w.HasActiveEntry(email)).Select(w => w.Id));
 
     /// <summary>
     /// Redemption-time waitlist cleanup shared by every coupon redemption path: for each ticket type the

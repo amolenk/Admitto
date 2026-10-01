@@ -121,7 +121,7 @@ export type ChangeTeamMembershipRoleHttpRequest = {
     newRole: TeamMembershipRoleDto;
 };
 
-export type CheckInCandidateState = 'eligible' | 'checkedIn' | 'cancelled';
+export type CheckInCandidateState = 'eligible' | 'checkedIn' | 'cancelled' | 'waitlisted';
 
 export type CheckInHttpRequest = {
     credential: string;
@@ -135,7 +135,7 @@ export type CheckInLookupCandidateDto = {
     checkedInAt: null | string;
 };
 
-export type CheckInOutcome = 'success' | 'alreadyCheckedIn' | 'cancelled' | 'invalidForEvent' | 'eventNotActive';
+export type CheckInOutcome = 'success' | 'alreadyCheckedIn' | 'cancelled' | 'waitlisted' | 'invalidForEvent' | 'eventNotActive';
 
 export type CheckInResponse = {
     outcome: CheckInOutcome;

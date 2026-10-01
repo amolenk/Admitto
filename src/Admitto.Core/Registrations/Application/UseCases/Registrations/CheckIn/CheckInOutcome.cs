@@ -5,6 +5,7 @@ public enum CheckInOutcome
     Success,
     AlreadyCheckedIn,
     Cancelled,
+    Waitlisted,
     InvalidForEvent,
     EventNotActive
 }

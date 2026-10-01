@@ -15,7 +15,7 @@ import {
     RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
+import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, RegistrationStatus, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
 import { formatInEventZone } from "@/lib/time-zones";
@@ -71,6 +71,12 @@ async function fetchTicketTypes(teamId: string, eventId: string): Promise<Ticket
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const STATUS_LABELS: Record<RegistrationStatus, string> = {
+    registered: "Registered",
+    waitlisted: "Waitlisted",
+    cancelled: "Cancelled",
+};
 
 function attendeeFullName(r: RegistrationDetailDto): string {
     const full = [r.firstName, r.lastName].filter(Boolean).join(" ").trim();
@@ -318,7 +324,7 @@ export default function AttendeeDetailPage() {
             const response = await apiClient.post<CheckInResponse>(`/api/teams/${teamId}/events/${eventId}/registrations/check-in`, { credential: registrationId });
             const result = mapCheckInOutcome(response);
             if (result.kind !== "success") {
-                toast.error(result.kind === "duplicate" ? `Already checked in${response.checkedInAt && eventQuery.data ? ` at ${formatInEventZone(response.checkedInAt, eventQuery.data.timeZone, "HH:mm")}` : ""}` : result.kind === "cancelled" ? "Cancelled — Create Registration is required." : result.kind === "inactive" ? "This event is not active." : "This attendee is not valid for this event.");
+                toast.error(result.kind === "duplicate" ? `Already checked in${response.checkedInAt && eventQuery.data ? ` at ${formatInEventZone(response.checkedInAt, eventQuery.data.timeZone, "HH:mm")}` : ""}` : result.kind === "cancelled" ? "Cancelled — Create Registration is required." : result.kind === "waitlisted" ? "Waitlisted — this attendee has no ticket to check in." : result.kind === "inactive" ? "This event is not active." : "This attendee is not valid for this event.");
                 return;
             }
             await queryClient.invalidateQueries({ queryKey: ["registration-detail", teamId, eventId, registrationId] });
@@ -436,6 +442,10 @@ export default function AttendeeDetailPage() {
                                             <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
                                                 Cancelled
                                             </Badge>
+                                        ) : registration.status === "waitlisted" ? (
+                                            <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10">
+                                                Waitlisted
+                                            </Badge>
                                         ) : registration.checkedInAt ? (
                                             <Badge variant="outline" className="text-success border-success/30 bg-success/10">
                                                 Checked in
@@ -466,9 +476,9 @@ export default function AttendeeDetailPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 flex-none">
-                                {registration.status === "registered" && (
+                                {registration.status !== "cancelled" && (
                                     <>
-                                        {canManageAttendees && <Button
+                                        {registration.status === "registered" && canManageAttendees && <Button
                                             variant="outline"
                                             size="sm"
                                             disabled={isResendingTicketEmail}
@@ -477,8 +487,8 @@ export default function AttendeeDetailPage() {
                                             <RotateCcw className="size-3.5" />
                                             {isResendingTicketEmail ? "Requesting…" : "Resend ticket email"}
                                         </Button>}
-                                        {!registration.checkedInAt && <Button variant="outline" size="sm" onClick={() => setCheckInDialogOpen(true)}><LogIn className="size-3.5" /> Check in</Button>}
-                                        {canManageAttendees && !registration.hasReconfirmed && !registration.checkedInAt && (
+                                        {registration.status === "registered" && !registration.checkedInAt && <Button variant="outline" size="sm" onClick={() => setCheckInDialogOpen(true)}><LogIn className="size-3.5" /> Check in</Button>}
+                                        {registration.status === "registered" && canManageAttendees && !registration.hasReconfirmed && !registration.checkedInAt && (
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -539,7 +549,7 @@ export default function AttendeeDetailPage() {
                                                 {registration.id}
                                             </span>,
                                         ],
-                                        ["Status", registration.status === "registered" ? "Registered" : "Cancelled"],
+                                        ["Status", STATUS_LABELS[registration.status]],
                                         [
                                             "Reconfirmed",
                                             registration.hasReconfirmed
@@ -577,7 +587,7 @@ export default function AttendeeDetailPage() {
                                         variant="ghost"
                                         size="sm"
                                         className="text-muted-foreground"
-                                        disabled={registration.status !== "registered"}
+                                        disabled={registration.status === "cancelled"}
                                         onClick={() => {
                                             setSelectedTicketTypeIds(registration.tickets.map((t) => t.id));
                                             setChangeTicketsDialogOpen(true);

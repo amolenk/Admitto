@@ -40,11 +40,13 @@ internal sealed class LookupCheckInCandidatesHandler(IRegistrationsWriteStore wr
                 r.Id.Value,
                 $"{r.FirstName.Value} {r.LastName.Value}",
                 r.Email.Value,
-                r.Status == RegistrationStatus.Cancelled
-                    ? CheckInCandidateState.Cancelled
-                    : r.CheckedInAt is not null
-                        ? CheckInCandidateState.CheckedIn
-                        : CheckInCandidateState.Eligible,
+                r.Status switch
+                {
+                    RegistrationStatus.Cancelled => CheckInCandidateState.Cancelled,
+                    RegistrationStatus.Waitlisted => CheckInCandidateState.Waitlisted,
+                    _ when r.CheckedInAt is not null => CheckInCandidateState.CheckedIn,
+                    _ => CheckInCandidateState.Eligible
+                },
                 r.CheckedInAt))
             .ToList();
     }

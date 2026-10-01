@@ -7825,7 +7825,8 @@
         "enum": [
           "eligible",
           "checkedIn",
-          "cancelled"
+          "cancelled",
+          "waitlisted"
         ]
       },
       "CheckInHttpRequest": {
@@ -7876,6 +7877,7 @@
           "success",
           "alreadyCheckedIn",
           "cancelled",
+          "waitlisted",
           "invalidForEvent",
           "eventNotActive"
         ]

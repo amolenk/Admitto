@@ -6,7 +6,7 @@ Earlier we let you know that a spot had opened up at {{ event_name }} and sent y
 
 Ticket type: {{ ticket_type_name }}
 
-Your coupon can no longer be used. If you'd still like to attend, you're welcome to register again while spots are available.
+{{ if registration_closed }}Your coupon can no longer be used. Registration for this event has closed.{{ else }}Your coupon can no longer be used. If you'd still like to attend, you're welcome to register again while spots are available.{{ end }}
 
 For more details about the event, visit: {{ event_website }}
 

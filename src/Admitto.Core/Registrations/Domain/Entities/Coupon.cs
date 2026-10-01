@@ -63,7 +63,7 @@ public class Coupon : Aggregate<CouponId>
     public CouponStatus GetStatus(DateTimeOffset now)
     {
         if (RedeemedAt.HasValue) return CouponStatus.Redeemed;
-        if (ExpiresAt < now) return CouponStatus.Expired;
+        if (ExpiresAt <= now) return CouponStatus.Expired;
         return CouponStatus.Active;
     }
 
@@ -167,6 +167,16 @@ public class Coupon : Aggregate<CouponId>
 
         RedeemedAt = now;
         return granted;
+    }
+
+    /// <summary>
+    /// Ends an unredeemed coupon early, e.g. a waitlist offer withdrawn because an admin registered its recipient for
+    /// the ticket type. A redeemed coupon stays redeemed.
+    /// </summary>
+    public void Expire(DateTimeOffset now)
+    {
+        if (GetStatus(now) == CouponStatus.Active)
+            ExpiresAt = now;
     }
 
     /// <summary>

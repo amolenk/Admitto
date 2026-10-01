@@ -183,7 +183,13 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         if (policy is not null && policy.ClosesAt > StartsAt)
             throw new BusinessRuleViolationException(Errors.RegistrationWindowClosesAfterEventStart);
 
+        var closesLater = RegistrationPolicy is not null
+                          && (policy is null || policy.ClosesAt > RegistrationPolicy.ClosesAt);
+
         RegistrationPolicy = policy;
+
+        if (closesLater)
+            AddDomainEvent(new TicketedEventRegistrationWindowExtendedDomainEvent(TeamId, Id));
     }
 
     public void ConfigureReconfirmPolicy(TicketedEventReconfirmPolicy? policy)
@@ -259,6 +265,13 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         IsActive
         && RegistrationPolicy is not null
         && RegistrationPolicy.IsWithinWindow(now);
+
+    /// <summary>
+    /// Whether the registration window has closed at <paramref name="now"/>. Automatic waitlist offers stop then; an
+    /// event without a registration window never closes.
+    /// </summary>
+    public bool HasRegistrationClosed(DateTimeOffset now) =>
+        RegistrationPolicy is not null && now >= RegistrationPolicy.ClosesAt;
 
     /// <summary>
     /// Enforces that the registration window is currently open.

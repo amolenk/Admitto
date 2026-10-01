@@ -14,6 +14,13 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.Proc
 /// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/> so the email notification is published via the
 /// outbox. Finally re-evaluates WaitlistMode.
 /// </summary>
+/// <remarks>
+/// No offers go out once registration has closed (<see cref="TicketedEvent.HasRegistrationClosed"/>), whatever freed
+/// the seat; the queue is left as it is. Offers issued before close stay valid until they expire. Moving the closing
+/// time later re-runs this check (<see cref="Domain.DomainEvents.TicketedEventRegistrationWindowExtendedDomainEvent"/>).
+/// The decision reads the event but writes the catalog, so a window reopened at the same moment as a cancellation
+/// can leave that seat unoffered until the next waitlist trigger (arc42 §11).
+/// </remarks>
 internal sealed class ProcessWaitlistNotificationsHandler(
     IRegistrationsWriteStore writeStore,
     TimeProvider timeProvider)
@@ -49,7 +56,8 @@ internal sealed class ProcessWaitlistNotificationsHandler(
             return;
 
         var utcNow = timeProvider.GetUtcNow();
-        while (ticketType.AvailableCapacity > 0
+        while (!ticketedEvent.HasRegistrationClosed(utcNow)
+               && ticketType.AvailableCapacity > 0
                && waitlist.IssueNextCoupon(ticketedEvent, catalog, utcNow) is { } coupon)
         {
             await writeStore.Coupons.AddAsync(coupon, cancellationToken);

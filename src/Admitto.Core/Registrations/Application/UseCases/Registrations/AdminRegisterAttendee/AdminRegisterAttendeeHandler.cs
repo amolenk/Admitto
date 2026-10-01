@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -49,6 +50,14 @@ internal sealed class AdminRegisterAttendeeHandler(
         var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
         var tickets = catalog.Claim(ticketTypeIds, ClaimMode.Admin);
 
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == eventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+        await LeaveWaitlistsAsync(waitlists, catalog, email, ticketTypeIds, now, cancellationToken);
+
+        var waitlistedTickets = RegisterAttendeeWithCouponHandler.DescribeActiveWaitlistEntries(
+            waitlists, catalog, email);
+
         Registration registration;
         if (existingRegistration is null)
         {
@@ -60,16 +69,52 @@ internal sealed class AdminRegisterAttendeeHandler(
                 lastName,
                 tickets,
                 additionalDetails,
-                now);
+                now,
+                waitlistedTickets);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
         else
         {
             registration = existingRegistration;
-            registration.Reset(firstName, lastName, tickets, additionalDetails, now);
+            registration.Reset(firstName, lastName, tickets, additionalDetails, now, waitlistedTickets);
         }
 
         return registration.Id.Value;
+    }
+
+    /// <summary>
+    /// For each ticket type the admin registered the attendee for, takes them off that waitlist and withdraws any
+    /// offer they hold for it. The admin ticket doesn't redeem the offer: it expires without an expired-offer email,
+    /// and an automatic offer's hold goes back to the catalog, so the seat goes to the next person waiting.
+    /// </summary>
+    private async ValueTask LeaveWaitlistsAsync(
+        IReadOnlyList<Waitlist> eventWaitlists,
+        TicketCatalog catalog,
+        EmailAddress email,
+        IReadOnlyList<TicketTypeId> ticketTypeIds,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        foreach (var waitlist in eventWaitlists.Where(w => ticketTypeIds.Contains(w.Id)))
+        {
+            waitlist.RemoveEntry(email, catalog);
+
+            var issuedCouponIds = waitlist.Coupons
+                .Where(c => c.Status == WaitlistCouponStatus.Issued)
+                .Select(c => c.Id)
+                .ToList();
+            if (issuedCouponIds.Count == 0)
+                continue;
+
+            var offers = await writeStore.Coupons
+                .Where(c => issuedCouponIds.Contains(c.Id) && c.Email == email)
+                .ToListAsync(cancellationToken);
+            foreach (var offer in offers)
+            {
+                if (waitlist.WithdrawCoupon(offer.Id, catalog))
+                    offer.Expire(now);
+            }
+        }
     }
 
     internal static class Errors

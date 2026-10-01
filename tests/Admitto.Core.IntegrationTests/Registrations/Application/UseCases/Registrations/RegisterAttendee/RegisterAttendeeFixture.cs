@@ -381,6 +381,90 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
+    /// <summary>
+    /// The state of <see cref="ExistingAttendeeEmail"/>'s registration before they submit a waitlist request.
+    /// </summary>
+    public enum ExistingAttendeeState
+    {
+        /// <summary>A cancelled registration that held Workshop A.</summary>
+        Cancelled,
+
+        /// <summary>A waitlisted registration whose waitlist entries are all gone (e.g. its offer expired).</summary>
+        LapsedWaitlisted,
+
+        /// <summary>A waitlisted registration with an active entry on Workshop C's waitlist.</summary>
+        Waitlisted,
+
+        /// <summary>A registration holding Workshop A.</summary>
+        Registered,
+
+        /// <summary>A waitlisted registration that left Workshop C's queue with an outstanding automatic offer.</summary>
+        HoldingOffer
+    }
+
+    public static EmailAddress ExistingAttendeeEmail { get; } = EmailAddress.From("dave@example.com");
+
+    /// <summary>
+    /// Workshop A is open; Workshop B and Workshop C are sold out and in WaitlistMode. <see cref="ExistingAttendeeEmail"/>
+    /// already has a registration in the given <paramref name="state"/>.
+    /// </summary>
+    public static RegisterAttendeeFixture WithWaitlistTicketsForExistingAttendee(ExistingAttendeeState state)
+    {
+        var f = new RegisterAttendeeFixture();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var workshopAId = TicketTypeId.New();
+        var workshopBId = TicketTypeId.New();
+        var workshopCId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["workshop-a"] = workshopAId;
+        f._ticketTypeIdsBySlug["workshop-b"] = workshopBId;
+        f._ticketTypeIdsBySlug["workshop-c"] = workshopCId;
+        catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"), [], 20);
+        catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"), [], 1, waitlistEnabled: true);
+        catalog.AddTicketType(workshopCId, TicketTypeName.From("Workshop C"), [], 1, waitlistEnabled: true);
+        catalog.Claim([workshopBId], ClaimMode.Public);
+        catalog.Claim([workshopCId], ClaimMode.Public);
+
+        var workshopATicket = new TicketTypeSnapshot(workshopAId, TicketTypeName.From("Workshop A"), []);
+        IReadOnlyList<TicketTypeSnapshot> tickets = state is ExistingAttendeeState.Cancelled or ExistingAttendeeState.Registered
+            ? [workshopATicket]
+            : [];
+        f._existingRegistration = new ExistingRegistrationSeed(
+            ExistingAttendeeEmail,
+            FirstName.From("Dave"),
+            LastName.From("Previous"),
+            tickets,
+            AdditionalDetails.Empty,
+            IsCancelled: state == ExistingAttendeeState.Cancelled,
+            CancellationReason.AttendeeRequest,
+            ReconfirmedAt: null);
+
+        if (state == ExistingAttendeeState.Waitlisted)
+        {
+            var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+                f.EventId, workshopCId, f.TeamId);
+            waitlist.AddEntry(ExistingAttendeeEmail, DateTimeOffset.UtcNow, catalog);
+            waitlist.ClearDomainEvents();
+            f._waitlists.Add(waitlist);
+        }
+        else if (state == ExistingAttendeeState.HoldingOffer)
+        {
+            var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+                f.EventId, workshopCId, f.TeamId);
+            waitlist.AddEntry(ExistingAttendeeEmail, DateTimeOffset.UtcNow, catalog);
+            f._coupon = waitlist.IssueNextCoupon(f._ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
+            f._coupon.ClearDomainEvents();
+            f.CouponCode = f._coupon.Code.Value;
+            waitlist.ClearDomainEvents();
+            f._waitlists.Add(waitlist);
+        }
+
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+        return f;
+    }
+
     public static RegisterAttendeeFixture WithMixedTicketStateConflict()
     {
         var f = new RegisterAttendeeFixture();

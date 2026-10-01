@@ -67,4 +67,21 @@ public sealed class CheckInLookupHandlerTests(TestContext testContext) : AspireI
         result.Any(candidate => candidate.State == CheckInCandidateState.Cancelled && candidate.CheckedInAt is null).ShouldBeTrue();
         result.Any(candidate => candidate.State == CheckInCandidateState.Eligible && candidate.CheckedInAt is null).ShouldBeTrue();
     }
+
+    // Given a registration that is only on a waitlist
+    // When lookup finds it
+    // Then it is shown as waitlisted rather than eligible for check-in
+    [TestMethod]
+    public async ValueTask Lookup_WaitlistedRegistration_ReturnsWaitlistedState()
+    {
+        var fixture = CheckInLookupFixture.Candidates();
+        await fixture.SetupAsync(Environment);
+        var sut = new LookupCheckInCandidatesHandler(Environment.RegistrationsDatabase.Context);
+
+        var result = await sut.HandleAsync(
+            new LookupCheckInCandidatesQuery(fixture.TeamId.Value, fixture.EventId.Value, "waiting"),
+            testContext.CancellationToken);
+
+        result.ShouldHaveSingleItem().State.ShouldBe(CheckInCandidateState.Waitlisted);
+    }
 }

@@ -49,9 +49,22 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
                 r => r.EventId == eventId && r.TeamId == teamId && r.Email == email,
                 cancellationToken);
 
-        if (registerTicketTypeIds.Count > 0 && existingRegistration?.Status
-                is RegistrationStatus.Registered or RegistrationStatus.Waitlisted)
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == eventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+        var currentWaitlistIds = waitlists.Where(w => w.HasActiveEntry(email)).Select(w => w.Id).ToList();
+
+        // A waitlisted registration with no active entries and no outstanding offer left (its offer expired, or an
+        // organiser removed the entry) is treated like a cancelled one: the attendee can register or rejoin again.
+        // One still holding an offer is live, since the offer holds a seat for it.
+        var hasLiveRegistration = existingRegistration?.Status == RegistrationStatus.Registered
+                                  || (existingRegistration?.Status == RegistrationStatus.Waitlisted
+                                      && (currentWaitlistIds.Count > 0
+                                          || await HasOutstandingOfferAsync(waitlists, email, cancellationToken)));
+
+        if (registerTicketTypeIds.Count > 0 && hasLiveRegistration)
             throw new BusinessRuleViolationException(AlreadyExistsError.Create<Registration>());
+
         var catalog = await writeStore.TicketCatalogs
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
@@ -59,9 +72,21 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
         EnsureRequestedTicketStatesMatch(catalog, registerTicketTypeIds, waitlistTicketTypeIds);
         ValidateWaitlistRequests(catalog, waitlistTicketTypeIds);
         var tickets = catalog.Claim(registerTicketTypeIds, ClaimMode.Public);
-        var waitlistedTickets = catalog.DescribeTicketTypes(waitlistTicketTypeIds);
 
-        Registration? registration = null;
+        var waitlistsById = waitlists.ToDictionary(w => w.Id);
+        foreach (var waitlistTicketTypeId in waitlistTicketTypeIds)
+        {
+            if (!waitlistsById.TryGetValue(waitlistTicketTypeId, out var waitlist))
+            {
+                waitlist = Waitlist.Create(eventId, waitlistTicketTypeId, teamId);
+                await writeStore.Waitlists.AddAsync(waitlist, cancellationToken);
+                waitlistsById[waitlistTicketTypeId] = waitlist;
+            }
+
+            waitlist.AddEntry(email, now, catalog);
+        }
+
+        Registration registration;
         if (existingRegistration is null)
         {
             registration = Registration.Create(
@@ -73,36 +98,49 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
                 tickets,
                 additionalDetails,
                 now,
-                waitlistedTickets);
+                catalog.DescribeTicketTypes(waitlistTicketTypeIds));
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
-        else if (registerTicketTypeIds.Count > 0)
+        else if (!hasLiveRegistration)
         {
+            // Reactivates a cancelled or lapsed waitlisted registration, sending a fresh confirmation email.
             registration = existingRegistration;
-            registration.Reset(firstName, lastName, tickets, additionalDetails, now, waitlistedTickets);
+            registration.Reset(
+                firstName, lastName, tickets, additionalDetails, now, catalog.DescribeTicketTypes(waitlistTicketTypeIds));
         }
-
-        foreach (var waitlistTicketTypeId in waitlistTicketTypeIds)
+        else
         {
-            var waitlist = await writeStore.Waitlists
-                .Include(w => w.Entries)
-                .FirstOrDefaultAsync(
-                    w => w.Id == waitlistTicketTypeId && w.EventId == eventId && w.TeamId == teamId,
-                    cancellationToken);
-
-            if (waitlist is null)
-            {
-                waitlist = Waitlist.Create(eventId, waitlistTicketTypeId, teamId);
-                await writeStore.Waitlists.AddAsync(waitlist, cancellationToken);
-            }
-
-            waitlist.AddEntry(email, now, catalog);
+            // A waitlist-only submission for a live registration behaves like the equivalent update: the entries
+            // are added and the ticket-changed email describes the new waitlist selection.
+            registration = existingRegistration;
+            registration.ChangeTickets(
+                registration.Tickets.ToList(),
+                catalog.DescribeTicketTypes(currentWaitlistIds),
+                catalog.DescribeTicketTypes(currentWaitlistIds.Union(waitlistTicketTypeIds)),
+                now);
         }
 
         return new RegisterAttendeeSelfServiceResult(
-            registration?.Id.Value,
+            registration.Id.Value,
             registerTicketTypeIds.Select(id => id.Value).ToArray(),
             waitlistTicketTypeIds.Select(id => id.Value).ToArray());
+    }
+
+    private async ValueTask<bool> HasOutstandingOfferAsync(
+        IReadOnlyList<Waitlist> eventWaitlists,
+        EmailAddress email,
+        CancellationToken cancellationToken)
+    {
+        var issuedCouponIds = eventWaitlists
+            .SelectMany(w => w.Coupons)
+            .Where(c => c.Status == WaitlistCouponStatus.Issued)
+            .Select(c => c.Id)
+            .ToList();
+
+        return issuedCouponIds.Count > 0
+               && await writeStore.Coupons.AnyAsync(
+                   c => issuedCouponIds.Contains(c.Id) && c.Email == email,
+                   cancellationToken);
     }
 
     internal static void EnsureNoDuplicateRequestedActions(

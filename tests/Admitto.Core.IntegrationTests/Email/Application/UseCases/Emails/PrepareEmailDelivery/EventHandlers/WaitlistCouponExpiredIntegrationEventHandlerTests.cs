@@ -27,14 +27,15 @@ public sealed class WaitlistCouponExpiredIntegrationEventHandlerTests(TestContex
         var sut = new WaitlistCouponExpiredIntegrationEventHandler(composer, deliveryHandler);
 
         await sut.HandleAsync(
-            new WaitlistCouponExpiredIntegrationEvent(teamId, eventId, "bob@example.com", "WAIT-456", "Conference Pass"),
+            new WaitlistCouponExpiredIntegrationEvent(teamId, eventId, "bob@example.com", "WAIT-456", "Conference Pass", RegistrationClosed: true),
             testContext.CancellationToken);
 
         await composer.Received(1).ComposeAsync(
             Arg.Is<WaitlistOfferExpiredIntent>(intent =>
                 intent!.TeamId == TeamId.From(teamId)
                 && intent.TicketedEventId == TicketedEventId.From(eventId)
-                && intent.TicketTypeName == "Conference Pass"),
+                && intent.TicketTypeName == "Conference Pass"
+                && intent.RegistrationClosed),
             Arg.Any<CancellationToken>());
 
         var delivery = deliveryHandler.ReceivedDelivery();

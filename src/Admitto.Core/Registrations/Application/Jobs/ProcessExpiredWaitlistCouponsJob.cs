@@ -14,7 +14,8 @@ namespace Amolenk.Admitto.Core.Registrations.Application.Jobs;
 /// (a VIP offer held none). The job counts no freed slots: the catalog decides from real capacity whether that
 /// seat goes to the next person in queue (<see cref="Domain.DomainEvents.WaitlistCapacityAvailableDomainEvent"/>)
 /// or makes up a shortfall left by lowering <c>PublicCapacity</c>. If the waitlist is empty after expiry, the domain
-/// raises <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
+/// raises <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode. After registration
+/// has closed the freed seat goes to nobody, and the expired-offer email doesn't invite the attendee to register again.
 /// </summary>
 /// <remarks>
 /// The 2-minute grace period (<see cref="GracePeriod"/>) prevents the job from racing with
@@ -65,6 +66,13 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                 if (catalog is null || catalog.EventStatus != EventLifecycleStatus.Active)
                     continue;
 
+                var ticketedEvent = await writeStore.TicketedEvents
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        e => e.Id == waitlist.EventId && e.TeamId == waitlist.TeamId,
+                        context.CancellationToken);
+                var registrationClosed = ticketedEvent?.HasRegistrationClosed(now) ?? false;
+
                 var lapsedCouponIds = waitlist.GetLapsedCouponIds(cutoff);
 
                 logger.LogInformation(
@@ -81,7 +89,8 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                 // aggregate still expires the waitlist coupon and gives back its hold.
                 foreach (var couponId in lapsedCouponIds)
                 {
-                    waitlist.ExpireCoupon(couponId, lapsedCoupons.GetValueOrDefault(couponId), catalog);
+                    waitlist.ExpireCoupon(
+                        couponId, lapsedCoupons.GetValueOrDefault(couponId), catalog, registrationClosed);
                 }
             }
 

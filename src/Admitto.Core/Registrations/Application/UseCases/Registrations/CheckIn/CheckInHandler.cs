@@ -40,6 +40,9 @@ internal sealed class CheckInHandler(
         if (registration.Status == RegistrationStatus.Cancelled)
             return CheckInResponse.ForRegistration(registration, CheckInOutcome.Cancelled);
 
+        if (registration.Status == RegistrationStatus.Waitlisted)
+            return CheckInResponse.ForRegistration(registration, CheckInOutcome.Waitlisted);
+
         if (registration.CheckedInAt is not null)
             return CheckInResponse.ForRegistration(registration, CheckInOutcome.AlreadyCheckedIn);
 

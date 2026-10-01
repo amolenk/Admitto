@@ -77,6 +77,7 @@ public sealed class EmailTemplateBehaviorTests
         ["plain_code"] = "123456",
         ["coupon_code"] = "WAITLIST-ABC123",
         ["ticket_type_name"] = "Conference Pass",
+        ["registration_closed"] = false,
         ["expires_at"] = "2026-06-15 08:00 (Europe/Amsterdam)"
     };
 }

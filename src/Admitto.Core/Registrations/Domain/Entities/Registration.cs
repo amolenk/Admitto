@@ -105,6 +105,10 @@ public class Registration : Aggregate<RegistrationId>
             TeamId, EventId, Id, Email, FirstName, LastName, reason, wasWaitlisted));
     }
 
+    /// <summary>
+    /// Starts a new registration cycle for this email: a cancelled registration, or a waitlisted one claiming tickets
+    /// or rejoining the waitlist, takes the new attendee data and tickets and announces itself as newly registered.
+    /// </summary>
     public void Reset(
         FirstName firstName,
         LastName lastName,
@@ -113,7 +117,7 @@ public class Registration : Aggregate<RegistrationId>
         DateTimeOffset registeredAt,
         IReadOnlyList<TicketTypeSnapshot>? waitlistedTickets = null)
     {
-        if (Status != RegistrationStatus.Cancelled)
+        if (Status == RegistrationStatus.Registered)
             throw new BusinessRuleViolationException(Errors.CannotResetActive);
 
         var newTickets = tickets.ToList();
@@ -299,7 +303,7 @@ public class Registration : Aggregate<RegistrationId>
 
         public static readonly Error CannotResetActive = new(
             "registration.cannot_reset_active",
-            "Only a cancelled registration can be reset.",
+            "Only a cancelled or waitlisted registration can be reset.",
             Type: ErrorType.Conflict);
     }
 }
