@@ -111,6 +111,56 @@ public sealed class WaitlistRegistrationCloseTests(TestContext testContext) : As
         published.OfType<WaitlistCouponIssuedIntegrationEvent>().ShouldBeEmpty();
     }
 
+    // Given a sold-out ticket type with people waiting, after registration has closed
+    // When its capacity limit is removed
+    // Then nobody is offered a seat, and everyone waiting stays queued
+    [TestMethod]
+    public async ValueTask UpdateTicketType_RemoveCapacityLimitAfterClose_IssuesNoOffer()
+    {
+        // Arrange
+        var (fixture, actions) = await SetupAsync();
+        actions.Clock.SetUtcNow(fixture.AfterClose);
+
+        // Act
+        var published = await actions.RemoveCapacityLimitAsync();
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            var waitlist = await dbContext.Waitlists.AsNoTracking()
+                .SingleAsync(w => w.Id == fixture.ConferencePassId, testContext.CancellationToken);
+            waitlist.ActiveEntryCount.ShouldBe(Fixture.WaitingCount);
+        });
+        published.OfType<WaitlistCouponIssuedIntegrationEvent>().ShouldBeEmpty();
+    }
+
+    // Given a capacity limit removed after registration closed, with people still waiting
+    // When the registration window is moved to close later, so registration is open again
+    // Then everyone waiting is offered a seat, as removing the limit would have done while open
+    [TestMethod]
+    public async ValueTask ConfigureRegistrationPolicy_ReopenedAfterLimitRemovedWhileClosed_OffersEveryoneWaiting()
+    {
+        // Arrange
+        var (fixture, actions) = await SetupAsync();
+        actions.Clock.SetUtcNow(fixture.AfterClose);
+        await actions.RemoveCapacityLimitAsync();
+
+        // Act
+        var published = await actions.MoveClosesAtAsync(fixture.AfterClose.AddDays(5));
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var waitlist = await dbContext.Waitlists.AsNoTracking()
+                .SingleAsync(w => w.Id == fixture.ConferencePassId, testContext.CancellationToken);
+            waitlist.ActiveEntryCount.ShouldBe(0);
+        });
+        published.OfType<WaitlistCouponIssuedIntegrationEvent>()
+            .Select(e => e.RecipientEmail)
+            .ShouldBe(Enumerable.Range(1, Fixture.WaitingCount).Select(p => Fixture.WaitingEmail(p).Value), ignoreOrder: true);
+    }
+
     // Given a seat freed after registration closed, with people waiting
     // When the registration window is moved to close later, so registration is open again
     // Then the freed seat is offered to the front of the queue straight away

@@ -106,6 +106,20 @@ internal sealed class WaitlistedRegistrationsActions(
                 fixture.EventId.Value, fixture.TeamId.Value, fixture.ConferencePassId.Value, null, publicCapacity),
             cancellationToken));
 
+    /// <summary>
+    /// Removes the Conference Pass's capacity limit, which switches its waitlist off (as the Admin UI sends it).
+    /// </summary>
+    public ValueTask<IReadOnlyList<IIntegrationEvent>> RemoveCapacityLimitAsync() =>
+        RunAsync(context => new UpdateTicketTypeHandler(context).HandleAsync(
+            new UpdateTicketTypeCommand(
+                fixture.EventId.Value,
+                fixture.TeamId.Value,
+                fixture.ConferencePassId.Value,
+                null,
+                PublicCapacity: null,
+                WaitlistEnabled: false),
+            cancellationToken));
+
     public ValueTask<IReadOnlyList<IIntegrationEvent>> MoveClosesAtAsync(DateTimeOffset closesAt) =>
         RunAsync(context => new ConfigureRegistrationPolicyHandler(context).HandleAsync(
             new ConfigureRegistrationPolicyCommand(

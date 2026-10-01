@@ -4,7 +4,7 @@
 
 **Blocked by:** 20 (Public capacity is the only enforced limit). The capacity assertions below use its pools: automatic offers hold a public seat, and VIP offers and admin actions are admin tickets on top of public capacity.
 
-**Status:** done (pre-deploy data check outstanding)
+**Status:** done
 
 Found in the pre-release sanity check (2026-09-29). Every item below reproduces on current main, and none is caught by a test. The register-with-coupon fixtures add waitlist entries without the matching `Waitlisted` registration, so they miss the main case. Each fix needs a test that starts from a real `Waitlisted` registration.
 
@@ -49,14 +49,14 @@ Found in the pre-release sanity check (2026-09-29). Every item below reproduces 
 
 ### Before deploying
 
-- [ ] Confirm that no environment has rows in the waitlists or coupons tables that predate the migrations from tickets 14, 16, 17 and 20. Those migrations don't backfill held capacity or queued count, don't carry revoked coupons over, and don't set `expires_at` on existing waitlist coupons, and ticket 20's migration doesn't convert reserved capacity or ticket modes. If any environment has such data, write a data migration first (derive the counts from active entries and outstanding automatic offers, map Revoked to Expired, copy `expires_at` from the coupons table, map ticket mode `Reserved` → `Admin` and `PublicUncapped` → `Public`). Record the outcome in this ticket.
+- [x] Confirm that no environment has rows in the waitlists or coupons tables that predate the migrations from tickets 14, 16, 17 and 20. Those migrations don't backfill held capacity or queued count, don't carry revoked coupons over, and don't set `expires_at` on existing waitlist coupons, and ticket 20's migration doesn't convert reserved capacity or ticket modes. If any environment has such data, write a data migration first (derive the counts from active entries and outstanding automatic offers, map Revoked to Expired, copy `expires_at` from the coupons table, map ticket mode `Reserved` → `Admin` and `PublicUncapped` → `Public`). Record the outcome in this ticket.
 
-  **Outcome (2026-10-01):** not yet checked. The implementation sandbox has no access to any deployed environment's database, so this needs someone with that access before deploying. Until then, treat it as open.
+  **Outcome (2026-10-01):** confirmed by the user: no environment has rows in the waitlists or coupons tables, so no data migration is needed.
 
 ### Implementation notes
 
 - Admin register withdraws any outstanding offer the attendee holds for a ticket type it registers them for, VIP offers included. A VIP offer holds no seat, so withdrawing it frees nothing; it just stops a useless offer keeping the waitlist out of "exhausted".
-- An explicit waitlist disable after close offers no freed slots. Removing a ticket type's capacity limit after close still offers everyone waiting, because that is a deliberate "room for everyone" action by the organiser.
+- An explicit waitlist disable after close offers no freed slots. Removing a ticket type's capacity limit after close offers nobody either and leaves everyone queued; reopening the registration window then offers everyone still waiting on that ticket type, as removing the limit would have done while open.
 - An event with no registration window never closes the waitlist; clearing the window counts as moving `ClosesAt` later and re-runs the waitlist check.
 - Update-registration with a window-bypassing coupon after close allows only what the coupon grants. Any other ticket or waitlist change in the same request (adding or releasing tickets, joining or leaving a waitlist) is still rejected as `registration.closed`.
 - A `Waitlisted` registration holding an outstanding offer (its entry left the queue when the offer was issued) still counts as live in self-service, so the attendee can't register publicly alongside the seat their offer holds.

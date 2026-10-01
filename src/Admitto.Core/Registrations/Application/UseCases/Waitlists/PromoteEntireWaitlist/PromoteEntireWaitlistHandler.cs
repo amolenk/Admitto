@@ -9,7 +9,9 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.Prom
 /// Issues a waitlist coupon (and waitlist-offer email) to every active entry once the ticket type's capacity limit
 /// has been removed. Unlike <see cref="ProcessWaitlistNotifications.ProcessWaitlistNotificationsHandler"/> this does
 /// not require the ticket type to still be in WaitlistMode: removing the limit switches the waitlist off in the same
-/// update, and every entry that was waiting must still receive an offer.
+/// update, and every entry that was waiting must still receive an offer. Once registration has closed nobody is
+/// offered and everyone stays queued; reopening the registration window promotes them then
+/// (<see cref="NotifyWaitlist.EventHandlers.TicketedEventRegistrationWindowExtendedDomainEventHandler"/>).
 /// </summary>
 internal sealed class PromoteEntireWaitlistHandler(
     IRegistrationsWriteStore writeStore,
@@ -34,10 +36,14 @@ internal sealed class PromoteEntireWaitlistHandler(
         var ticketedEvent = await writeStore.TicketedEvents.GetAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
+        var utcNow = timeProvider.GetUtcNow();
+        if (ticketedEvent.HasRegistrationClosed(utcNow))
+            return;
+
         var catalog = await writeStore.TicketCatalogs.GetAsync(
             c => c.Id == eventId && c.TeamId == teamId,
             cancellationToken);
-        var coupons = waitlist.IssueCouponsToAllEntries(ticketedEvent, catalog, timeProvider.GetUtcNow());
+        var coupons = waitlist.IssueCouponsToAllEntries(ticketedEvent, catalog, utcNow);
 
         await writeStore.Coupons.AddRangeAsync(coupons, cancellationToken);
     }
