@@ -37,7 +37,7 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
 
             catalog.ShouldNotBeNull();
             var ticketType = catalog.TicketTypes.ShouldHaveSingleItem();
-            ticketType.MaxCapacity.ShouldBe(200);
+            ticketType.PublicCapacity.ShouldBe(200);
             ticketType.Name.Value.ShouldBe("General Admission");
             ticketType.MaxReconfirmationEmails.ShouldBeNull();
         });
@@ -102,39 +102,6 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
             var catalog = await dbContext.TicketCatalogs.FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
             catalog.TicketTypes[0].MaxReconfirmationEmails!.Value.Value.ShouldBe(2);
-        });
-    }
-
-    // Given an active event with a ticket type
-    // When the ticket type's reserved capacity is updated
-    // Then the new reserved capacity is persisted
-    [TestMethod]
-    public async ValueTask UpdateTicketType_UpdateReservedCapacity_PersistsNewValue()
-    {
-        // Arrange
-        var fixture = UpdateTicketTypeFixture.ActiveEvent();
-        await fixture.SetupAsync(Environment);
-
-        var command = new UpdateTicketTypeCommand(
-            fixture.EventId.Value,
-            fixture.TeamId.Value,
-            fixture.TicketTypeId.Value,
-            null,
-            200,
-            ReservedCapacity: 25);
-        var sut = new UpdateTicketTypeHandler(Environment.RegistrationsDatabase.Context);
-
-        // Act
-        await sut.HandleAsync(command, testContext.CancellationToken);
-
-        // Assert
-        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
-        {
-            var catalog = await dbContext.TicketCatalogs
-                .FirstOrDefaultAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
-
-            catalog.ShouldNotBeNull();
-            catalog.TicketTypes.ShouldHaveSingleItem().ReservedCapacity.ShouldBe(25);
         });
     }
 

@@ -1,6 +1,6 @@
 # Admitto context
 
-These are the canonical domain terms for reconfirmation and email:
+These are the canonical domain terms for capacity, reconfirmation and email:
 
 ## Requested reconfirmation deadline
 
@@ -31,3 +31,13 @@ _Avoid_: Template parameters, email type string, send command
 
 A transactional email inviting a recipient to register for an event with an organizer-issued coupon code. It is distinct from a waitlist offer and therefore carries no waitlist position, ticket type, or expiry language.
 _Avoid_: Waitlist notification, waitlist offer
+
+## Public capacity
+
+The number of seats on a ticket type available through self-service registration, and the only capacity limit the system enforces. Automatic waitlist offers count against it; admin tickets come on top of it. No limit means self-service is unbounded; zero means sold out to the public.
+_Avoid_: Max capacity, total capacity
+
+## Admin ticket
+
+A ticket claimed by an admin action — an admin registration, a ticket added by an admin edit, an organiser coupon or a VIP waitlist promotion. It comes on top of public capacity and never uses or frees a public seat.
+_Avoid_: Reserved ticket

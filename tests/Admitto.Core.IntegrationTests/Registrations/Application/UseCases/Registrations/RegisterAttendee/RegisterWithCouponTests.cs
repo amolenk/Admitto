@@ -13,12 +13,11 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class RegisterWithCouponTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // Successful coupon registration — capacity exceeded, still registers and increments used
-    // Given a coupon for a ticket type whose capacity is already exceeded
+    // Given an organiser coupon for a ticket type whose public capacity is already full
     // When an attendee registers using the coupon
-    // Then the registration succeeds, the coupon is redeemed, and used capacity is incremented
+    // Then the registration succeeds, the coupon is redeemed, and the ticket is an admin ticket on top of public capacity
     [TestMethod]
-    public async ValueTask RegisterWithCoupon_CapacityExceeded_SucceedsAndIncrementsUsedCapacity()
+    public async ValueTask RegisterWithCoupon_CapacityExceeded_SucceedsWithAdminTicket()
     {
         var fixture = RegisterAttendeeFixture.CouponHappyFlow();
         await fixture.SetupAsync(Environment);
@@ -40,7 +39,8 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(6);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(5);
+            catalog.TicketTypes[0].AdminUsedCount.ShouldBe(1);
         });
     }
 
@@ -174,12 +174,12 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
-    // Coupon bypasses capacity requirement (null MaxCapacity)
+    // Coupon bypasses capacity requirement (null PublicCapacity)
     // Given a ticket type with no maximum capacity configured
     // When an attendee registers using a coupon for that ticket type
-    // Then the registration succeeds and used capacity is incremented
+    // Then the registration succeeds with an admin ticket
     [TestMethod]
-    public async ValueTask RegisterWithCoupon_NullCapacity_SucceedsAndIncrementsUsedCapacity()
+    public async ValueTask RegisterWithCoupon_NullCapacity_SucceedsWithAdminTicket()
     {
         var fixture = RegisterAttendeeFixture.CouponBypassesNullCapacity();
         await fixture.SetupAsync(Environment);
@@ -196,8 +196,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(1);
-            catalog.TicketTypes[0].MaxCapacity.ShouldBeNull();
+            catalog.TicketTypes[0].AdminUsedCount.ShouldBe(1);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(0);
+            catalog.TicketTypes[0].PublicCapacity.ShouldBeNull();
         });
     }
 
@@ -307,7 +308,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             coupon.RedeemedAt.ShouldNotBeNull();
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(6);
+            var ticketType = catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId);
+            ticketType.PublicUsedCapacity.ShouldBe(5);
+            ticketType.AdminUsedCount.ShouldBe(1);
         });
     }
 

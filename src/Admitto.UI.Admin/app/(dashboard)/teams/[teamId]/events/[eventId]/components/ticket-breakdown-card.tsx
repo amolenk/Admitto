@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
+import { formatCapacitySummary, ticketCapacity } from "@/lib/ticket-capacity";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,10 +52,10 @@ export function TicketBreakdownCard({ teamId, eventId, ticketTypes, isLoading }:
             </div>
             <div className="flex flex-col gap-3.5">
                 {ticketTypes.map((t) => {
-                    const cap = Number(t.maxCapacity) || 0;
-                    const used = Number(t.usedCapacity);
-                    const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
-                    const isFull = cap > 0 && used >= cap;
+                    const capacity = ticketCapacity(t);
+                    const cap = capacity.publicCapacity;
+                    const pct = capacity.publicUsedPercent ?? 0;
+                    const isFull = capacity.isPubliclySoldOut;
 
                     return (
                         <div key={t.id}>
@@ -72,12 +73,11 @@ export function TicketBreakdownCard({ teamId, eventId, ticketTypes, isLoading }:
                                         </Badge>
                                     )}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                    <span className="font-mono tabular-nums text-foreground font-medium">{used}</span>
-                                    {cap > 0 && <> / {cap}</>}
+                                <div className="text-xs text-muted-foreground font-mono tabular-nums">
+                                    {formatCapacitySummary(capacity)}
                                 </div>
                             </div>
-                            {cap > 0 && (
+                            {cap != null && (
                                 <div className="capacity-bar">
                                     <span
                                         style={{

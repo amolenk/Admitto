@@ -40,7 +40,7 @@ internal sealed class ProcessWaitlistNotificationsFixture
         new() { FreeSeats = 0 };
 
     /// <summary>
-    /// Two waitlist entries and one free seat, with a VIP offer outstanding that the free seat must cover.
+    /// Two waitlist entries and one free seat, with a VIP offer outstanding (which takes no public seat).
     /// </summary>
     public static ProcessWaitlistNotificationsFixture WithTwoEntriesOneSlotAndVipOffer() =>
         new() { OutstandingVipOffers = 1 };
@@ -51,14 +51,14 @@ internal sealed class ProcessWaitlistNotificationsFixture
     public int FreeSeats { get; private init; } = 1;
 
     /// <summary>
-    /// Seats held by VIP offers made while sold out.
+    /// VIP offers made while sold out; they take no public hold.
     /// </summary>
     public int OutstandingVipOffers { get; private init; }
 
     public async ValueTask SetupAsync(
         IntegrationTestEnvironment environment,
         int activeEntries = 1,
-        int maxCapacity = 2)
+        int publicCapacity = 2)
     {
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
@@ -77,10 +77,10 @@ internal sealed class ProcessWaitlistNotificationsFixture
 
             // TicketCatalog — ticket type with WaitlistEnabled + WaitlistMode active
             var catalog = TicketCatalog.Create(EventId, TeamId);
-            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity, waitlistEnabled: true, claimWindowHours: 8);
+            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], publicCapacity, waitlistEnabled: true, claimWindowHours: 8);
 
             // Fill to capacity and trigger WaitlistMode
-            var tickets = Enumerable.Range(0, maxCapacity)
+            var tickets = Enumerable.Range(0, publicCapacity)
                 .Select(_ => catalog.Claim([TicketTypeId], ClaimMode.Public))
                 .ToList();
 

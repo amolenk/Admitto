@@ -46,9 +46,9 @@ describe("EditTicketTypeForm waitlist cascade", () => {
 
     // Given a ticket type with no capacity limit
     // When the edit form renders
-    // Then neither the max-capacity field nor the waitlist toggle is shown
+    // Then neither the public capacity field nor the waitlist toggle is shown
     it("hides capacity and waitlist fields when the ticket type has no capacity limit", () => {
-        renderForm({ maxCapacity: null, waitlistEnabled: true });
+        renderForm({ publicCapacity: null, waitlistEnabled: true });
 
         expect(screen.queryByPlaceholderText("e.g. 100")).not.toBeInTheDocument();
         expect(screen.queryByRole("switch", { name: /enable waitlist/i })).not.toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("EditTicketTypeForm waitlist cascade", () => {
     // When the organizer switches capacity limiting on
     // Then the max-capacity field and the waitlist toggle both appear
     it("reveals the waitlist toggle once capacity limiting is switched on", async () => {
-        const { user } = renderForm({ maxCapacity: null, waitlistEnabled: false });
+        const { user } = renderForm({ publicCapacity: null, waitlistEnabled: false });
 
         await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
 
@@ -77,11 +77,23 @@ describe("EditTicketTypeForm waitlist cascade", () => {
     // When the edit form renders
     // Then the waitlist toggle is shown and pre-checked, matching the persisted state
     it("shows the waitlist toggle already enabled for a ticket type with capacity and waitlist configured", () => {
-        renderForm({ maxCapacity: 100, waitlistEnabled: true, claimWindowHours: 6 });
+        renderForm({ publicCapacity: 100, waitlistEnabled: true, claimWindowHours: 6 });
 
         expect(screen.getByRole("switch", { name: /limit capacity/i })).toBeChecked();
         expect(screen.getByRole("switch", { name: /enable waitlist/i })).toBeChecked();
         expect(screen.getByPlaceholderText("e.g. 8")).toHaveValue(6);
+    });
+
+    // Given a ticket type with a public capacity
+    // When the edit form renders
+    // Then the capacity field is labelled public capacity with its value, explains that admin registrations and
+    // coupons come on top, and there is no reserved capacity field
+    it("shows the public capacity field without a reserved capacity field", () => {
+        renderForm({ publicCapacity: 40, publicUsedCapacity: 40, adminUsedCount: 5 });
+
+        expect(screen.getByLabelText("Public capacity")).toHaveValue(40);
+        expect(screen.getByText(/Admin registrations and coupons come on top of this/)).toBeInTheDocument();
+        expect(screen.queryByText(/reserved/i)).not.toBeInTheDocument();
     });
 
     // Given a ticket type that already has capacity and an active waitlist configured
@@ -90,7 +102,7 @@ describe("EditTicketTypeForm waitlist cascade", () => {
     // waitlist configuration is not sent when the form is saved
     it("discards the waitlist configuration when capacity limiting is switched back off", async () => {
         const { user } = renderForm({
-            maxCapacity: 100,
+            publicCapacity: 100,
             waitlistEnabled: true,
             claimWindowHours: 6,
         });
@@ -105,8 +117,7 @@ describe("EditTicketTypeForm waitlist cascade", () => {
             expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, {
                 name: "General Admission",
                 selfServiceEnabled: true,
-                maxCapacity: null,
-                reservedCapacity: 0,
+                publicCapacity: null,
                 waitlistEnabled: false,
                 claimWindowHours: undefined,
                 maxReconfirmationEmails: null,
@@ -121,7 +132,7 @@ describe("EditTicketTypeForm waitlist cascade", () => {
     it("shows time slots as non-editable and omits them from the update payload", async () => {
         const { user } = renderForm({
             timeSlots: ["morning", "afternoon"],
-            maxCapacity: 100,
+            publicCapacity: 100,
         });
 
         expect(screen.getByText("Schedule")).toBeInTheDocument();
@@ -139,8 +150,7 @@ describe("EditTicketTypeForm waitlist cascade", () => {
             expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, {
                 name: "Updated Pass",
                 selfServiceEnabled: true,
-                maxCapacity: 100,
-                reservedCapacity: 0,
+                publicCapacity: 100,
                 waitlistEnabled: false,
                 claimWindowHours: undefined,
                 maxReconfirmationEmails: null,
@@ -160,7 +170,7 @@ describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () =>
     // When the organizer switches the waitlist off and saves
     // Then a confirmation explains that everyone waiting is removed and must be informed, and nothing is saved yet
     it("asks for confirmation with the removal wording when explicitly disabling an active waitlist", async () => {
-        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: true });
+        const { user } = renderForm({ publicCapacity: 100, waitlistEnabled: true, waitlistMode: true });
 
         await user.click(screen.getByRole("switch", { name: /enable waitlist/i }));
         await user.click(screen.getByRole("button", { name: "Save changes" }));
@@ -179,7 +189,7 @@ describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () =>
     // When the organizer confirms
     // Then the ticket type is saved with its waitlist switched off
     it("saves the disabled waitlist once the organizer confirms", async () => {
-        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: true });
+        const { user } = renderForm({ publicCapacity: 100, waitlistEnabled: true, waitlistMode: true });
 
         await user.click(screen.getByRole("switch", { name: /enable waitlist/i }));
         await user.click(screen.getByRole("button", { name: "Save changes" }));
@@ -187,7 +197,7 @@ describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () =>
 
         await waitFor(() =>
             expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, expect.objectContaining({
-                maxCapacity: 100,
+                publicCapacity: 100,
                 waitlistEnabled: false,
             })),
         );
@@ -197,7 +207,7 @@ describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () =>
     // When the organizer removes the capacity limit
     // Then an informational note says everyone waiting will receive an offer, and saving needs no confirmation
     it("shows an informational note instead of the disable dialog when removing the capacity limit", async () => {
-        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: true });
+        const { user } = renderForm({ publicCapacity: 100, waitlistEnabled: true, waitlistMode: true });
 
         await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
 
@@ -208,7 +218,7 @@ describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () =>
 
         await waitFor(() =>
             expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, expect.objectContaining({
-                maxCapacity: null,
+                publicCapacity: null,
                 waitlistEnabled: false,
             })),
         );
@@ -219,7 +229,7 @@ describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () =>
     // When the organizer removes the capacity limit
     // Then no note about offers is shown
     it("does not show the offer note when nobody is waiting", async () => {
-        const { user } = renderForm({ maxCapacity: 100, waitlistEnabled: true, waitlistMode: false });
+        const { user } = renderForm({ publicCapacity: 100, waitlistEnabled: true, waitlistMode: false });
 
         await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
 

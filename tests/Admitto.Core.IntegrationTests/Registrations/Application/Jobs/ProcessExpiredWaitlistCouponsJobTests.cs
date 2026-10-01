@@ -62,7 +62,7 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
                 ["attendee1@example.com"] = WaitlistCouponStatus.Expired,
                 ["attendee2@example.com"] = WaitlistCouponStatus.Issued,
             }, ignoreOrder: true);
-            await ctx.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await ctx.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
@@ -208,7 +208,7 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 
     // Given a VIP coupon made while sold out, expired, with another entry still waiting
     // When the process-expired-waitlist-coupons job runs
-    // Then the coupon is expired and its recipient told, but no new offer goes out
+    // Then the coupon is expired and its recipient told, but it held no public seat, so no new offer goes out
     [TestMethod]
     public async ValueTask Execute_WhenVipCouponExpiresWhileSoldOut_ExpiresWithoutNotifyingNext()
     {
@@ -232,15 +232,17 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 
             var catalog = await ctx.TicketCatalogs
                 .FirstAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
-            catalog.GetTicketType(fixture.TicketTypeId)!.WaitlistMode.ShouldBeTrue(
-                "WaitlistMode stays on while an attendee is still waiting");
-            await ctx.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            var ticketType = catalog.GetTicketType(fixture.TicketTypeId)!;
+            ticketType.WaitlistMode.ShouldBeTrue("WaitlistMode stays on while an attendee is still waiting");
+            ticketType.WaitlistHeldCapacity.ShouldBe(0);
+            ticketType.AvailableCapacity.ShouldBe(0);
+            await ctx.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
     // Given an automatic and a VIP coupon that both expired, with two more entries still waiting
     // When the process-expired-waitlist-coupons job runs
-    // Then both coupons are expired but only one new offer goes out, for the one seat that is available
+    // Then both coupons are expired but only one new offer goes out, for the public seat the automatic offer held
     [TestMethod]
     public async ValueTask Execute_WhenAutomaticAndVipCouponsExpire_OffersOnlyTheAvailableSeat()
     {
@@ -262,15 +264,15 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
                 ["attendee4@example.com"] = WaitlistCouponStatus.Expired,
                 ["attendee2@example.com"] = WaitlistCouponStatus.Issued,
             }, ignoreOrder: true);
-            await ctx.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await ctx.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
     // Given an automatic offer to the front of the queue, then a VIP offer to the next attendee made while sold out
     // When only the automatic offer lapses and the process-expired-waitlist-coupons job runs
-    // Then the freed seat covers the VIP offer, so nobody else in the queue is offered
+    // Then the freed public seat goes to the next person in the queue, whatever the outstanding VIP offer
     [TestMethod]
-    public async ValueTask Execute_WhenAutomaticCouponExpiresWhileVipOfferOutstanding_DoesNotNotifyNext()
+    public async ValueTask Execute_WhenAutomaticCouponExpiresWhileVipOfferOutstanding_NotifiesNext()
     {
         // Arrange — attendee1 automatic, attendee2 VIP (position 2), attendee3 waiting
         var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithPendingCouponAndVipCouponAtPositionTwo();
@@ -289,15 +291,17 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
             {
                 ["attendee1@example.com"] = WaitlistCouponStatus.Expired,
                 ["attendee2@example.com"] = WaitlistCouponStatus.Issued,
+                ["attendee3@example.com"] = WaitlistCouponStatus.Issued,
             }, ignoreOrder: true);
 
             var waitlist = await ctx.Waitlists.SingleAsync(w => w.Id == fixture.TicketTypeId, testContext.CancellationToken);
-            waitlist.GetActivePosition(EmailAddress.From("attendee3@example.com")).ShouldBe(1);
+            waitlist.ActiveEntryCount.ShouldBe(0);
 
             var ticketType = (await ctx.TicketCatalogs.SingleAsync(testContext.CancellationToken))
                 .FindTicketType(fixture.TicketTypeId);
+            ticketType.WaitlistHeldCapacity.ShouldBe(1);
             ticketType.AvailableCapacity.ShouldBe(0);
-            await ctx.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await ctx.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 

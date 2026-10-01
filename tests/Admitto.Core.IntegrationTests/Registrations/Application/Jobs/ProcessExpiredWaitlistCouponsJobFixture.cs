@@ -75,7 +75,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     /// frees <see cref="CouponsToIssue"/> seats and issues that many coupons to the front-of-queue entries using
     /// the real handler so the coupon rows exist in the DB with a real <c>expires_at</c>. Finally promotes
     /// <see cref="VipCouponsToIssue"/> entries (from the back of the queue, or its front if <see cref="VipsFromFront"/>)
-    /// as VIPs while the ticket type is sold out, so their offers hold seats beyond capacity.
+    /// as VIPs while the ticket type is sold out; their offers take no hold, being admin tickets on top of capacity.
     /// </summary>
     /// <param name="activeEntriesAfterCoupon">
     /// Number of active entries that should remain in the waitlist AFTER the coupons are issued.
@@ -106,7 +106,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             dbContext.TicketedEvents.Add(ticketedEvent);
 
             var catalog = TicketCatalog.Create(EventId, TeamId);
-            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: capacity,
+            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], publicCapacity: capacity,
                 waitlistEnabled: true, claimWindowHours: 8);
             var tickets = Enumerable.Range(0, capacity)
                 .Select(_ => catalog.Claim([TicketTypeId], ClaimMode.Public))   // fill to capacity → WaitlistMode
@@ -178,7 +178,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
 
         await new UpdateTicketTypeHandler(context).HandleAsync(
             new UpdateTicketTypeCommand(
-                EventId.Value, TeamId.Value, TicketTypeId.Value, Name: null, MaxCapacity: capacity, WaitlistEnabled: false),
+                EventId.Value, TeamId.Value, TicketTypeId.Value, Name: null, PublicCapacity: capacity, WaitlistEnabled: false),
             cancellationToken);
         await new DisableWaitlistHandler(context, TimeProvider.System).HandleAsync(
             new DisableWaitlistCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: 0),

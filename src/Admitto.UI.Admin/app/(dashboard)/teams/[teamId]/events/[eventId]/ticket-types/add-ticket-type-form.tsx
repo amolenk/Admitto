@@ -17,29 +17,20 @@ import {
 } from "@/components/ui/sheet";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
+import { PUBLIC_CAPACITY_HELP } from "@/lib/ticket-capacity";
 
 const slugRegex = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
-const addSchema = z
-    .object({
-        name: z.string().min(1, "Name is required"),
-        selfServiceEnabled: z.boolean(),
-        limitCapacity: z.boolean(),
-        maxCapacity: z.number().int().min(1).optional(),
-        reservedCapacity: z.number().int().min(0).optional(),
-        waitlistEnabled: z.boolean(),
-        claimWindowHours: z.number().int().min(1).optional(),
-        maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
-        timeSlots: z.array(z.string().regex(slugRegex)),
-    })
-    .refine(
-        (values) =>
-            !values.limitCapacity ||
-            values.reservedCapacity === undefined ||
-            values.maxCapacity === undefined ||
-            values.reservedCapacity <= values.maxCapacity,
-        { message: "Reserved capacity cannot exceed max capacity", path: ["reservedCapacity"] }
-    );
+const addSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    selfServiceEnabled: z.boolean(),
+    limitCapacity: z.boolean(),
+    publicCapacity: z.number().int().min(0).optional(),
+    waitlistEnabled: z.boolean(),
+    claimWindowHours: z.number().int().min(1).optional(),
+    maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
+    timeSlots: z.array(z.string().regex(slugRegex)),
+});
 
 type AddValues = z.infer<typeof addSchema>;
 
@@ -61,8 +52,7 @@ export function AddTicketTypeForm({
         name: "",
         selfServiceEnabled: true,
         limitCapacity: false,
-        maxCapacity: undefined,
-        reservedCapacity: undefined,
+        publicCapacity: undefined,
         waitlistEnabled: false,
         claimWindowHours: 8,
         maxReconfirmationEmails: undefined,
@@ -76,8 +66,7 @@ export function AddTicketTypeForm({
         await apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types`, {
             name: values.name,
             selfServiceEnabled: values.selfServiceEnabled,
-            maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
-            reservedCapacity: values.limitCapacity ? (values.reservedCapacity ?? 0) : 0,
+            publicCapacity: values.limitCapacity ? (values.publicCapacity ?? null) : null,
             waitlistEnabled: values.limitCapacity ? values.waitlistEnabled : false,
             claimWindowHours: values.limitCapacity && values.waitlistEnabled ? (values.claimWindowHours ?? 8) : undefined,
             maxReconfirmationEmails: values.maxReconfirmationEmails ?? null,
@@ -149,14 +138,14 @@ export function AddTicketTypeForm({
                         {limitCapacity && (
                             <FormField
                                 control={form.control}
-                                name="maxCapacity"
+                                name="publicCapacity"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Max capacity</FormLabel>
+                                        <FormLabel>Public capacity</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
-                                                min={1}
+                                                min={0}
                                                 placeholder="e.g. 100"
                                                 value={field.value ?? ""}
                                                 onChange={(e) =>
@@ -164,31 +153,8 @@ export function AddTicketTypeForm({
                                                 }
                                             />
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        )}
-                        {limitCapacity && (
-                            <FormField
-                                control={form.control}
-                                name="reservedCapacity"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Reserved capacity (optional)</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min={0}
-                                                placeholder="e.g. 20"
-                                                value={field.value ?? ""}
-                                                onChange={(e) =>
-                                                    field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                                }
-                                            />
-                                        </FormControl>
                                         <FormDescription>
-                                            Slots held back from self-service and reserved for admin/coupon registrations.
+                                            {PUBLIC_CAPACITY_HELP}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>

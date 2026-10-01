@@ -23,7 +23,7 @@ internal sealed class UpdateTicketTypeWaitlistFixture
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
     public TicketTypeId WorkshopTicketTypeId { get; } = TicketTypeId.New();
     public TicketTypeId DinnerTicketTypeId { get; } = TicketTypeId.New();
-    public const int MaxCapacity = 1;
+    public const int PublicCapacity = 1;
     public static EmailAddress OfferedEmail { get; } = EmailAddress.From("offered@example.com");
     public Guid OutstandingCouponCode { get; private set; }
     public RegistrationId WaitlistedRegistrationId { get; private set; }
@@ -53,7 +53,7 @@ internal sealed class UpdateTicketTypeWaitlistFixture
 
     /// <summary>
     /// Attendees waiting, plus <paramref name="vipOffers"/> VIP offers (to <see cref="VipEmail"/>) made while the ticket
-    /// type was sold out, so each holds a seat beyond capacity.
+    /// type was sold out. VIP offers take no public hold.
     /// </summary>
     public static UpdateTicketTypeWaitlistFixture WithWaitingEntriesAndVipOffers(int waitingCount, int vipOffers) =>
         new() { _waitingCount = waitingCount, _vipOffers = vipOffers };
@@ -93,8 +93,8 @@ internal sealed class UpdateTicketTypeWaitlistFixture
 
             var catalog = TicketCatalog.Create(EventId, TeamId);
             catalog.AddTicketType(
-                TicketTypeId, TicketTypeName.From("Conference Pass"), [], MaxCapacity, waitlistEnabled: true);
-            for (var i = 0; i < MaxCapacity; i++)
+                TicketTypeId, TicketTypeName.From("Conference Pass"), [], PublicCapacity, waitlistEnabled: true);
+            for (var i = 0; i < PublicCapacity; i++)
                 catalog.Claim([TicketTypeId], ClaimMode.Public); // sells out → WaitlistMode
             catalog.AddTicketType(WorkshopTicketTypeId, TicketTypeName.From("Workshop"), [], 10);
             catalog.AddTicketType(DinnerTicketTypeId, TicketTypeName.From("Dinner"), [], 10);

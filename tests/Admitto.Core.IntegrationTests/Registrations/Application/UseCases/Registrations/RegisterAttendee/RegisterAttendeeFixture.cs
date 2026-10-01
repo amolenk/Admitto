@@ -39,11 +39,11 @@ internal sealed class RegisterAttendeeFixture
 
     // ── Generic factories (apply to all modes) ───────────────────────────────
 
-    public static RegisterAttendeeFixture OpenWindowWithCapacity(int max = 100, int used = 50)
+    public static RegisterAttendeeFixture OpenWindowWithCapacity(int publicCapacity = 100, int used = 50)
     {
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeCatalog(("general-admission", "General Admission", max, used));
+        f._catalog = f.MakeCatalog(("general-admission", "General Admission", publicCapacity, used));
         return f;
     }
 
@@ -92,7 +92,7 @@ internal sealed class RegisterAttendeeFixture
 
     public static RegisterAttendeeFixture WithExistingRegistration()
     {
-        var f = OpenWindowWithCapacity(max: 100, used: 50);
+        var f = OpenWindowWithCapacity(publicCapacity: 100, used: 50);
         f.WithActiveExistingRegistration();
         return f;
     }
@@ -356,7 +356,7 @@ internal sealed class RegisterAttendeeFixture
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "general-admission" };
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", max: 3, preFill: 2);
+        f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", publicCapacity: 3, preFill: 2);
         return f;
     }
 
@@ -429,7 +429,7 @@ internal sealed class RegisterAttendeeFixture
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "general-admission" };
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", max: 2, preFill: 1);
+        f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", publicCapacity: 2, preFill: 1);
         var ticketTypeId = f.GetTicketTypeId("general-admission");
 
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, ticketTypeId, f.TeamId);
@@ -448,7 +448,7 @@ internal sealed class RegisterAttendeeFixture
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "general-admission" };
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", max: 2, preFill: 1);
+        f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", publicCapacity: 2, preFill: 1);
         var ticketTypeId = f.GetTicketTypeId("general-admission");
 
         f._coupon = new CouponBuilder()
@@ -606,36 +606,36 @@ internal sealed class RegisterAttendeeFixture
         return ev;
     }
 
-    private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used)[] ticketTypes) =>
-        MakeCatalog(ticketTypes.Select(t => (t.slug, t.name, t.max, t.used, true)).ToArray());
+    private TicketCatalog MakeCatalog(params (string slug, string name, int? publicCapacity, int used)[] ticketTypes) =>
+        MakeCatalog(ticketTypes.Select(t => (t.slug, t.name, t.publicCapacity, t.used, true)).ToArray());
 
-    private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used, bool selfServiceEnabled)[] ticketTypes)
+    private TicketCatalog MakeCatalog(params (string slug, string name, int? publicCapacity, int used, bool selfServiceEnabled)[] ticketTypes)
     {
         var catalog = TicketCatalog.Create(EventId, TeamId);
-        foreach (var (slug, name, max, used, selfServiceEnabled) in ticketTypes)
+        foreach (var (slug, name, publicCapacity, used, selfServiceEnabled) in ticketTypes)
         {
             var id = TicketTypeId.New();
             _ticketTypeIdsBySlug[slug] = id;
-            catalog.AddTicketType(id, TicketTypeName.From(name), [], max, selfServiceEnabled);
+            catalog.AddTicketType(id, TicketTypeName.From(name), [], publicCapacity, selfServiceEnabled);
             for (var i = 0; i < used; i++)
-                catalog.Claim([id], ClaimMode.Reserved);
+                catalog.Claim([id], selfServiceEnabled ? ClaimMode.Public : ClaimMode.Admin);
         }
         return catalog;
     }
 
     /// <summary>
     /// Creates a catalog with a single WaitlistEnabled ticket type where WaitlistMode is active.
-    /// Uses <paramref name="preFill"/> uncapped claims to set initial used capacity, then one
-    /// enforced claim to fill the last slot and trigger WaitlistMode activation.
+    /// Uses <paramref name="preFill"/> public claims to set initial used capacity, then one
+    /// more to fill the last seat and trigger WaitlistMode activation.
     /// </summary>
-    private TicketCatalog MakeWaitlistModeCatalog(string slug, string name, int max, int preFill)
+    private TicketCatalog MakeWaitlistModeCatalog(string slug, string name, int publicCapacity, int preFill)
     {
         var catalog = TicketCatalog.Create(EventId, TeamId);
         var id = TicketTypeId.New();
         _ticketTypeIdsBySlug[slug] = id;
-        catalog.AddTicketType(id, TicketTypeName.From(name), [], max, waitlistEnabled: true);
+        catalog.AddTicketType(id, TicketTypeName.From(name), [], publicCapacity, waitlistEnabled: true);
         for (var i = 0; i < preFill; i++)
-            catalog.Claim([id], ClaimMode.Reserved);
+            catalog.Claim([id], ClaimMode.Public);
         catalog.Claim([id], ClaimMode.Public); // fills last slot → activates WaitlistMode
         catalog.ClearDomainEvents();
         return catalog;

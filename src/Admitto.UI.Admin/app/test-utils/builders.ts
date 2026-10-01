@@ -96,15 +96,14 @@ export function ticketTypeDto(overrides: Partial<TicketTypeDto> = {}): TicketTyp
         id: "cccccccc-0000-0000-0000-000000000001",
         name: "General Admission",
         timeSlots: [],
-        maxCapacity: null,
-        usedCapacity: 0,
+        publicCapacity: null,
+        publicUsedCapacity: 0,
+        adminUsedCount: 0,
         selfServiceEnabled: true,
         waitlistEnabled: false,
         waitlistMode: false,
         claimWindowHours: 0,
         maxReconfirmationEmails: null,
-        reservedCapacity: 0,
-        reservedUsedCapacity: 0,
         ...overrides,
     };
 }

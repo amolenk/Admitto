@@ -150,8 +150,8 @@ public class Waitlist : Aggregate<TicketTypeId>
 
     /// <summary>
     /// Issues a coupon to the top-ranked active waitlist entry and removes that entry from the queue. The offer
-    /// holds a seat on the <paramref name="catalog"/>'s ticket type, and the entry leaves its queued count. Returns <c>null</c> when there are no active
-    /// entries.
+    /// holds a public seat on the <paramref name="catalog"/>'s ticket type, and the entry leaves its queued count.
+    /// Returns <c>null</c> when there are no active entries.
     /// </summary>
     public Coupon? IssueNextCoupon(
         TicketedEvent ticketedEvent,
@@ -169,8 +169,8 @@ public class Waitlist : Aggregate<TicketTypeId>
 
     /// <summary>
     /// Issues a coupon to one specific active waitlist entry, regardless of its queue position (e.g. a VIP
-    /// promotion by an organizer), and removes that entry from the queue. Like any offer it holds a seat on the
-    /// <paramref name="catalog"/>'s ticket type, even when none is available: the next seat that frees up covers it.
+    /// promotion by an organizer), and removes that entry from the queue. The offer takes no public hold: redeemed, it
+    /// is an admin ticket on top of public capacity.
     /// </summary>
     public Coupon IssueCouponToEntry(
         WaitlistEntryId entryId,
@@ -193,7 +193,8 @@ public class Waitlist : Aggregate<TicketTypeId>
         WaitlistCouponOrigin origin)
     {
         var ticketType = catalog.FindTicketType(Id);
-        catalog.HoldForWaitlistOffer(Id);
+        if (origin == WaitlistCouponOrigin.Automatic)
+            catalog.HoldForWaitlistOffer(Id);
 
         LeaveQueue(entry, catalog);
         RenumberPositions();
@@ -214,7 +215,8 @@ public class Waitlist : Aggregate<TicketTypeId>
             bypassRegistrationWindow: true,
             [new TicketTypeInfo(ticketType.Id)],
             utcNow,
-            CouponSource.Waitlist);
+            CouponSource.Waitlist,
+            origin);
 
         _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow, expiresAt, origin));
 
@@ -250,8 +252,9 @@ public class Waitlist : Aggregate<TicketTypeId>
             .ToList();
 
     /// <summary>
-    /// Marks the given waitlist coupon as expired because it lapsed unclaimed, gives back the seat the offer held
-    /// on the <paramref name="catalog"/> (which decides whether that leaves a seat for the next person waiting), and
+    /// Marks the given waitlist coupon as expired because it lapsed unclaimed, gives back the seat an automatic offer
+    /// held on the <paramref name="catalog"/> (which decides whether that leaves a seat for the next person waiting;
+    /// a VIP offer held none, so its lapse offers nobody a seat), and
     /// raises <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired. The
     /// <paramref name="coupon"/> only supplies that email's recipient and code; when it or the ticket type
     /// no longer exists there is nothing to send, so the coupon is expired without raising the event.
@@ -260,7 +263,8 @@ public class Waitlist : Aggregate<TicketTypeId>
     {
         var waitlistCoupon = FindCoupon(couponId);
         waitlistCoupon.Expire();
-        catalog.ReleaseWaitlistHold(Id);
+        if (waitlistCoupon.Origin == WaitlistCouponOrigin.Automatic)
+            catalog.ReleaseWaitlistHold(Id);
 
         var ticketType = catalog.GetTicketType(Id);
         if (coupon is not null && ticketType is not null)

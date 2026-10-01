@@ -4,12 +4,11 @@ internal sealed record TicketTypeDto(
     Guid Id,
     string Name,
     string[] TimeSlots,
-    int? MaxCapacity,
-    int UsedCapacity,
+    int? PublicCapacity,
+    int PublicUsedCapacity,
+    int AdminUsedCount,
     bool SelfServiceEnabled,
     bool WaitlistEnabled,
     bool WaitlistMode,
     int ClaimWindowHours,
-    int? MaxReconfirmationEmails,
-    int ReservedCapacity,
-    int ReservedUsedCapacity);
+    int? MaxReconfirmationEmails);

@@ -7502,7 +7502,7 @@
               "type": "string"
             }
           },
-          "maxCapacity": {
+          "publicCapacity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -7532,15 +7532,6 @@
               "string"
             ],
             "format": "int32"
-          },
-          "reservedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32",
-            "default": 0
           }
         }
       },
@@ -9596,15 +9587,14 @@
           "id",
           "name",
           "timeSlots",
-          "maxCapacity",
-          "usedCapacity",
+          "publicCapacity",
+          "publicUsedCapacity",
+          "adminUsedCount",
           "selfServiceEnabled",
           "waitlistEnabled",
           "waitlistMode",
           "claimWindowHours",
-          "maxReconfirmationEmails",
-          "reservedCapacity",
-          "reservedUsedCapacity"
+          "maxReconfirmationEmails"
         ],
         "type": "object",
         "properties": {
@@ -9621,7 +9611,7 @@
               "type": "string"
             }
           },
-          "maxCapacity": {
+          "publicCapacity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9630,7 +9620,15 @@
             ],
             "format": "int32"
           },
-          "usedCapacity": {
+          "publicUsedCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "adminUsedCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -9659,22 +9657,6 @@
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "reservedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "reservedUsedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
               "integer",
               "string"
             ],
@@ -9872,7 +9854,7 @@
               "string"
             ]
           },
-          "maxCapacity": {
+          "publicCapacity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9897,14 +9879,6 @@
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "reservedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
               "integer",
               "string"
             ],

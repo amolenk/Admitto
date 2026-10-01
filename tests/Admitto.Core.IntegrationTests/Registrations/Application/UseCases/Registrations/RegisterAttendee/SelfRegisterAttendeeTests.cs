@@ -25,7 +25,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_Success_CreatesRegistrationAndUpdatesCapacity()
     {
-        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(max: 100, used: 50);
+        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(publicCapacity: 100, used: 50);
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, "dave@example.com", fixture.TicketTypeId.Value);
@@ -43,7 +43,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(51);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(51);
         });
     }
 
@@ -71,7 +71,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
             var ticketType = (await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken))
                 .TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop"));
-            ticketType.UsedCapacity.ShouldBe(20);
+            ticketType.PublicUsedCapacity.ShouldBe(20);
         });
     }
 
@@ -220,8 +220,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).UsedCapacity.ShouldBe(1);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).PublicUsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).PublicUsedCapacity.ShouldBe(1);
         });
     }
 
@@ -326,7 +326,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         {
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(0);
         });
     }
 
@@ -392,7 +392,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().Single().RegisteredAt.ShouldBe(resetAt);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).PublicUsedCapacity.ShouldBe(1);
         });
     }
 
@@ -423,7 +423,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.CancellationReason.ShouldBe(CancellationReason.AttendeeRequest);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).PublicUsedCapacity.ShouldBe(0);
         });
     }
 
@@ -630,9 +630,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
             (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).UsedCapacity.ShouldBe(0);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-b")).UsedCapacity.ShouldBe(1);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-c")).UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).PublicUsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-b")).PublicUsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-c")).PublicUsedCapacity.ShouldBe(0);
         });
     }
 

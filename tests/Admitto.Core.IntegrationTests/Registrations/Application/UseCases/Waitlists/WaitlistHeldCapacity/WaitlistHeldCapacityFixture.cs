@@ -6,21 +6,21 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Waitlists.WaitlistHeldCapacity;
 
 /// <summary>
-/// A sold-out, waitlist-enabled ticket type in WaitlistMode: <see cref="MaxCapacity"/> seats taken by registrations
+/// A sold-out, waitlist-enabled ticket type in WaitlistMode: <see cref="PublicCapacity"/> seats taken by registrations
 /// of <see cref="RegisteredEmail"/>, and attendees waiting in queue order <see cref="WaitingEmail"/>.
 /// </summary>
 internal sealed class WaitlistHeldCapacityFixture
 {
     private readonly List<RegistrationId> _registrationIds = [];
     private int _waitingCount;
-    private bool _withOrganiserCoupon;
+    private bool _withAdminRegistration;
 
     public TeamId TeamId { get; } = TeamId.New();
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
-    public const int MaxCapacity = 2;
-    public static EmailAddress OrganiserGuestEmail { get; } = EmailAddress.From("organiser-guest@example.com");
-    public Guid OrganiserCouponCode { get; private set; }
+    public const int PublicCapacity = 2;
+    public static EmailAddress AdminGuestEmail { get; } = EmailAddress.From("admin-guest@example.com");
+    public RegistrationId AdminRegistrationId { get; private set; }
     public IReadOnlyList<RegistrationId> RegistrationIds => _registrationIds;
 
     public static EmailAddress RegisteredEmail(int index) => EmailAddress.From($"registered{index}@example.com");
@@ -38,11 +38,11 @@ internal sealed class WaitlistHeldCapacityFixture
         new() { _waitingCount = count };
 
     /// <summary>
-    /// Sold out, with attendees waiting, and an organiser coupon for <see cref="OrganiserGuestEmail"/>. There is no
-    /// reserved buffer, so redeeming it overbooks the ticket type.
+    /// Sold out, with attendees waiting, and an admin registration for <see cref="AdminGuestEmail"/> holding an admin
+    /// ticket on top of the public capacity.
     /// </summary>
-    public static WaitlistHeldCapacityFixture SoldOutWithWaitingEntriesAndOrganiserCoupon(int count) =>
-        new() { _waitingCount = count, _withOrganiserCoupon = true };
+    public static WaitlistHeldCapacityFixture SoldOutWithWaitingEntriesAndAdminRegistration(int count) =>
+        new() { _waitingCount = count, _withAdminRegistration = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -67,8 +67,8 @@ internal sealed class WaitlistHeldCapacityFixture
 
             var catalog = TicketCatalog.Create(EventId, TeamId);
             catalog.AddTicketType(
-                TicketTypeId, TicketTypeName.From("Conference Pass"), [], MaxCapacity, waitlistEnabled: true);
-            for (var i = 1; i <= MaxCapacity; i++)
+                TicketTypeId, TicketTypeName.From("Conference Pass"), [], PublicCapacity, waitlistEnabled: true);
+            for (var i = 1; i <= PublicCapacity; i++)
             {
                 var registration = Registration.Create(
                     TeamId,
@@ -82,6 +82,20 @@ internal sealed class WaitlistHeldCapacityFixture
                 dbContext.Registrations.Add(registration);
             }
 
+            if (_withAdminRegistration)
+            {
+                var registration = Registration.Create(
+                    TeamId,
+                    EventId,
+                    AdminGuestEmail,
+                    FirstName.From("Admin"),
+                    LastName.From("Guest"),
+                    catalog.Claim([TicketTypeId], ClaimMode.Admin));
+                registration.ClearDomainEvents();
+                AdminRegistrationId = registration.Id;
+                dbContext.Registrations.Add(registration);
+            }
+
             catalog.ClearDomainEvents();
             dbContext.TicketCatalogs.Add(catalog);
 
@@ -90,22 +104,6 @@ internal sealed class WaitlistHeldCapacityFixture
                 waitlist.AddEntry(WaitingEmail(i), now.AddMinutes(i), catalog);
             waitlist.ClearDomainEvents();
             dbContext.Waitlists.Add(waitlist);
-
-            if (_withOrganiserCoupon)
-            {
-                var coupon = Coupon.Create(
-                    EventId,
-                    TeamId,
-                    OrganiserGuestEmail,
-                    [TicketTypeId],
-                    now.AddDays(7),
-                    bypassRegistrationWindow: false,
-                    [new TicketTypeInfo(TicketTypeId)],
-                    now);
-                coupon.ClearDomainEvents();
-                OrganiserCouponCode = coupon.Code.Value;
-                dbContext.Coupons.Add(coupon);
-            }
         });
     }
 }

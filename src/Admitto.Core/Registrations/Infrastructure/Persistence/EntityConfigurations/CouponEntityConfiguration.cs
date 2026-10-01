@@ -52,6 +52,11 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
             .HasConversion<string>()
             .HasMaxLength(32);
 
+        builder.Property(e => e.WaitlistOrigin)
+            .HasColumnName("waitlist_origin")
+            .HasConversion<string>()
+            .HasMaxLength(32);
+
         builder.PrimitiveCollection(e => e.AllowedTicketTypeIds)
             .HasColumnName("allowed_ticket_type_ids")
             .IsRequired()

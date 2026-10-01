@@ -7,9 +7,8 @@ internal sealed record AddTicketTypeCommand(
     Guid TeamId,
     string Name,
     string[] TimeSlots,
-    int? MaxCapacity,
+    int? PublicCapacity,
     bool SelfServiceEnabled = true,
     bool WaitlistEnabled = false,
     int ClaimWindowHours = 8,
-    int? MaxReconfirmationEmails = null,
-    int ReservedCapacity = 0) : Command<Guid>;
+    int? MaxReconfirmationEmails = null) : Command<Guid>;

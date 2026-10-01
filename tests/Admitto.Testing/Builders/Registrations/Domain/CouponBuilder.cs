@@ -21,6 +21,7 @@ public class CouponBuilder
     private List<TicketTypeInfo> _availableTicketTypes = [new(DefaultTicketTypeId)];
     private DateTimeOffset _now = DefaultNow;
     private CouponSource _source = CouponSource.Organiser;
+    private WaitlistCouponOrigin? _waitlistOrigin;
 
     public CouponBuilder WithEventId(TicketedEventId eventId)
     {
@@ -76,6 +77,16 @@ public class CouponBuilder
         return this;
     }
 
+    /// <summary>
+    /// Makes this a waitlist coupon with the given origin (automatic offer or VIP promotion).
+    /// </summary>
+    public CouponBuilder WithWaitlistOrigin(WaitlistCouponOrigin origin)
+    {
+        _source = CouponSource.Waitlist;
+        _waitlistOrigin = origin;
+        return this;
+    }
+
     public Coupon Build()
     {
         return Coupon.Create(
@@ -87,6 +98,7 @@ public class CouponBuilder
             _bypassRegistrationWindow,
             _availableTicketTypes,
             _now,
-            _source);
+            _source,
+            _waitlistOrigin);
     }
 }

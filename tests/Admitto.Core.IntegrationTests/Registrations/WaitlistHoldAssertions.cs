@@ -8,10 +8,11 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations;
 internal static class WaitlistHoldAssertions
 {
     /// <summary>
-    /// Asserts the invariant between the two aggregates: the seats a ticket type holds for waitlist offers equal the
-    /// number of <see cref="WaitlistCouponStatus.Issued"/> coupons on its waitlist.
+    /// Asserts the invariant between the two aggregates: the public seats a ticket type holds for waitlist offers
+    /// equal the number of <see cref="WaitlistCouponStatus.Issued"/> automatic coupons on its waitlist. VIP offers
+    /// take no hold.
     /// </summary>
-    public static async ValueTask ShouldHoldOneSeatPerIssuedCouponAsync(
+    public static async ValueTask ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(
         this RegistrationsDbContext dbContext,
         TicketedEventId eventId,
         TicketTypeId ticketTypeId,
@@ -23,8 +24,9 @@ internal static class WaitlistHoldAssertions
             .SingleAsync(w => w.Id == ticketTypeId, cancellationToken);
 
         catalog.FindTicketType(ticketTypeId).WaitlistHeldCapacity.ShouldBe(
-            waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued),
-            "the ticket type should hold one seat per outstanding waitlist offer");
+            waitlist.Coupons.Count(c =>
+                c.Status == WaitlistCouponStatus.Issued && c.Origin == WaitlistCouponOrigin.Automatic),
+            "the ticket type should hold one seat per outstanding automatic waitlist offer");
     }
 
     /// <summary>

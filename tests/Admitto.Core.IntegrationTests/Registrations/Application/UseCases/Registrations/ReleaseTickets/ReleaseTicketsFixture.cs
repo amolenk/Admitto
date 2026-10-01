@@ -26,15 +26,15 @@ internal sealed class ReleaseTicketsFixture
     private ReleaseTicketsFixture() { }
 
     public static ReleaseTicketsFixture WithCatalogAndRegistration(
-        int maxCapacity = 10,
+        int publicCapacity = 10,
         int usedCapacity = 3)
     {
         var f = new ReleaseTicketsFixture();
         f._registrationTicketTypeId = f.TicketTypeId;
         var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
-        catalog.AddTicketType(f.TicketTypeId, TicketTypeName.From("General Admission"), [], maxCapacity);
+        catalog.AddTicketType(f.TicketTypeId, TicketTypeName.From("General Admission"), [], publicCapacity);
         for (var i = 0; i < usedCapacity; i++)
-            catalog.Claim([f.TicketTypeId], ClaimMode.Reserved);
+            catalog.Claim([f.TicketTypeId], ClaimMode.Public);
         f._catalog = catalog;
         return f;
     }
@@ -66,7 +66,7 @@ internal sealed class ReleaseTicketsFixture
 
         var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
         catalog.AddTicketType(knownId, TicketTypeName.From("Known Ticket"), [], 10);
-        catalog.Claim([knownId], ClaimMode.Reserved);
+        catalog.Claim([knownId], ClaimMode.Public);
         f._catalog = catalog;
         return f;
     }
@@ -84,7 +84,7 @@ internal sealed class ReleaseTicketsFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot(_registrationTicketTypeId, TicketTypeName.From("General Admission"), [], ClaimMode.Reserved)]);
+                [new TicketTypeSnapshot(_registrationTicketTypeId, TicketTypeName.From("General Admission"), [], ClaimMode.Public)]);
 
             RegistrationId = registration.Id;
             dbContext.Registrations.Add(registration);

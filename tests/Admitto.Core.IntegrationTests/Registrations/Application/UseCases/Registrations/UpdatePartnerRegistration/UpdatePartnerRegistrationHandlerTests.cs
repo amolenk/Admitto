@@ -56,18 +56,18 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.UsedCapacity.ShouldBe(49);
-            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(11);
+            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.PublicUsedCapacity.ShouldBe(49);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.PublicUsedCapacity.ShouldBe(11);
         });
     }
 
-    // Given a registration holding a ticket originally claimed under the admin/reserved pool
-    // When the attendee updates their tickets via the partner API, keeping the reserved ticket
-    // Then the kept ticket's claim mode is preserved, so releasing it later credits the reserved buffer back
+    // Given a registration holding an admin ticket
+    // When the attendee updates their tickets via the partner API, keeping the admin ticket
+    // Then the kept ticket stays an admin ticket, so releasing it later frees no public seat
     [TestMethod]
-    public async ValueTask UpdatePartnerRegistration_KeepsExistingReservedTicket_PreservesClaimModeOnRelease()
+    public async ValueTask UpdatePartnerRegistration_KeepsExistingAdminTicket_PreservesClaimModeOnRelease()
     {
-        var fixture = UpdatePartnerRegistrationFixture.WithReservedCapacityTicket();
+        var fixture = UpdatePartnerRegistrationFixture.WithAdminTicket();
         await fixture.SetupAsync(Environment);
 
         var command = new UpdatePartnerRegistrationCommand(
@@ -89,7 +89,7 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             registration.ShouldNotBeNull();
             registration.Tickets.Count.ShouldBe(2);
             var vipTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("vip"));
-            vipTicket.Mode.ShouldBe(ClaimMode.Reserved);
+            vipTicket.Mode.ShouldBe(ClaimMode.Admin);
             var earlyBirdTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("early-bird"));
             earlyBirdTicket.Mode.ShouldBe(ClaimMode.Public);
         });
@@ -105,8 +105,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
             var vip = catalog.GetTicketType(fixture.GetTicketTypeId("vip"))!;
-            vip.UsedCapacity.ShouldBe(0);
-            vip.ReservedUsedCapacity.ShouldBe(0);
+            vip.PublicUsedCapacity.ShouldBe(0);
+            vip.AdminUsedCount.ShouldBe(0);
         });
     }
 
@@ -230,7 +230,7 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
                 .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
             registration.Status.ShouldBe(RegistrationStatus.Registered);
             registration.Tickets.ShouldContain(t =>
-                t.Id == fixture.GetTicketTypeId("workshop") && t.Mode == ClaimMode.PublicUncapped);
+                t.Id == fixture.GetTicketTypeId("workshop") && t.Mode == ClaimMode.Public);
 
             var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
             coupon.RedeemedAt.ShouldNotBeNull();
@@ -238,8 +238,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             var catalog = await dbContext.TicketCatalogs
                 .FirstAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             var workshop = catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!;
-            workshop.UsedCapacity.ShouldBe(2);
-            workshop.ReservedUsedCapacity.ShouldBe(0);
+            workshop.PublicUsedCapacity.ShouldBe(2);
+            workshop.AdminUsedCount.ShouldBe(0);
+            workshop.WaitlistHeldCapacity.ShouldBe(0);
 
             var waitlist = await dbContext.Waitlists
                 .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
@@ -251,7 +252,7 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
 
     // Given an organiser coupon covering two sold-out ticket types, both of whose waitlists the attendee is on
     // When the attendee updates their registration to confirm only one of them using the coupon, staying queued for the other
-    // Then only that ticket type is granted from the reserved pool, its waitlist entry is removed, the other ticket type is forfeited, and the coupon is redeemed
+    // Then only that ticket type is granted as an admin ticket, its waitlist entry is removed, the other ticket type is forfeited, and the coupon is redeemed
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_OrganiserMultiTicketTypeCoupon_GrantsSelectedTicketAndRemovesItsWaitlistEntry()
     {
@@ -280,7 +281,7 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
                 [fixture.GetTicketTypeId("early-bird"), fixture.GetTicketTypeId("workshop")],
                 ignoreOrder: true);
             registration.Tickets.ShouldContain(t =>
-                t.Id == fixture.GetTicketTypeId("workshop") && t.Mode == ClaimMode.Reserved);
+                t.Id == fixture.GetTicketTypeId("workshop") && t.Mode == ClaimMode.Admin);
 
             var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
             coupon.RedeemedAt.ShouldNotBeNull();
@@ -288,9 +289,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             var catalog = await dbContext.TicketCatalogs
                 .FirstAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             var workshop = catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!;
-            workshop.UsedCapacity.ShouldBe(2);
-            workshop.ReservedUsedCapacity.ShouldBe(1);
-            catalog.GetTicketType(fixture.GetTicketTypeId("masterclass"))!.UsedCapacity.ShouldBe(1);
+            workshop.PublicUsedCapacity.ShouldBe(1);
+            workshop.AdminUsedCount.ShouldBe(1);
+            catalog.GetTicketType(fixture.GetTicketTypeId("masterclass"))!.PublicUsedCapacity.ShouldBe(1);
 
             var workshopWaitlist = await dbContext.Waitlists
                 .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
@@ -460,7 +461,7 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
 
             var catalog = await dbContext.TicketCatalogs
                 .FirstAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
-            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(1);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.PublicUsedCapacity.ShouldBe(1);
 
             var waitlist = await dbContext.Waitlists
                 .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);

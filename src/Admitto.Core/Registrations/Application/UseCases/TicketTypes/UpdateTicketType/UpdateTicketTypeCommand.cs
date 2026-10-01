@@ -7,10 +7,9 @@ internal sealed record UpdateTicketTypeCommand(
     Guid TeamId,
     Guid TicketTypeId,
     string? Name,
-    int? MaxCapacity,
+    int? PublicCapacity,
     bool? SelfServiceEnabled = null,
     bool? WaitlistEnabled = null,
     int? ClaimWindowHours = null,
     int? MaxReconfirmationEmails = null,
-    bool UpdateMaxReconfirmationEmails = false,
-    int ReservedCapacity = 0) : Command;
+    bool UpdateMaxReconfirmationEmails = false) : Command;

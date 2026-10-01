@@ -26,7 +26,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             {
                 Name = "Session",
                 TimeSlots = Array.Empty<string>(),
-                MaxCapacity = 50,
+                PublicCapacity = 50,
                 MaxReconfirmationEmails = 3
             },
             cancellationToken: testContext.CancellationToken);
@@ -59,7 +59,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             {
                 Name = "Session",
                 TimeSlots = Array.Empty<string>(),
-                MaxCapacity = 50,
+                PublicCapacity = 50,
                 MaxReconfirmationEmails = 0
             },
             cancellationToken: testContext.CancellationToken);
@@ -84,7 +84,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             {
                 Name = "Session",
                 TimeSlots = Array.Empty<string>(),
-                MaxCapacity = 50
+                PublicCapacity = 50
             },
             cancellationToken: testContext.CancellationToken);
 
@@ -197,7 +197,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             fixture.ExistingTicketTypeRoute,
             new
             {
-                MaxCapacity = 1,
+                PublicCapacity = 1,
                 WaitlistEnabled = true
             },
             cancellationToken: testContext.CancellationToken);
@@ -232,7 +232,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             fixture.ExistingTicketTypeRoute,
             new
             {
-                MaxCapacity = 2,
+                PublicCapacity = 2,
                 WaitlistEnabled = true
             },
             cancellationToken: testContext.CancellationToken);

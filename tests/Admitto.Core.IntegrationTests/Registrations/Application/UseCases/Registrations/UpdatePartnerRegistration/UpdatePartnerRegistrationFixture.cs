@@ -13,7 +13,7 @@ internal sealed class UpdatePartnerRegistrationFixture
     private Coupon? _coupon;
     private readonly List<global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist> _waitlists = [];
     private bool _preCancel;
-    private TicketTypeSnapshot? _reservedTicket;
+    private TicketTypeSnapshot? _adminTicket;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
@@ -68,7 +68,7 @@ internal sealed class UpdatePartnerRegistrationFixture
         return f;
     }
 
-    public static UpdatePartnerRegistrationFixture WithReservedCapacityTicket()
+    public static UpdatePartnerRegistrationFixture WithAdminTicket()
     {
         var f = new UpdatePartnerRegistrationFixture();
         f._ticketedEvent = f.MakeActiveEventWithSchema();
@@ -79,14 +79,14 @@ internal sealed class UpdatePartnerRegistrationFixture
         f._ticketTypeIdsBySlug["vip"] = vipId;
         f._ticketTypeIdsBySlug["early-bird"] = earlyBirdId;
 
-        catalog.AddTicketType(vipId, TicketTypeName.From("VIP"), [], maxCapacity: 10, reservedCapacity: 3);
-        catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], maxCapacity: 100);
+        catalog.AddTicketType(vipId, TicketTypeName.From("VIP"), [], publicCapacity: 10);
+        catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], publicCapacity: 100);
 
-        // The registration's only ticket was claimed under the admin/reserved pool.
-        var reservedTickets = catalog.Claim([vipId], ClaimMode.Reserved);
+        // The registration's only ticket is an admin ticket.
+        var adminTickets = catalog.Claim([vipId], ClaimMode.Admin);
         catalog.ClearDomainEvents();
         f._catalog = catalog;
-        f._reservedTicket = reservedTickets[0];
+        f._adminTicket = adminTickets[0];
 
         return f;
     }
@@ -109,7 +109,7 @@ internal sealed class UpdatePartnerRegistrationFixture
 
         catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [TimeSlot.From("morning")], 100);
         catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From("afternoon")], 1, waitlistEnabled: true);
-        catalog.Claim([earlyBirdId], ClaimMode.Reserved);
+        catalog.Claim([earlyBirdId], ClaimMode.Public);
         catalog.Claim([workshopId], ClaimMode.Public);
         catalog.ClearDomainEvents();
         f._catalog = catalog;
@@ -295,8 +295,8 @@ internal sealed class UpdatePartnerRegistrationFixture
             dbContext.Waitlists.AddRange(_waitlists);
 
             var earlyBirdId = _ticketTypeIdsBySlug.TryGetValue("early-bird", out var id) ? id : TicketTypeId.New();
-            var initialTickets = _reservedTicket is { } reservedTicket
-                ? [reservedTicket]
+            var initialTickets = _adminTicket is { } adminTicket
+                ? [adminTicket]
                 : new List<TicketTypeSnapshot> { new(earlyBirdId, TicketTypeName.From("Early Bird"), []) };
             var registration = Registration.Create(
                 TeamId,
@@ -338,15 +338,16 @@ internal sealed class UpdatePartnerRegistrationFixture
         return ticketedEvent;
     }
 
-    private TicketCatalog MakeCatalog(params (string slug, string name, int max, int used, bool selfServiceEnabled)[] ticketTypes)
+    private TicketCatalog MakeCatalog(params (string slug, string name, int publicCapacity, int used, bool selfServiceEnabled)[] ticketTypes)
     {
         var catalog = TicketCatalog.Create(EventId, TeamId);
-        foreach (var (slug, name, max, used, selfServiceEnabled) in ticketTypes)
+        foreach (var (slug, name, publicCapacity, used, selfServiceEnabled) in ticketTypes)
         {
             var id = TicketTypeId.New();
             _ticketTypeIdsBySlug[slug] = id;
-            catalog.AddTicketType(id, TicketTypeName.From(name), [], max, selfServiceEnabled);
-            for (var i = 0; i < used; i++) catalog.Claim([id], ClaimMode.Reserved);
+            catalog.AddTicketType(id, TicketTypeName.From(name), [], publicCapacity, selfServiceEnabled);
+            for (var i = 0; i < used; i++)
+                catalog.Claim([id], selfServiceEnabled ? ClaimMode.Public : ClaimMode.Admin);
         }
         catalog.ClearDomainEvents();
         return catalog;

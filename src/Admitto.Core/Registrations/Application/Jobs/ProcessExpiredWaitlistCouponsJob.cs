@@ -10,10 +10,10 @@ namespace Amolenk.Admitto.Core.Registrations.Application.Jobs;
 /// Polls for waitlists holding issued coupons whose offer lapsed (past the grace period) and expires
 /// each one on the <see cref="Waitlist"/> aggregate, which raises
 /// <see cref="Domain.DomainEvents.WaitlistCouponExpiredDomainEvent"/> so the recipient is told
-/// their offer lapsed, and gives back the seat the offer held on the <see cref="TicketCatalog"/>. The
-/// job counts no freed slots: the catalog decides from real capacity whether that seat goes to the
-/// next person in queue (<see cref="Domain.DomainEvents.WaitlistCapacityAvailableDomainEvent"/>) or
-/// covers an outstanding VIP offer or overbooking. If the waitlist is empty after expiry, the domain
+/// their offer lapsed, and gives back the public seat an automatic offer held on the <see cref="TicketCatalog"/>
+/// (a VIP offer held none). The job counts no freed slots: the catalog decides from real capacity whether that
+/// seat goes to the next person in queue (<see cref="Domain.DomainEvents.WaitlistCapacityAvailableDomainEvent"/>)
+/// or makes up a shortfall left by lowering <c>PublicCapacity</c>. If the waitlist is empty after expiry, the domain
 /// raises <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
 /// </summary>
 /// <remarks>

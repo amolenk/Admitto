@@ -13,7 +13,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
     [TestMethod]
     public async ValueTask ReleaseTickets_WithMatchingCatalog_DecrementsUsedCapacity()
     {
-        var fixture = ReleaseTicketsFixture.WithCatalogAndRegistration(maxCapacity: 10, usedCapacity: 3);
+        var fixture = ReleaseTicketsFixture.WithCatalogAndRegistration(publicCapacity: 10, usedCapacity: 3);
         await fixture.SetupAsync(Environment);
 
         var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value, fixture.TeamId.Value);
@@ -26,7 +26,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType(fixture.TicketTypeId)!.UsedCapacity.ShouldBe(2);
+            catalog.GetTicketType(fixture.TicketTypeId)!.PublicUsedCapacity.ShouldBe(2);
         });
     }
 
@@ -67,7 +67,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType(fixture.TicketTypeId)!.UsedCapacity.ShouldBe(0);
+            catalog.GetTicketType(fixture.TicketTypeId)!.PublicUsedCapacity.ShouldBe(0);
         });
     }
 
@@ -93,7 +93,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
             // The known ticket type's capacity was not affected
-            catalog.GetTicketType(fixture.KnownTicketTypeId)!.UsedCapacity.ShouldBe(1);
+            catalog.GetTicketType(fixture.KnownTicketTypeId)!.PublicUsedCapacity.ShouldBe(1);
         });
     }
 }

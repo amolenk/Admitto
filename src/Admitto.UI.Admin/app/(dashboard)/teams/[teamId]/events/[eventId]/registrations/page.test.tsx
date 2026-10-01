@@ -795,36 +795,35 @@ describe("EventHeroCard registration capacity summary", () => {
         return label.parentElement?.parentElement as HTMLElement;
     }
 
-    // Given the event has no configured ticket capacity
+    // Given the event has no configured public capacity
     // When the event's actual capacity summary UI renders
-    // Then the registered count is labelled as a total without an artificial capacity
+    // Then the registered count is shown against an unlimited public capacity
     it("shows the registered total for unlimited capacity", () => {
         renderWithProviders(
             <EventHeroCard
                 event={event}
-                ticketTypes={[ticketTypeDto({ maxCapacity: null, usedCapacity: 47 })]}
+                ticketTypes={[ticketTypeDto({ publicCapacity: null, publicUsedCapacity: 47 })]}
             />,
         );
 
         const stat = registeredStat();
         expect(within(stat).getByText("47")).toBeInTheDocument();
-        expect(within(stat).getByText("total")).toBeInTheDocument();
-        expect(within(stat).queryByText(/of/)).not.toBeInTheDocument();
+        expect(within(stat).getByText("public 47/\u221E \u00B7 admin 0 \u00B7 total 47")).toBeInTheDocument();
     });
 
-    // Given the event's ticket catalog has a configured capacity of 250
+    // Given the event's ticket catalog has a configured public capacity of 250
     // When the event's actual capacity summary UI renders
-    // Then the registered count is displayed against that capacity
+    // Then the registered count is displayed against that public capacity
     it("shows the registered count of configured capacity", () => {
         renderWithProviders(
             <EventHeroCard
                 event={event}
-                ticketTypes={[ticketTypeDto({ maxCapacity: 250, usedCapacity: 47 })]}
+                ticketTypes={[ticketTypeDto({ publicCapacity: 250, publicUsedCapacity: 47 })]}
             />,
         );
 
         const stat = registeredStat();
         expect(within(stat).getByText("47")).toBeInTheDocument();
-        expect(within(stat).getByText("of 250")).toBeInTheDocument();
+        expect(within(stat).getByText("public 47/250 \u00B7 admin 0 \u00B7 total 47")).toBeInTheDocument();
     });
 });

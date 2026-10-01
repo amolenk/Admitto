@@ -7,7 +7,7 @@ using Amolenk.Admitto.Testing.Builders.Registrations.Domain;
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Waitlists.WaitlistQueuedCount;
 
 /// <summary>
-/// A sold-out, waitlist-enabled ticket type in WaitlistMode: <see cref="MaxCapacity"/> seats taken by registrations
+/// A sold-out, waitlist-enabled ticket type in WaitlistMode: <see cref="PublicCapacity"/> seats taken by registrations
 /// of <see cref="RegisteredEmail"/>, and attendees waiting in queue order <see cref="WaitingEmail"/>, each with a
 /// <c>Waitlisted</c> registration.
 /// </summary>
@@ -21,7 +21,7 @@ internal sealed class WaitlistQueuedCountFixture
     public TeamId TeamId { get; } = TeamId.New();
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
-    public const int MaxCapacity = 2;
+    public const int PublicCapacity = 2;
     public Guid OrganiserCouponCode { get; private set; }
 
     /// <summary>Registrations holding the sold-out seats.</summary>
@@ -73,8 +73,8 @@ internal sealed class WaitlistQueuedCountFixture
 
             var catalog = TicketCatalog.Create(EventId, TeamId);
             catalog.AddTicketType(
-                TicketTypeId, TicketTypeName.From("Conference Pass"), [], MaxCapacity, waitlistEnabled: true);
-            for (var i = 1; i <= MaxCapacity; i++)
+                TicketTypeId, TicketTypeName.From("Conference Pass"), [], PublicCapacity, waitlistEnabled: true);
+            for (var i = 1; i <= PublicCapacity; i++)
             {
                 var registration = Registration.Create(
                     TeamId,

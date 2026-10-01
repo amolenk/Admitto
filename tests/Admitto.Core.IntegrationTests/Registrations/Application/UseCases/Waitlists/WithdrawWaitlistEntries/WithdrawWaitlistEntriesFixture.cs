@@ -90,5 +90,5 @@ internal sealed class WithdrawWaitlistEntriesFixture
     }
 
     private static void AddWaitlistEnabledTicketType(TicketCatalog catalog, TicketTypeId id, string name) =>
-        catalog.AddTicketType(id, TicketTypeName.From(name), [], maxCapacity: 10, waitlistEnabled: true);
+        catalog.AddTicketType(id, TicketTypeName.From(name), [], publicCapacity: 10, waitlistEnabled: true);
 }

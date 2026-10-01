@@ -91,9 +91,9 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
     // Given a ticket type with one free seat and a VIP offer outstanding that was made while it was sold out
     // When waitlist notifications are processed
-    // Then the free seat covers the VIP offer and nobody else in the queue is offered
+    // Then the VIP offer takes no public seat, so the free seat goes to the front of the queue
     [TestMethod]
-    public async ValueTask ProcessWaitlistNotifications_FreeSeatCoveredByVipOffer_IssuesNoCoupon()
+    public async ValueTask ProcessWaitlistNotifications_FreeSeatWithVipOfferOutstanding_OffersFrontOfQueue()
     {
         // Arrange
         var fixture = ProcessWaitlistNotificationsFixture.WithTwoEntriesOneSlotAndVipOffer();
@@ -107,14 +107,16 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
             new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
             testContext.CancellationToken);
 
-        // Assert — only the VIP's coupon exists, both others still waiting
+        // Assert — the VIP's coupon and one new offer to the front of the queue
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
-            (await dbContext.Coupons.SingleAsync(testContext.CancellationToken)).Email.Value
-                .ShouldBe("attendee3@example.com");
+            (await dbContext.Coupons.Select(c => c.Email.Value).ToListAsync(testContext.CancellationToken))
+                .ShouldBe(["attendee3@example.com", "attendee1@example.com"], ignoreOrder: true);
 
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
-            waitlist.ActiveEntryCount.ShouldBe(2);
+            waitlist.ActiveEntryCount.ShouldBe(1);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(
+                fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 

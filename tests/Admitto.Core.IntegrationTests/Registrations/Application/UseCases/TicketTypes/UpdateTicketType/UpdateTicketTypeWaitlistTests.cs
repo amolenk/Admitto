@@ -31,7 +31,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntries(3);
         await fixture.SetupAsync(Environment);
 
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity + 2, waitlistEnabled: true);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity + 2, waitlistEnabled: true);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -44,7 +44,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.GetActivePosition(UpdateTicketTypeWaitlistFixture.WaitingEmail(3)).ShouldBe(1);
             waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(2);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
             ticketType.WaitlistEnabled.ShouldBeTrue();
@@ -53,46 +53,33 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
     }
 
     // Given a sold-out ticket type with three people waiting and two VIP offers made while it was sold out
-    // When its capacity is raised by three
-    // Then the new seats first cover the VIP offers, and only one more person is offered
+    // When its public capacity is raised by three
+    // Then the VIP offers take none of the new seats, and all three people waiting are offered
     [TestMethod]
-    public async ValueTask UpdateTicketType_CapacityRaisedWithVipOffersOutstanding_OffersSeatsLeftAfterVipHolds()
+    public async ValueTask UpdateTicketType_CapacityRaisedWithVipOffersOutstanding_OffersEveryNewSeat()
     {
         var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntriesAndVipOffers(waitingCount: 3, vipOffers: 2);
         await fixture.SetupAsync(Environment);
 
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity + 3, waitlistEnabled: true);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity + 3, waitlistEnabled: true);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var newOffers = await dbContext.Coupons
                 .Where(c => !UpdateTicketTypeWaitlistFixture.VipEmails.Contains(c.Email))
                 .ToListAsync(testContext.CancellationToken);
-            newOffers.ShouldHaveSingleItem().Email.ShouldBe(UpdateTicketTypeWaitlistFixture.WaitingEmail(1));
+            newOffers.Select(c => c.Email).ShouldBe(
+                [
+                    UpdateTicketTypeWaitlistFixture.WaitingEmail(1),
+                    UpdateTicketTypeWaitlistFixture.WaitingEmail(2),
+                    UpdateTicketTypeWaitlistFixture.WaitingEmail(3),
+                ],
+                ignoreOrder: true);
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
             ticketType.WaitlistHeldCapacity.ShouldBe(3);
             ticketType.AvailableCapacity.ShouldBe(0);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
-        });
-    }
-
-    // Given a sold-out ticket type with people waiting and two VIP offers made while it was sold out
-    // When its capacity is raised by only one
-    // Then the new seat covers a VIP offer and nobody else is offered
-    [TestMethod]
-    public async ValueTask UpdateTicketType_CapacityRaisedLessThanVipOffers_IssuesNoCoupon()
-    {
-        var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntriesAndVipOffers(waitingCount: 3, vipOffers: 2);
-        await fixture.SetupAsync(Environment);
-
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity + 1, waitlistEnabled: true);
-
-        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
-        {
-            (await dbContext.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(2);
-            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
-            waitlist.ActiveEntryCount.ShouldBe(3);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
@@ -106,7 +93,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         await fixture.SetupAsync(Environment);
 
         // The Admin UI switches the waitlist off together with the capacity limit.
-        await UpdateTicketTypeAsync(fixture, maxCapacity: null, waitlistEnabled: false);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: null, waitlistEnabled: false);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -118,10 +105,10 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.ActiveEntryCount.ShouldBe(0);
             waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(3);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
-            ticketType.MaxCapacity.ShouldBeNull();
+            ticketType.PublicCapacity.ShouldBeNull();
             ticketType.WaitlistEnabled.ShouldBeFalse();
             ticketType.WaitlistMode.ShouldBeFalse();
         });
@@ -136,7 +123,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntriesAndOutstandingCoupon(2);
         await fixture.SetupAsync(Environment);
 
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity, waitlistEnabled: false);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity, waitlistEnabled: false);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -162,7 +149,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
     {
         var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntriesAndOutstandingCoupon(1);
         await fixture.SetupAsync(Environment);
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity, waitlistEnabled: false);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity, waitlistEnabled: false);
         Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
 
         var registrationId = await new RegisterAttendeeWithCouponHandler(
@@ -201,7 +188,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         var fixture = UpdateTicketTypeWaitlistFixture.WithWaitingEntries(3);
         await fixture.SetupAsync(Environment);
 
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity + 1, waitlistEnabled: false);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity + 1, waitlistEnabled: false);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -211,7 +198,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.ActiveEntryCount.ShouldBe(0);
             waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(1);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
@@ -224,7 +211,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         var fixture = UpdateTicketTypeWaitlistFixture.WithWaitlistedRegistration();
         await fixture.SetupAsync(Environment);
 
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity, waitlistEnabled: false);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity, waitlistEnabled: false);
         Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
 
         var result = await new GetPartnerRegistrationDetailsHandler(Environment.RegistrationsDatabase.Context)
@@ -249,7 +236,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
     {
         var fixture = UpdateTicketTypeWaitlistFixture.WithMixedRegistration();
         await fixture.SetupAsync(Environment);
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity, waitlistEnabled: false);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity, waitlistEnabled: false);
         Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
 
         await new ChangeAttendeeTicketsHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System)
@@ -273,7 +260,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
     {
         var fixture = UpdateTicketTypeWaitlistFixture.WithMixedRegistration();
         await fixture.SetupAsync(Environment);
-        await UpdateTicketTypeAsync(fixture, maxCapacity: UpdateTicketTypeWaitlistFixture.MaxCapacity, waitlistEnabled: false);
+        await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity, waitlistEnabled: false);
         Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
 
         await new UpdatePartnerRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System)
@@ -317,7 +304,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
     /// </summary>
     private async ValueTask UpdateTicketTypeAsync(
         UpdateTicketTypeWaitlistFixture fixture,
-        int? maxCapacity,
+        int? publicCapacity,
         bool waitlistEnabled)
     {
         await using var dispatch = DispatchingRegistrationsContext.Create(Environment);
@@ -328,7 +315,7 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
                 fixture.TeamId.Value,
                 fixture.TicketTypeId.Value,
                 Name: null,
-                MaxCapacity: maxCapacity,
+                PublicCapacity: publicCapacity,
                 WaitlistEnabled: waitlistEnabled),
             testContext.CancellationToken);
 

@@ -28,7 +28,8 @@ public class Coupon : Aggregate<CouponId>
         IReadOnlyList<TicketTypeId> allowedTicketTypeIds,
         DateTimeOffset expiresAt,
         bool bypassRegistrationWindow,
-        CouponSource source)
+        CouponSource source,
+        WaitlistCouponOrigin? waitlistOrigin)
         : base(id)
     {
         EventId = eventId;
@@ -38,6 +39,7 @@ public class Coupon : Aggregate<CouponId>
         ExpiresAt = expiresAt;
         BypassRegistrationWindow = bypassRegistrationWindow;
         Source = source;
+        WaitlistOrigin = waitlistOrigin;
 
         _allowedTicketTypeIds = allowedTicketTypeIds.ToList();
     }
@@ -50,6 +52,12 @@ public class Coupon : Aggregate<CouponId>
     public DateTimeOffset ExpiresAt { get; private set; }
     public bool BypassRegistrationWindow { get; private set; }
     public CouponSource Source { get; private set; }
+
+    /// <summary>
+    /// How a waitlist coupon was issued (automatic front-of-queue offer or VIP promotion); <c>null</c> for organiser
+    /// coupons. Decides the pool a redemption claims from (<see cref="RedemptionClaimMode"/>).
+    /// </summary>
+    public WaitlistCouponOrigin? WaitlistOrigin { get; private set; }
     public DateTimeOffset? RedeemedAt { get; private set; }
 
     public CouponStatus GetStatus(DateTimeOffset now)
@@ -68,7 +76,8 @@ public class Coupon : Aggregate<CouponId>
         bool bypassRegistrationWindow,
         IReadOnlyList<TicketTypeInfo> availableTicketTypes,
         DateTimeOffset now,
-        CouponSource source = CouponSource.Organiser)
+        CouponSource source = CouponSource.Organiser,
+        WaitlistCouponOrigin? waitlistOrigin = null)
     {
         // Validate at least one ticket type.
         if (requestedTicketTypeIds.Count == 0)
@@ -103,7 +112,8 @@ public class Coupon : Aggregate<CouponId>
             requestedTicketTypeIds,
             expiresAt,
             bypassRegistrationWindow,
-            source);
+            source,
+            source == CouponSource.Waitlist ? waitlistOrigin ?? WaitlistCouponOrigin.Automatic : null);
 
         if (source == CouponSource.Organiser)
         {
@@ -120,11 +130,13 @@ public class Coupon : Aggregate<CouponId>
 
     /// <summary>
     /// The capacity pool a redemption of this coupon claims from. This is capacity bookkeeping only, not a
-    /// redemption rule: a waitlist coupon re-fills a slot already freed from the public pool, while any other
-    /// coupon draws on the reserved buffer first (see <see cref="ClaimMode"/>).
+    /// redemption rule: an automatic waitlist offer converts the public seat it holds into a public ticket, while
+    /// an organiser coupon or a VIP offer claims admin tickets on top of public capacity (see <see cref="ClaimMode"/>).
     /// </summary>
     public ClaimMode RedemptionClaimMode =>
-        Source == CouponSource.Waitlist ? ClaimMode.PublicUncapped : ClaimMode.Reserved;
+        Source == CouponSource.Waitlist && WaitlistOrigin == WaitlistCouponOrigin.Automatic
+            ? ClaimMode.Public
+            : ClaimMode.Admin;
 
     /// <summary>
     /// Redeems the coupon against the ticket types the attendee is claiming, regardless of the coupon's source.

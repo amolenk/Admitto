@@ -39,11 +39,10 @@ export type AddTicketTypeHttpRequest = {
     name: string;
     selfServiceEnabled?: boolean;
     timeSlots?: null | Array<string>;
-    maxCapacity?: null | number | string;
+    publicCapacity?: null | number | string;
     waitlistEnabled?: boolean;
     claimWindowHours?: number | string;
     maxReconfirmationEmails?: null | number | string;
-    reservedCapacity?: number | string;
 };
 
 export type AddTicketTypeHttpResponse = {
@@ -545,15 +544,14 @@ export type TicketTypeDto = {
     id: string;
     name: string;
     timeSlots: Array<string>;
-    maxCapacity: null | number | string;
-    usedCapacity: number | string;
+    publicCapacity: null | number | string;
+    publicUsedCapacity: number | string;
+    adminUsedCount: number | string;
     selfServiceEnabled: boolean;
     waitlistEnabled: boolean;
     waitlistMode: boolean;
     claimWindowHours: number | string;
     maxReconfirmationEmails: null | number | string;
-    reservedCapacity: number | string;
-    reservedUsedCapacity: number | string;
 };
 
 export type UpdateAdditionalDetailSchemaHttpRequest = {
@@ -597,11 +595,10 @@ export type UpdateTicketedEventDetailsHttpRequest = {
 
 export type UpdateTicketTypeHttpRequest = {
     name?: null | string;
-    maxCapacity?: null | number | string;
+    publicCapacity?: null | number | string;
     selfServiceEnabled?: null | boolean;
     waitlistEnabled?: null | boolean;
     claimWindowHours?: null | number | string;
-    reservedCapacity?: number | string;
     maxReconfirmationEmails?: null | number | string;
 };
 

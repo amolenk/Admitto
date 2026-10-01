@@ -16,12 +16,11 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
 {
     // Given an event with ticket capacity already at its maximum
     // When an admin registers a new attendee
-    // Then the registration is created and capacity is incremented past the limit
-    // Successful admin-add registration (capacity at limit still allowed)
+    // Then the registration is created with an admin ticket on top of the public capacity
     [TestMethod]
-    public async ValueTask AdminRegisterAttendee_Success_CreatesRegistrationAndIncrementsCapacity()
+    public async ValueTask AdminRegisterAttendee_AtPublicCapacity_CreatesRegistrationWithAdminTicket()
     {
-        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(max: 5, used: 5);
+        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(publicCapacity: 5, used: 5);
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, "speaker@example.com", fixture.TicketTypeId.Value);
@@ -36,10 +35,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             registration.Id.Value.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("speaker@example.com");
             registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
+            registration.Tickets[0].Mode.ShouldBe(ClaimMode.Admin);
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(6);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(5);
+            catalog.TicketTypes[0].AdminUsedCount.ShouldBe(1);
         });
     }
 
@@ -117,10 +118,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
 
     // Given a ticket type whose capacity is already full
     // When an admin registers a new attendee for that ticket type
-    // Then the registration is created and used capacity exceeds the configured limit
-    // Admin-add bypasses capacity limit
+    // Then the registration is created as an admin ticket and public availability is unchanged
     [TestMethod]
-    public async ValueTask AdminRegisterAttendee_CapacityFull_CreatesRegistrationAndExceedsLimit()
+    public async ValueTask AdminRegisterAttendee_CapacityFull_CreatesAdminTicketWithoutChangingPublicAvailability()
     {
         var fixture = RegisterAttendeeFixture.CapacityFull();
         await fixture.SetupAsync(Environment);
@@ -134,7 +134,10 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         {
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(21);
+            var ticketType = catalog.TicketTypes[0];
+            ticketType.PublicUsedCapacity.ShouldBe(20);
+            ticketType.AdminUsedCount.ShouldBe(1);
+            ticketType.AvailableCapacity.ShouldBe(0);
         });
     }
 
@@ -240,7 +243,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
     public async ValueTask AdminRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
     {
         var fixture = RegisterAttendeeFixture
-            .OpenWindowWithCapacity(max: 5, used: 5)
+            .OpenWindowWithCapacity(publicCapacity: 5, used: 5)
             .ConfigureAdditionalDetailSchema(("meal", "Meal", 20))
             .WithCancelledExistingRegistration(
                 email: "alice@example.com",
@@ -276,7 +279,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             registration.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().Single().RegisteredAt.ShouldBe(resetAt);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(6);
+            var ticketType = catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId);
+            ticketType.PublicUsedCapacity.ShouldBe(5);
+            ticketType.AdminUsedCount.ShouldBe(1);
         });
     }
 
@@ -410,7 +415,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         {
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(0);
         });
     }
 

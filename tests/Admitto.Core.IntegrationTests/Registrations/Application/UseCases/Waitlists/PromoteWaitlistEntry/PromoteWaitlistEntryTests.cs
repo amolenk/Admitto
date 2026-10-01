@@ -115,7 +115,7 @@ public sealed class PromoteWaitlistEntryTests(TestContext testContext) : AspireI
 
     // Given the VIP was promoted and received a waitlist coupon for the sold-out workshop
     // When the VIP updates their registration to add the workshop using that coupon
-    // Then the workshop ticket is granted and the coupon is redeemed on the waitlist that issued it
+    // Then the workshop ticket is granted as an admin ticket and the coupon is redeemed on the waitlist that issued it
     [TestMethod]
     public async ValueTask PromoteWaitlistEntry_CouponRedeemedViaUpdateRegistration_GrantsWorkshopTicket()
     {
@@ -148,7 +148,13 @@ public sealed class PromoteWaitlistEntryTests(TestContext testContext) : AspireI
         {
             var registration = await db.Registrations
                 .FirstAsync(r => r.Id == fixture.VipRegistrationId, testContext.CancellationToken);
-            registration.Tickets.ShouldContain(t => t.Id == fixture.WorkshopId && t.Mode == ClaimMode.PublicUncapped);
+            registration.Tickets.ShouldContain(t => t.Id == fixture.WorkshopId && t.Mode == ClaimMode.Admin);
+
+            // A redeemed VIP offer is an admin ticket on top of public capacity.
+            var workshop = (await db.TicketCatalogs.SingleAsync(testContext.CancellationToken))
+                .GetTicketType(fixture.WorkshopId)!;
+            workshop.AdminUsedCount.ShouldBe(1);
+            workshop.WaitlistHeldCapacity.ShouldBe(0);
 
             var coupon = await db.Coupons.SingleAsync(testContext.CancellationToken);
             coupon.RedeemedAt.ShouldNotBeNull();

@@ -352,16 +352,30 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.TicketTypeNotAllowlisted([otherTicketTypeId.Value]));
     }
 
-    // Given a coupon of a given source
+    // Given an organiser coupon
     // When its redemption claim mode is read
-    // Then waitlist coupons re-fill the public pool and organiser coupons draw on the reserved buffer
+    // Then it claims admin tickets on top of public capacity
     [TestMethod]
-    [DataRow(CouponSource.Waitlist, ClaimMode.PublicUncapped)]
-    [DataRow(CouponSource.Organiser, ClaimMode.Reserved)]
-    public void RedemptionClaimMode_BySource_ReturnsCapacityPool(CouponSource source, ClaimMode expected)
+    public void RedemptionClaimMode_OrganiserCoupon_ReturnsAdmin()
     {
         // Arrange
-        var sut = new CouponBuilder().WithSource(source).Build();
+        var sut = new CouponBuilder().WithSource(CouponSource.Organiser).Build();
+
+        // Act & Assert
+        sut.RedemptionClaimMode.ShouldBe(ClaimMode.Admin);
+        sut.WaitlistOrigin.ShouldBeNull();
+    }
+
+    // Given a waitlist coupon of a given origin
+    // When its redemption claim mode is read
+    // Then an automatic offer converts its public hold and a VIP offer claims an admin ticket
+    [TestMethod]
+    [DataRow(WaitlistCouponOrigin.Automatic, ClaimMode.Public)]
+    [DataRow(WaitlistCouponOrigin.Manual, ClaimMode.Admin)]
+    public void RedemptionClaimMode_WaitlistCoupon_ReturnsPoolByOrigin(WaitlistCouponOrigin origin, ClaimMode expected)
+    {
+        // Arrange
+        var sut = new CouponBuilder().WithWaitlistOrigin(origin).Build();
 
         // Act & Assert
         sut.RedemptionClaimMode.ShouldBe(expected);

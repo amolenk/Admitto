@@ -47,7 +47,7 @@ internal sealed class AdminRegisterAttendeeHandler(
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
         var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
-        var tickets = catalog.Claim(ticketTypeIds, ClaimMode.Reserved);
+        var tickets = catalog.Claim(ticketTypeIds, ClaimMode.Admin);
 
         Registration registration;
         if (existingRegistration is null)

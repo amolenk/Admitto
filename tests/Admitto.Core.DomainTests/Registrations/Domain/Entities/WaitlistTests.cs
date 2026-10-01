@@ -35,14 +35,14 @@ public sealed class WaitlistTests
     private static TicketCatalog CreateCatalog()
     {
         var catalog = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
-        catalog.AddTicketType(DefaultTicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: 100);
+        catalog.AddTicketType(DefaultTicketTypeId, TicketTypeName.From("Conference Pass"), [], publicCapacity: 100);
         return catalog;
     }
 
     private static TicketType TicketTypeOf(TicketCatalog catalog) => catalog.FindTicketType(DefaultTicketTypeId);
 
     /// <summary>
-    /// The catalog every entry in a test joins and leaves, and every offer holds a seat on (a fresh one per test).
+    /// The catalog every entry in a test joins and leaves, and every automatic offer holds a seat on (a fresh one per test).
     /// </summary>
     private readonly TicketCatalog _catalog = CreateCatalog();
 
@@ -490,7 +490,7 @@ public sealed class WaitlistTests
 
     // Given a waitlist with an active entry
     // When the next coupon is issued from the front of the queue
-    // Then the offer holds a seat on the ticket type
+    // Then the automatic offer holds a public seat on the ticket type
     [TestMethod]
     public void IssueNextCoupon_WhenActiveEntryExists_HoldsSeatOnTicketType()
     {
@@ -508,14 +508,14 @@ public sealed class WaitlistTests
 
     // Given a sold-out ticket type with an attendee waiting
     // When an organizer promotes that attendee as a VIP
-    // Then the offer still holds a seat, taking the ticket type's availability below zero
+    // Then the offer takes no hold and the ticket type's availability is unchanged
     [TestMethod]
-    public void IssueCouponToEntry_SoldOut_HoldsSeatBeyondCapacity()
+    public void IssueCouponToEntry_SoldOut_TakesNoHold()
     {
         // Arrange
         var sut = CreateWaitlist();
         var catalog = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
-        catalog.AddTicketType(DefaultTicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: 1,
+        catalog.AddTicketType(DefaultTicketTypeId, TicketTypeName.From("Conference Pass"), [], publicCapacity: 1,
             waitlistEnabled: true);
         catalog.Claim([DefaultTicketTypeId], ClaimMode.Public);
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, catalog);
@@ -524,15 +524,15 @@ public sealed class WaitlistTests
         sut.IssueCouponToEntry(sut.Entries.Single().Id, CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow);
 
         // Assert
-        TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(1);
-        TicketTypeOf(catalog).AvailableCapacity.ShouldBe(-1);
+        TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(0);
+        TicketTypeOf(catalog).AvailableCapacity.ShouldBe(0);
     }
 
     // Given an automatic and a VIP waitlist coupon outstanding
     // When both expire unclaimed
-    // Then each gives back the seat it held, whatever its origin
+    // Then only the automatic offer had a seat to give back, and both recipients are told their offer expired
     [TestMethod]
-    public void ExpireCoupon_AutomaticAndManualCoupons_ReleaseTheirHolds()
+    public void ExpireCoupon_AutomaticAndManualCoupons_OnlyAutomaticReleasesHold()
     {
         // Arrange
         var sut = CreateWaitlist();
@@ -544,11 +544,15 @@ public sealed class WaitlistTests
             sut.Entries.Single(e => e.Status == WaitlistEntryStatus.Active).Id,
             CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow);
 
+        TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(1);
+
         // Act
-        sut.ExpireCoupon(automatic.Id, automatic, catalog);
         sut.ExpireCoupon(manual.Id, manual, catalog);
+        var heldAfterVipExpiry = TicketTypeOf(catalog).WaitlistHeldCapacity;
+        sut.ExpireCoupon(automatic.Id, automatic, catalog);
 
         // Assert
+        heldAfterVipExpiry.ShouldBe(1);
         TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(0);
         sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().Count().ShouldBe(2);
     }
@@ -1065,9 +1069,9 @@ public sealed class WaitlistTests
 
     // Given two attendees queued
     // When an organizer promotes the second one as a VIP
-    // Then that attendee moves from the queued count to a held seat
+    // Then that attendee leaves the queued count without taking a held seat
     [TestMethod]
-    public void IssueCouponToEntry_QueuedAttendee_MovesFromQueuedCountToHold()
+    public void IssueCouponToEntry_QueuedAttendee_LeavesQueuedCountWithoutHold()
     {
         // Arrange
         var sut = CreateWaitlist();
@@ -1079,7 +1083,7 @@ public sealed class WaitlistTests
 
         // Assert
         QueuedCount.ShouldBe(1);
-        TicketTypeOf(_catalog).WaitlistHeldCapacity.ShouldBe(1);
+        TicketTypeOf(_catalog).WaitlistHeldCapacity.ShouldBe(0);
     }
 
     // Given the redeeming attendee is queued alongside someone else

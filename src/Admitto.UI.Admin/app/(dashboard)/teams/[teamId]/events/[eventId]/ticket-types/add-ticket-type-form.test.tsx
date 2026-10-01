@@ -58,14 +58,41 @@ describe("AddTicketTypeForm", () => {
         expect(await submittedPayload()).toEqual({
             name: "General Admission",
             selfServiceEnabled: true,
-            maxCapacity: null,
-            reservedCapacity: 0,
+            publicCapacity: null,
             waitlistEnabled: false,
             claimWindowHours: undefined,
             maxReconfirmationEmails: null,
             timeSlots: [],
         });
         expect(post).toHaveBeenCalledWith(ENDPOINT, expect.anything());
+    });
+
+    // Given capacity limiting is switched on
+    // When the capacity field appears
+    // Then it is labelled public capacity, explains that admin registrations and coupons come on top, and there is
+    // no reserved capacity field
+    it("labels the capacity field as public capacity without a reserved capacity field", async () => {
+        const { user } = renderForm();
+
+        await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
+
+        expect(screen.getByLabelText("Public capacity")).toBeInTheDocument();
+        expect(screen.getByText(/Admin registrations and coupons come on top of this/)).toBeInTheDocument();
+        expect(screen.queryByText(/reserved/i)).not.toBeInTheDocument();
+    });
+
+    // Given capacity limiting is switched on
+    // When a public capacity of zero is entered and submitted
+    // Then zero is sent, making the ticket type sold out to self-service
+    it("accepts a public capacity of zero", async () => {
+        const { user } = renderForm();
+
+        await user.type(screen.getByPlaceholderText("Early Bird"), "Invite Only");
+        await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
+        await user.type(screen.getByLabelText("Public capacity"), "0");
+        await user.click(screen.getByRole("button", { name: "Add ticket type" }));
+
+        expect(await submittedPayload()).toMatchObject({ publicCapacity: 0 });
     });
 
     // Given the reconfirmation limit is optional
@@ -124,7 +151,7 @@ describe("AddTicketTypeForm", () => {
         await user.click(screen.getByRole("button", { name: "Add ticket type" }));
 
         expect(await submittedPayload()).toMatchObject({
-            maxCapacity: 100,
+            publicCapacity: 100,
             waitlistEnabled: true,
             claimWindowHours: 8,
         });
@@ -149,7 +176,7 @@ describe("AddTicketTypeForm", () => {
         await user.click(screen.getByRole("button", { name: "Add ticket type" }));
 
         expect(await submittedPayload()).toMatchObject({
-            maxCapacity: null,
+            publicCapacity: null,
             waitlistEnabled: false,
             claimWindowHours: undefined,
         });

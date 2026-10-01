@@ -94,7 +94,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
         var claimedTickets = catalog.Claim(toConfirmPublicly, ClaimMode.Public);
         var couponClaimedTickets = coupon is null
             ? []
-            : catalog.Claim(couponGrantedIds, coupon.RedemptionClaimMode);
+            : catalog.ClaimWithCoupon(couponGrantedIds, coupon);
 
         var releasedSnapshots = registration.Tickets.Where(t => toReleaseConfirmed.Contains(t.Id)).ToList();
         catalog.Release(releasedSnapshots);

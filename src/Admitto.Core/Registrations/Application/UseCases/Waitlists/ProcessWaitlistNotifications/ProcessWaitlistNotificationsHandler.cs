@@ -9,8 +9,8 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.Proc
 /// <summary>
 /// Issues waitlist coupons to the top-ranked attendees while the ticket type has seats available. How many is decided
 /// by the <see cref="TicketCatalog"/> from real capacity (<see cref="TicketType.AvailableCapacity"/>), not by the
-/// change that triggered this: each coupon holds a seat, so offers stop once the seats are covered, and seats still
-/// owed to outstanding VIP offers or overbooking are paid back first. Each coupon raises
+/// change that triggered this: each automatic coupon holds a public seat, so offers stop once the seats are covered,
+/// and a shortfall left by lowering <c>PublicCapacity</c> below what's committed is made up first. Each coupon raises
 /// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/> so the email notification is published via the
 /// outbox. Finally re-evaluates WaitlistMode.
 /// </summary>

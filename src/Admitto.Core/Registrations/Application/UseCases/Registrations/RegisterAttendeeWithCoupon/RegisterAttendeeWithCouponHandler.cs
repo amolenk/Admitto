@@ -57,7 +57,7 @@ internal sealed class RegisterAttendeeWithCouponHandler(
         var catalog = await writeStore.TicketCatalogs
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
-        var tickets = catalog.Claim(ticketTypeIds, coupon.RedemptionClaimMode);
+        var tickets = catalog.ClaimWithCoupon(ticketTypeIds, coupon);
 
         Registration registration;
         if (existingRegistration is null)

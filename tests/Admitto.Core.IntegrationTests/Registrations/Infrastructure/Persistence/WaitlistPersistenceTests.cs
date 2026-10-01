@@ -82,7 +82,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
             DateTimeOffset.UtcNow.AddDays(31),
             TimeZoneId.From("UTC"));
         var catalog = TicketCatalog.Create(eventId, teamId);
-        catalog.AddTicketType(ticketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: 1,
+        catalog.AddTicketType(ticketTypeId, TicketTypeName.From("Conference Pass"), [], publicCapacity: 1,
             waitlistEnabled: true);
 
         var waitlist = Waitlist.Create(eventId, ticketTypeId, teamId);

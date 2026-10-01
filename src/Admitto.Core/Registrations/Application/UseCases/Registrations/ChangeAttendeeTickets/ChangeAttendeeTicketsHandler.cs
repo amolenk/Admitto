@@ -78,14 +78,15 @@ internal sealed class ChangeAttendeeTicketsHandler(
         // 7. Release freed capacity.
         catalog.Release(toRelease);
 
-        // 8. Claim added capacity. Ticket types granted by a coupon are claimed under the coupon's pool.
+        // 8. Claim added capacity. Ticket types granted by a coupon are claimed under the coupon's pool; tickets an
+        // admin adds are admin tickets on top of public capacity.
         toClaim = toClaim.Except(couponGrantedIds).ToList();
 
-        var claimMode = command.Mode == ChangeMode.SelfService ? ClaimMode.Public : ClaimMode.Reserved;
+        var claimMode = command.Mode == ChangeMode.SelfService ? ClaimMode.Public : ClaimMode.Admin;
         var claimedTickets = catalog.Claim(toClaim, claimMode);
         var couponClaimedTickets = coupon is null
             ? []
-            : catalog.Claim(couponGrantedIds, coupon.RedemptionClaimMode);
+            : catalog.ClaimWithCoupon(couponGrantedIds, coupon);
 
         // 9. Build new ticket snapshots. Newly claimed tickets keep the ClaimMode they were
         // claimed under (see step 8); tickets that were already on the registration keep their

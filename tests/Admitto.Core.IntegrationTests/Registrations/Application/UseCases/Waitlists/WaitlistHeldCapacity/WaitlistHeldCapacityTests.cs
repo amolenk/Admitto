@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteWaitlistEntry;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -13,19 +14,19 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Waitlists.WaitlistHeldCapacity;
 
 /// <summary>
-/// Waitlist offers hold catalog capacity: every outstanding offer holds a seat, and the catalog decides from real
-/// capacity how many offers go out. Each action runs on a <see cref="DispatchingRegistrationsContext"/>, so the
-/// cascade through domain event handlers (e.g. a cancellation releasing a seat that is offered to the queue) happens
-/// in the same save, as in production.
+/// Automatic waitlist offers hold a public seat, and the catalog decides from public capacity how many offers go out.
+/// VIP offers and admin tickets come on top of public capacity and never use or free a public seat (ADR-019). Each
+/// action runs on a <see cref="DispatchingRegistrationsContext"/>, so the cascade through domain event handlers (e.g.
+/// a cancellation releasing a seat that is offered to the queue) happens in the same save, as in production.
 /// </summary>
 [TestClass]
 public sealed class WaitlistHeldCapacityTests(TestContext testContext) : AspireIntegrationTestBase
 {
     // Given a sold-out ticket type with two people waiting
     // When the organizer promotes the attendee at position 1 as a VIP
-    // Then the offer holds a seat beyond capacity and no other offer goes out
+    // Then the offer takes no hold and no other offer goes out
     [TestMethod]
-    public async ValueTask PromoteWaitlistEntry_VipAtPositionOneWhileSoldOut_HoldsSeatWithoutOtherOffers()
+    public async ValueTask PromoteWaitlistEntry_VipWhileSoldOut_TakesNoHoldAndOffersNobodyElse()
     {
         var fixture = WaitlistHeldCapacityFixture.SoldOutWithWaitingEntries(2);
         await fixture.SetupAsync(Environment);
@@ -38,64 +39,101 @@ public sealed class WaitlistHeldCapacityTests(TestContext testContext) : AspireI
                 .ShouldBe(WaitlistHeldCapacityFixture.WaitingEmail(1));
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
-            ticketType.WaitlistHeldCapacity.ShouldBe(1);
-            ticketType.AvailableCapacity.ShouldBe(-1);
+            ticketType.WaitlistHeldCapacity.ShouldBe(0);
+            ticketType.AvailableCapacity.ShouldBe(0);
             ticketType.WaitlistMode.ShouldBeTrue();
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
-    // Given a sold-out ticket type with a VIP offer outstanding and two more people waiting
-    // When a registration is cancelled
-    // Then the freed seat covers the VIP offer and nobody else is offered
+    // Given a VIP promoted while the ticket type was sold out, with two more people waiting
+    // When the VIP registers with their offer, and later cancels
+    // Then the redemption is an admin ticket, and the cancellation frees no public seat so nobody is offered
     [TestMethod]
-    public async ValueTask CancelRegistration_VipOfferOutstanding_FreedSeatCoversVipOffer()
+    public async ValueTask CancelRegistration_RedeemedVipCancels_IssuesNoOffer()
     {
+        // Arrange — attendee1 promoted as VIP while sold out
         var fixture = WaitlistHeldCapacityFixture.SoldOutWithWaitingEntries(3);
         await fixture.SetupAsync(Environment);
-        await PromoteAsync(fixture, position: 1);
+        var vipCouponCode = await PromoteAsync(fixture, position: 1);
 
-        await CancelAsync(fixture, fixture.RegistrationIds[0]);
+        // Act — the VIP redeems their offer
+        await RegisterWithCouponAsync(fixture, WaitlistHeldCapacityFixture.WaitingEmail(1), vipCouponCode);
 
+        // Assert — an admin ticket on top of public capacity; the public counters are unchanged
+        RegistrationId? vipRegistrationId = null;
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .SingleAsync(r => r.Email == WaitlistHeldCapacityFixture.WaitingEmail(1), testContext.CancellationToken);
+            registration.Tickets.ShouldHaveSingleItem().Mode.ShouldBe(ClaimMode.Admin);
+            vipRegistrationId = registration.Id;
+
+            var ticketType = await GetTicketTypeAsync(dbContext, fixture);
+            ticketType.PublicUsedCapacity.ShouldBe(WaitlistHeldCapacityFixture.PublicCapacity);
+            ticketType.AdminUsedCount.ShouldBe(1);
+            ticketType.WaitlistHeldCapacity.ShouldBe(0);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+        });
+
+        // Act — the VIP cancels
+        var published = await CancelAsync(fixture, vipRegistrationId!.Value);
+
+        // Assert — no public seat was freed, so nobody else is offered
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             (await dbContext.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(1);
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
+            ticketType.AdminUsedCount.ShouldBe(0);
             ticketType.AvailableCapacity.ShouldBe(0);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            ticketType.WaitlistMode.ShouldBeTrue();
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
+        published.OfType<WaitlistCouponIssuedIntegrationEvent>().ShouldBeEmpty();
     }
 
-    // Given a VIP who redeemed their offer while the ticket type was sold out, taking it one over capacity
-    // When a registration is cancelled, and then another one
-    // Then the first cancellation only pays back the overbooking, and the second offers the seat to the queue
+    // Given a sold-out ticket type in waitlist mode with people waiting and an admin registration on top
+    // When the admin registration is cancelled
+    // Then no public seat is freed, so nobody is offered
     [TestMethod]
-    public async ValueTask CancelRegistration_AfterVipRedeemedOverCapacity_PaysBackOverbookingBeforeOffering()
+    public async ValueTask CancelRegistration_AdminRegistrationInWaitlistMode_IssuesNoOffer()
     {
-        // Arrange — attendee1 promoted as VIP and registered: 3 of 2 seats used
-        var fixture = WaitlistHeldCapacityFixture.SoldOutWithWaitingEntries(3);
+        var fixture = WaitlistHeldCapacityFixture.SoldOutWithWaitingEntriesAndAdminRegistration(2);
         await fixture.SetupAsync(Environment);
-        var vipCouponCode = await PromoteAsync(fixture, position: 1);
-        await RegisterWithCouponAsync(fixture, WaitlistHeldCapacityFixture.WaitingEmail(1), vipCouponCode);
+
+        await CancelAsync(fixture, fixture.AdminRegistrationId);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
+            (await dbContext.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
-            ticketType.UsedCapacity.ShouldBe(WaitlistHeldCapacityFixture.MaxCapacity + 1);
-            ticketType.WaitlistHeldCapacity.ShouldBe(0);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            ticketType.AdminUsedCount.ShouldBe(0);
+            ticketType.PublicUsedCapacity.ShouldBe(WaitlistHeldCapacityFixture.PublicCapacity);
+            ticketType.WaitlistMode.ShouldBeTrue();
         });
+    }
+
+    // Given a sold-out ticket type with people waiting whose public capacity is lowered by one
+    // When two registrations are cancelled
+    // Then the first cancellation only makes up the shortfall, and exactly one offer goes out
+    [TestMethod]
+    public async ValueTask CancelRegistration_AfterPublicCapacityLowered_MakesUpShortfallBeforeOffering()
+    {
+        // Arrange — 2 of 2 used, capacity lowered to 1
+        var fixture = WaitlistHeldCapacityFixture.SoldOutWithWaitingEntries(3);
+        await fixture.SetupAsync(Environment);
+        await UpdatePublicCapacityAsync(fixture, WaitlistHeldCapacityFixture.PublicCapacity - 1);
 
         // Act — first cancellation
         await CancelAsync(fixture, fixture.RegistrationIds[0]);
 
-        // Assert — back at capacity, nobody else offered
+        // Assert — the shortfall is made up, nobody offered
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
-            (await dbContext.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(1);
-            var ticketType = await GetTicketTypeAsync(dbContext, fixture);
-            ticketType.UsedCapacity.ShouldBe(WaitlistHeldCapacityFixture.MaxCapacity);
+            (await dbContext.Coupons.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            (await GetTicketTypeAsync(dbContext, fixture)).AvailableCapacity.ShouldBe(0);
         });
 
         // Act — second cancellation
@@ -104,41 +142,15 @@ public sealed class WaitlistHeldCapacityTests(TestContext testContext) : AspireI
         // Assert — one offer, to the front of the queue, sent in the same save
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
-            var offers = await dbContext.Coupons
-                .Where(c => c.Email != WaitlistHeldCapacityFixture.WaitingEmail(1))
-                .ToListAsync(testContext.CancellationToken);
-            offers.ShouldHaveSingleItem().Email.ShouldBe(WaitlistHeldCapacityFixture.WaitingEmail(2));
+            (await dbContext.Coupons.SingleAsync(testContext.CancellationToken)).Email
+                .ShouldBe(WaitlistHeldCapacityFixture.WaitingEmail(1));
 
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
-            waitlist.GetActivePosition(WaitlistHeldCapacityFixture.WaitingEmail(3)).ShouldBe(1);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            waitlist.GetActivePosition(WaitlistHeldCapacityFixture.WaitingEmail(2)).ShouldBe(1);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
         published.OfType<WaitlistCouponIssuedIntegrationEvent>()
-            .ShouldHaveSingleItem().RecipientEmail.ShouldBe(WaitlistHeldCapacityFixture.WaitingEmail(2).Value);
-    }
-
-    // Given a sold-out ticket type without a reserved buffer, overbooked by an organiser coupon, with people waiting
-    // When a registration is cancelled
-    // Then the freed seat pays back the overbooking and nobody is offered
-    [TestMethod]
-    public async ValueTask CancelRegistration_AfterOrganiserCouponOverbooked_IssuesNoOffer()
-    {
-        var fixture = WaitlistHeldCapacityFixture.SoldOutWithWaitingEntriesAndOrganiserCoupon(2);
-        await fixture.SetupAsync(Environment);
-        await RegisterWithCouponAsync(
-            fixture, WaitlistHeldCapacityFixture.OrganiserGuestEmail, fixture.OrganiserCouponCode);
-
-        await CancelAsync(fixture, fixture.RegistrationIds[0]);
-
-        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
-        {
-            (await dbContext.Coupons.CountAsync(c => c.Source == CouponSource.Waitlist, testContext.CancellationToken))
-                .ShouldBe(0);
-
-            var ticketType = await GetTicketTypeAsync(dbContext, fixture);
-            ticketType.UsedCapacity.ShouldBe(WaitlistHeldCapacityFixture.MaxCapacity);
-            ticketType.WaitlistMode.ShouldBeTrue();
-        });
+            .ShouldHaveSingleItem().RecipientEmail.ShouldBe(WaitlistHeldCapacityFixture.WaitingEmail(1).Value);
     }
 
     // Given a sold-out ticket type with people waiting
@@ -160,7 +172,7 @@ public sealed class WaitlistHeldCapacityTests(TestContext testContext) : AspireI
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
             ticketType.WaitlistHeldCapacity.ShouldBe(1);
             ticketType.IsSoldOut.ShouldBeTrue();
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
@@ -181,13 +193,13 @@ public sealed class WaitlistHeldCapacityTests(TestContext testContext) : AspireI
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);
-            ticketType.UsedCapacity.ShouldBe(WaitlistHeldCapacityFixture.MaxCapacity);
+            ticketType.PublicUsedCapacity.ShouldBe(WaitlistHeldCapacityFixture.PublicCapacity);
             ticketType.WaitlistHeldCapacity.ShouldBe(0);
             ticketType.AvailableCapacity.ShouldBe(0);
 
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
-            await dbContext.ShouldHoldOneSeatPerIssuedCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
         });
     }
 
@@ -209,6 +221,16 @@ public sealed class WaitlistHeldCapacityTests(TestContext testContext) : AspireI
         var coupon = await Environment.RegistrationsDatabase.Context.Coupons.AsNoTracking()
             .SingleAsync(c => c.Id == CouponId.From(couponId), testContext.CancellationToken);
         return coupon.Code.Value;
+    }
+
+    private async ValueTask UpdatePublicCapacityAsync(WaitlistHeldCapacityFixture fixture, int publicCapacity)
+    {
+        await using var dispatch = DispatchingRegistrationsContext.Create(Environment);
+        await new UpdateTicketTypeHandler(dispatch.Context).HandleAsync(
+            new UpdateTicketTypeCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, null, publicCapacity),
+            testContext.CancellationToken);
+        await dispatch.SaveChangesAsync(testContext.CancellationToken);
     }
 
     private async ValueTask RegisterWithCouponAsync(

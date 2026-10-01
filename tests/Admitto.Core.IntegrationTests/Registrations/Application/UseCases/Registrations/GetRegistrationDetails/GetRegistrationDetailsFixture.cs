@@ -119,7 +119,7 @@ internal sealed class GetRegistrationDetailsFixture
         {
             // The read model doesn't read the catalog; it only counts the queued entries here.
             var catalog = TicketCatalog.Create(EventId, TeamId);
-            catalog.AddTicketType(WaitlistedTicketTypeId, TicketTypeName.From("Workshop"), [], maxCapacity: 1, waitlistEnabled: true);
+            catalog.AddTicketType(WaitlistedTicketTypeId, TicketTypeName.From("Workshop"), [], publicCapacity: 1, waitlistEnabled: true);
             var waitlist = Waitlist.Create(EventId, WaitlistedTicketTypeId, TeamId);
             waitlist.AddEntry(EmailAddress.From("someone-else@example.com"), DateTimeOffset.UtcNow.AddDays(-1), catalog);
             waitlist.AddEntry(registration.Email, DateTimeOffset.UtcNow, catalog);

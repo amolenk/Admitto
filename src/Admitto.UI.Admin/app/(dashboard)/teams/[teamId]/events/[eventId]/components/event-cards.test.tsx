@@ -6,6 +6,7 @@ import { renderWithProviders } from "@/test-utils/render";
 
 import { CheckInCard } from "./check-in-card";
 import { EventHeroCard } from "./event-hero-card";
+import { TicketBreakdownCard } from "./ticket-breakdown-card";
 
 const event = ticketedEventDetailsDto({
     name: "Acme Summit",
@@ -19,7 +20,7 @@ const event = ticketedEventDetailsDto({
     },
 });
 
-const ticketTypes = [ticketTypeDto({ id: "tt-1", name: "General Admission", usedCapacity: 42 })];
+const ticketTypes = [ticketTypeDto({ id: "tt-1", name: "General Admission", publicUsedCapacity: 42 })];
 
 describe("event dashboard cards", () => {
     beforeEach(() => {
@@ -79,6 +80,44 @@ describe("event dashboard cards", () => {
         expect(screen.queryByText(/Scanner is available/)).not.toBeInTheDocument();
         expect(screen.queryByRole("link")).not.toBeInTheDocument();
         expect(screen.queryByText(/share link/i)).not.toBeInTheDocument();
+    });
+
+    // Given ticket types whose admin tickets come on top of a full public capacity
+    // When the hero card renders
+    // Then the Registered stat counts every ticket and the summary splits public and admin tickets
+    it("shows public, admin and total counts in the Registered stat", () => {
+        const soldOut = [
+            ticketTypeDto({ id: "tt-1", name: "Workshop", publicCapacity: 10, publicUsedCapacity: 10, adminUsedCount: 3 }),
+            ticketTypeDto({ id: "tt-2", name: "Dinner", publicCapacity: 5, publicUsedCapacity: 2, adminUsedCount: 1 }),
+        ];
+
+        renderWithProviders(<EventHeroCard event={event} openStatus={{ isOpen: true }} ticketTypes={soldOut} />);
+
+        expect(screen.getByText("16")).toBeInTheDocument();
+        expect(screen.getByText("public 12/15 \u00B7 admin 4 \u00B7 total 16")).toBeInTheDocument();
+        expect(screen.queryByText(/exceed/i)).not.toBeInTheDocument();
+    });
+
+    // Given a publicly sold-out ticket type with admin tickets on top, and an unlimited one
+    // When the ticket breakdown card renders
+    // Then each ticket type shows its public, admin and total counts, and only the full one is sold out
+    it("shows public, admin and total counts per ticket type in the breakdown", () => {
+        renderWithProviders(
+            <TicketBreakdownCard
+                teamId="team"
+                eventId="event"
+                isLoading={false}
+                ticketTypes={[
+                    ticketTypeDto({ id: "tt-1", name: "Workshop", publicCapacity: 10, publicUsedCapacity: 10, adminUsedCount: 3 }),
+                    ticketTypeDto({ id: "tt-2", name: "Staff", publicCapacity: null, publicUsedCapacity: 0, adminUsedCount: 4 }),
+                ]}
+            />,
+        );
+
+        expect(screen.getByText("public 10/10 \u00B7 admin 3 \u00B7 total 13")).toBeInTheDocument();
+        expect(screen.getByText("public 0/\u221E \u00B7 admin 4 \u00B7 total 4")).toBeInTheDocument();
+        expect(screen.getAllByText("Sold out")).toHaveLength(1);
+        expect(screen.queryByText(/exceed/i)).not.toBeInTheDocument();
     });
 
     // Given an event with no reconfirmed registrations

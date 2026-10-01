@@ -8,8 +8,8 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.Prom
 /// <summary>
 /// Issues a waitlist coupon to one specific active waitlist entry, out of queue order (VIP promotion).
 /// The entry leaves the queue immediately and the attendee receives the regular waitlist-offer email via
-/// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/>. The offer holds a seat on the catalog even
-/// when the ticket type is sold out, so the next seat that frees up covers it instead of going to the queue.
+/// <see cref="Domain.DomainEvents.WaitlistCouponIssuedDomainEvent"/>. The offer takes no public hold: redeemed, it
+/// is an admin ticket on top of public capacity, so it never affects the offers made to the rest of the queue.
 /// </summary>
 internal sealed class PromoteWaitlistEntryHandler(
     IRegistrationsWriteStore writeStore,
