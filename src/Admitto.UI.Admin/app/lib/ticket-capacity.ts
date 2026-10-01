@@ -1,3 +1,4 @@
+import * as z from "zod";
 import type { TicketTypeDto } from "@/lib/admitto-api/generated";
 
 // A ticket type's capacity in the public-capacity model (ADR-019): `publicCapacity` is the only enforced limit,
@@ -6,6 +7,23 @@ import type { TicketTypeDto } from "@/lib/admitto-api/generated";
 /** Help text for the public capacity field on the add and edit ticket type forms. */
 export const PUBLIC_CAPACITY_HELP =
     "Seats available through self-service. Admin registrations and coupons come on top of this.";
+
+/**
+ * Zod `superRefine` check shared by every ticket type form: a public capacity is required once capacity
+ * is limited, since that is the only enforced limit in the public-capacity model.
+ */
+export function requirePublicCapacityWhenLimited(
+    data: { limitCapacity: boolean; publicCapacity?: number },
+    ctx: z.RefinementCtx,
+): void {
+    if (data.limitCapacity && data.publicCapacity === undefined) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["publicCapacity"],
+            message: "Required while capacity is limited",
+        });
+    }
+}
 
 export interface TicketCapacity {
     /** Seats available through self-service; `null` means no limit. */

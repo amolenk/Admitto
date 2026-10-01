@@ -12,18 +12,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
-import { formatCapacitySummary, PUBLIC_CAPACITY_HELP, ticketCapacity } from "@/lib/ticket-capacity";
-
-
-const requirePublicCapacityWhenLimited = (data: { limitCapacity: boolean; publicCapacity?: number }, ctx: z.RefinementCtx) => {
-    if (data.limitCapacity && data.publicCapacity === undefined) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["publicCapacity"],
-            message: "Required while capacity is limited",
-        });
-    }
-};
+import {
+    formatCapacitySummary,
+    PUBLIC_CAPACITY_HELP,
+    requirePublicCapacityWhenLimited,
+    ticketCapacity,
+} from "@/lib/ticket-capacity";
 
 const addSchema = z.object({
     name: z.string().min(1, "Name is required"),

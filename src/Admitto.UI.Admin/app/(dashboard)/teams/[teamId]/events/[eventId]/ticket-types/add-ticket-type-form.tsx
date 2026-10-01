@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
-import { PUBLIC_CAPACITY_HELP } from "@/lib/ticket-capacity";
+import { PUBLIC_CAPACITY_HELP, requirePublicCapacityWhenLimited } from "@/lib/ticket-capacity";
 
 const slugRegex = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
@@ -30,15 +30,7 @@ const addSchema = z.object({
     claimWindowHours: z.number().int().min(1).optional(),
     maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
     timeSlots: z.array(z.string().regex(slugRegex)),
-}).superRefine((data, ctx) => {
-    if (data.limitCapacity && data.publicCapacity === undefined) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["publicCapacity"],
-            message: "Required while capacity is limited",
-        });
-    }
-});
+}).superRefine(requirePublicCapacityWhenLimited);
 
 type AddValues = z.infer<typeof addSchema>;
 
