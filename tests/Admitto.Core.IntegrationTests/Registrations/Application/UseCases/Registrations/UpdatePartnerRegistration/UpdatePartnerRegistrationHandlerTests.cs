@@ -2,7 +2,7 @@ using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReleaseTickets;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
+using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -192,8 +192,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(ValidWorkshopCommand(fixture), testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [],
                 WaitlistableTicketTypeIds: [],
                 UnavailableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
@@ -371,8 +371,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(ValidWorkshopCommand(fixture), testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [],
                 WaitlistableTicketTypeIds: [],
                 UnavailableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
@@ -491,8 +491,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
                 WaitlistableTicketTypeIds: [],
                 UnavailableTicketTypeIds: [],
@@ -526,8 +526,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [],
                 WaitlistableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
                 UnavailableTicketTypeIds: [],

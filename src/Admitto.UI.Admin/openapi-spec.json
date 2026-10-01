@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:34643/"
+      "url": "http://localhost:37643/"
     }
   ],
   "paths": {
@@ -5859,7 +5859,7 @@
         "tags": [
           "Partner"
         ],
-        "operationId": "RegisterAttendeeSelfService",
+        "operationId": "RegisterAttendee",
         "parameters": [
           {
             "name": "eventSlug",
@@ -5874,7 +5874,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterAttendeeSelfServiceHttpRequest"
+                "$ref": "#/components/schemas/RegisterAttendeeHttpRequest"
               }
             }
           },
@@ -5906,7 +5906,7 @@
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegisterAttendeeSelfServiceTicketStateConflictProblemDetails"
+                  "$ref": "#/components/schemas/RegisterAttendeeTicketStateConflictProblemDetails"
                 }
               }
             }
@@ -5946,101 +5946,6 @@
           {
             "ApiKey": [ ],
             "EmailVerificationBearer": [ ]
-          }
-        ]
-      }
-    },
-    "/api/events/{eventSlug}/registrations/coupon": {
-      "post": {
-        "tags": [
-          "Partner"
-        ],
-        "operationId": "RegisterAttendeeWithCoupon",
-        "parameters": [
-          {
-            "name": "eventSlug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterAttendeeWithCouponHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKey": [ ]
           }
         ]
       }
@@ -6305,7 +6210,7 @@
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegisterAttendeeSelfServiceTicketStateConflictProblemDetails"
+                  "$ref": "#/components/schemas/RegisterAttendeeTicketStateConflictProblemDetails"
                 }
               }
             }
@@ -8802,7 +8707,7 @@
           }
         }
       },
-      "RegisterAttendeeSelfServiceHttpRequest": {
+      "RegisterAttendeeHttpRequest": {
         "required": [
           "email",
           "firstName",
@@ -8843,10 +8748,17 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "couponCode": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
-      "RegisterAttendeeSelfServiceTicketStateConflictProblemDetails": {
+      "RegisterAttendeeTicketStateConflictProblemDetails": {
         "type": "object",
         "properties": {
           "type": {
@@ -8918,47 +8830,6 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
-          }
-        }
-      },
-      "RegisterAttendeeWithCouponHttpRequest": {
-        "required": [
-          "couponCode",
-          "email",
-          "firstName",
-          "lastName",
-          "ticketTypeIds"
-        ],
-        "type": "object",
-        "properties": {
-          "couponCode": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "email": {
-            "type": "string"
-          },
-          "firstName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "ticketTypeIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "additionalDetails": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
             }
           }
         }

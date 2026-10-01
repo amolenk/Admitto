@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteWaitlistEntry;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.RemoveWaitlistEntry;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -25,7 +25,7 @@ public sealed class WaitlistQueuedCountTests(TestContext testContext) : AspireIn
     // When another attendee joins the waitlist through self-service registration
     // Then the ticket type counts both attendees as queued
     [TestMethod]
-    public async ValueTask RegisterAttendeeSelfService_JoinsWaitlist_CountsJoinOnCatalog()
+    public async ValueTask RegisterAttendee_JoinsWaitlist_CountsJoinOnCatalog()
     {
         var fixture = WaitlistQueuedCountFixture.SoldOutWithWaitingEntries(1);
         await fixture.SetupAsync(Environment);
@@ -150,7 +150,7 @@ public sealed class WaitlistQueuedCountTests(TestContext testContext) : AspireIn
     // When a registered attendee cancels, freeing a seat and lifting waitlist mode, before the join is saved
     // Then saving the join fails with a concurrency conflict, so nobody ends up queued with waitlist mode off
     [TestMethod]
-    public async ValueTask RegisterAttendeeSelfService_ConcurrentWaitlistModeLift_JoinFailsWithConcurrencyConflict()
+    public async ValueTask RegisterAttendee_ConcurrentWaitlistModeLift_JoinFailsWithConcurrencyConflict()
     {
         // Arrange — the joiner has read the catalog (in WaitlistMode) and queued, but not saved yet
         var fixture = WaitlistQueuedCountFixture.SoldOutWithWaitingEntries(0);
@@ -186,8 +186,8 @@ public sealed class WaitlistQueuedCountTests(TestContext testContext) : AspireIn
         WaitlistQueuedCountFixture fixture,
         string email)
     {
-        await new RegisterAttendeeSelfServiceHandler(dispatch.Context, TimeProvider.System).HandleAsync(
-            new RegisterAttendeeSelfServiceCommand(
+        await new RegisterAttendeeHandler(dispatch.Context, TimeProvider.System).HandleAsync(
+            new RegisterAttendeeCommand(
                 fixture.EventId.Value,
                 fixture.TeamId.Value,
                 email,

@@ -297,6 +297,28 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
+    public static RegisterAttendeeFixture CouponAndPublicTicketTypes()
+    {
+        var f = new RegisterAttendeeFixture { TicketTypeSlug = "coupon-ticket" };
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+        f._catalog = f.MakeCatalog(
+            ("coupon-ticket", "Coupon Ticket", 5, 5),
+            ("public-ticket", "Public Ticket", 100, 0));
+        f._coupon = f.BuildCoupon();
+        return f;
+    }
+
+    public static RegisterAttendeeFixture CouponAndUnavailableTicket()
+    {
+        var f = new RegisterAttendeeFixture { TicketTypeSlug = "coupon-ticket" };
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+        f._catalog = f.MakeCatalog(
+            ("coupon-ticket", "Coupon Ticket", 5, 5, true),
+            ("unavailable-ticket", "Unavailable Ticket", 100, 0, false));
+        f._coupon = f.BuildCoupon();
+        return f;
+    }
+
     public static RegisterAttendeeFixture CouponBypassesNullCapacity()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
@@ -464,6 +486,23 @@ internal sealed class RegisterAttendeeFixture
 
         catalog.ClearDomainEvents();
         f._catalog = catalog;
+        return f;
+    }
+
+    public static RegisterAttendeeFixture OrganiserCouponForExistingWaitlistedAttendee()
+    {
+        var f = WithWaitlistTicketsForExistingAttendee(ExistingAttendeeState.Waitlisted);
+        var ticketTypeId = f.GetTicketTypeId("workshop-c");
+        f.CouponEmail = ExistingAttendeeEmail;
+        f._coupon = new CouponBuilder()
+            .WithEventId(f.EventId)
+            .WithTeamId(f.TeamId)
+            .WithEmail(f.CouponEmail)
+            .WithRequestedTicketTypeIds(ticketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
+            .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
+            .Build(); // Source=Organiser by default
+        f.CouponCode = f._coupon.Code.Value;
         return f;
     }
 

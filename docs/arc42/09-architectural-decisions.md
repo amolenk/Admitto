@@ -21,6 +21,7 @@ Detailed ADRs are stored in [`/docs/adr/`](../adr/).
 | 2026-08-29 | Hourly reconfirmation evaluation and requested deadlines | Accepted and implemented | [ADR-017](../adr/adr-017-reconfirmation-batches-and-requested-deadlines.md) |
 | 2026-09-20 | Anonymous shared-scanner bearer-credential boundary | Accepted | [ADR-018](../adr/adr-018-shared-scanner-bearer-credential-boundary.md) |
 | 2026-09-30 | Public capacity is the only enforced limit; admin claims are additive | Accepted | [ADR-019](../adr/adr-019-public-capacity-only-enforced-limit.md) |
+| 2026-10-01 | Unify registration creation into a single partner API endpoint | Accepted | [ADR-020](../adr/adr-020-unify-registration-create-endpoint.md) |
 
 ## Done-when
 

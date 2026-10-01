@@ -1,11 +1,12 @@
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
 using FluentValidation;
 
-namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PartnerApi;
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee.PartnerApi;
 
-public sealed class RegisterAttendeeSelfServiceValidator : AbstractValidator<RegisterAttendeeSelfServiceHttpRequest>
+public sealed class RegisterAttendeeValidator : AbstractValidator<RegisterAttendeeHttpRequest>
 {
-    public RegisterAttendeeSelfServiceValidator()
+    public RegisterAttendeeValidator()
     {
         RuleFor(x => x.Email)
             .MustBeParseable(EmailAddress.TryFrom);
@@ -15,6 +16,10 @@ public sealed class RegisterAttendeeSelfServiceValidator : AbstractValidator<Reg
 
         RuleFor(x => x.LastName)
             .MustBeParseable(LastName.TryFrom);
+
+        When(x => x.CouponCode is not null, () =>
+            RuleFor(x => x.CouponCode!.Value)
+                .MustBeParseable(CouponCode.TryFrom));
 
         RuleFor(x => x.RegisterTicketTypeIds)
             .NotNull();

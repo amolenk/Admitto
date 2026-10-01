@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.AdminRegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureRegistrationPolicy;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
@@ -42,15 +42,16 @@ internal sealed class WaitlistedRegistrationsActions(
         EmailAddress email,
         Guid couponCode,
         params TicketTypeId[] ticketTypeIds) =>
-        RunAsync(async context => await new RegisterAttendeeWithCouponHandler(context, Clock).HandleAsync(
-            new RegisterAttendeeWithCouponCommand(
+        RunAsync(async context => await new RegisterAttendeeHandler(context, Clock).HandleAsync(
+            new RegisterAttendeeCommand(
                 fixture.EventId.Value,
                 fixture.TeamId.Value,
                 email.Value,
                 "Coupon",
-                "Holder",
-                ticketTypeIds.Select(id => id.Value).ToArray(),
-                couponCode),
+                 "Holder",
+                 ticketTypeIds.Select(id => id.Value).ToArray(),
+                 [],
+                 CouponCode: couponCode),
             cancellationToken));
 
     public ValueTask<IReadOnlyList<IIntegrationEvent>> AdminRegisterAsync(

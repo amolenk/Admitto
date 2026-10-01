@@ -6,29 +6,29 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
-namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PartnerApi;
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee.PartnerApi;
 
-public static class RegisterAttendeeSelfServiceHttpEndpoint
+public static class RegisterAttendeeHttpEndpoint
 {
-    public static RouteGroupBuilder MapRegisterAttendeeSelfService(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapRegisterAttendee(this RouteGroupBuilder group)
     {
-        group.MapPost("/registrations", RegisterAttendeeSelfService)
-            .WithName(nameof(RegisterAttendeeSelfService))
+        group.MapPost("/registrations", RegisterAttendee)
+            .WithName(nameof(RegisterAttendee))
             .RequireEmailVerificationBearerToken()
-            .Produces<RegisterAttendeeSelfServiceTicketStateConflictProblemDetails>(
+            .Produces<RegisterAttendeeTicketStateConflictProblemDetails>(
                 StatusCodes.Status409Conflict,
                 "application/problem+json");
 
         return group;
     }
 
-    private static async ValueTask<IResult> RegisterAttendeeSelfService(
+    private static async ValueTask<IResult> RegisterAttendee(
         HttpContext httpContext,
         string eventSlug,
-        RegisterAttendeeSelfServiceHttpRequest request,
+        RegisterAttendeeHttpRequest request,
         IVerificationTokenService verificationTokenService,
         PartnerTicketedEventResolver eventResolver,
-        ICommandHandler<RegisterAttendeeSelfServiceCommand, RegisterAttendeeSelfServiceResult> handler,
+        ICommandHandler<RegisterAttendeeCommand, RegisterAttendeeResult> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -46,7 +46,7 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
         if (claims.Email != EmailAddress.From(request.Email))
             return Errors.EmailMismatch.ToProblemHttpResult();
 
-        var command = new RegisterAttendeeSelfServiceCommand(
+        var command = new RegisterAttendeeCommand(
             eventId.Value,
             teamId,
             claims.Email.Value,
@@ -54,22 +54,18 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
             request.LastName,
             request.RegisterTicketTypeIds,
             request.WaitlistTicketTypeIds,
-            AdditionalDetails: request.AdditionalDetails);
+            request.AdditionalDetails,
+            request.CouponCode);
 
         var result = await handler.HandleAsync(command, cancellationToken);
-
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var response = new RegisterAttendeeSelfServiceHttpResponse(
-            result.RegistrationId,
-            result.RegisteredTicketTypeIds,
-            result.WaitlistedTicketTypeIds);
-
         return Results.Created(
-            result.RegistrationId is { } registrationId
-                ? $"/api/events/{eventSlug}/registrations/{registrationId}"
-                : $"/api/events/{eventSlug}/registrations",
-            response);
+            $"/api/events/{eventSlug}/registrations/{result.RegistrationId}",
+            new RegisterAttendeeHttpResponse(
+                result.RegistrationId,
+                result.RegisteredTicketTypeIds,
+                result.WaitlistedTicketTypeIds));
     }
 
     private static string? ExtractBearerToken(HttpRequest request)

@@ -1,9 +1,10 @@
 using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -470,7 +471,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        result.RegistrationId.ShouldNotBeNull();
         result.RegisteredTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-a").Value]);
         result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-b").Value]);
 
@@ -503,14 +503,13 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        result.RegistrationId.ShouldNotBeNull();
         result.RegisteredTicketTypeIds.ShouldBeEmpty();
         result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-b").Value]);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
-            registration.Id.Value.ShouldBe(result.RegistrationId!.Value);
+            registration.Id.Value.ShouldBe(result.RegistrationId);
             registration.Email.Value.ShouldBe("dave@example.com");
             registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
             registration.Tickets.ShouldBeEmpty();
@@ -689,7 +688,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static RegisterAttendeeSelfServiceCommand NewCommand(
+    private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         params Guid[] ticketTypeIds)
@@ -702,7 +701,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             ticketTypeIds,
             []);
 
-    private static RegisterAttendeeSelfServiceCommand NewCommand(
+    private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         Guid[] registerTicketTypeIds,
@@ -716,7 +715,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registerTicketTypeIds,
             waitlistTicketTypeIds);
 
-    private static RegisterAttendeeSelfServiceCommand NewCommand(
+    private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         Guid[] ticketTypeIds,
@@ -884,8 +883,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         Guid[]? unknownTicketTypeIds = null,
         Guid[]? invalidForRequestedActionTicketTypeIds = null)
     {
-        error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 registerableTicketTypeIds ?? [],
                 waitlistableTicketTypeIds ?? [],
                 unavailableTicketTypeIds ?? [],
@@ -908,7 +907,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         // The endpoint owns the commit, so the new registration is still only tracked, not persisted.
         var registration = Environment.RegistrationsDatabase.Context.Registrations.Local
-            .Single(r => r.Id == RegistrationId.From(result.RegistrationId!.Value));
+            .Single(r => r.Id == RegistrationId.From(result.RegistrationId));
         var domainEvent = registration.GetDomainEvents()
             .OfType<AttendeeRegisteredDomainEvent>()
             .ShouldHaveSingleItem();
@@ -917,6 +916,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             Environment, fixture.TeamId, fixture.EventId, domainEvent, testContext.CancellationToken);
     }
 
-    private static RegisterAttendeeSelfServiceHandler NewHandler(TimeProvider? timeProvider = null)
+    private static RegisterAttendeeHandler NewHandler(TimeProvider? timeProvider = null)
         => new(Environment.RegistrationsDatabase.Context, timeProvider ?? TimeProvider.System);
 }

@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -55,7 +55,7 @@ internal sealed class AdminRegisterAttendeeHandler(
             .ToListAsync(cancellationToken);
         await LeaveWaitlistsAsync(waitlists, catalog, email, ticketTypeIds, now, cancellationToken);
 
-        var waitlistedTickets = RegisterAttendeeWithCouponHandler.DescribeActiveWaitlistEntries(
+        var waitlistedTickets = RegistrationCouponHelpers.DescribeActiveWaitlistEntries(
             waitlists, catalog, email);
 
         Registration registration;

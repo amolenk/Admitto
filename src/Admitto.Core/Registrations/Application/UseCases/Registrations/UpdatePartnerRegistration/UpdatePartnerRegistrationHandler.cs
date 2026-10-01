@@ -1,9 +1,9 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -28,7 +28,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
         var registerTicketTypeIds = command.RegisterTicketTypeIds.Select(TicketTypeId.From).ToList();
         var waitlistTicketTypeIds = command.WaitlistTicketTypeIds.Select(TicketTypeId.From).ToList();
 
-        RegisterAttendeeSelfServiceHandler.EnsureNoDuplicateRequestedActions(registerTicketTypeIds, waitlistTicketTypeIds);
+        RegistrationTicketClassifier.EnsureNoDuplicateRequestedActions(registerTicketTypeIds, waitlistTicketTypeIds);
 
         var registration = await writeStore.Registrations.GetAsync(
             r => r.Id == registrationId && r.EventId == eventId && r.TeamId == teamId,
@@ -75,17 +75,16 @@ internal sealed class UpdatePartnerRegistrationHandler(
         // the self-service ticket-state classification and capacity gate, like every coupon claim. Tickets the
         // registration already holds are not granted by the coupon, so they cannot satisfy its redemption.
         Coupon? coupon = null;
-        IReadOnlyList<TicketTypeId> couponGrantedIds = [];
         if (command.CouponCode is { } couponCode)
         {
             coupon = await writeStore.Coupons.GetAsync(
                 c => c.EventId == eventId && c.TeamId == teamId && c.Code == CouponCode.From(couponCode),
                 cancellationToken);
 
-            couponGrantedIds = coupon.Redeem(registration.Email, toConfirm, now);
         }
 
-        var toConfirmPublicly = toConfirm.Except(couponGrantedIds).ToList();
+        var (couponGrantedIds, toConfirmPublicly) = RegistrationCouponHelpers.SplitCouponGranted(
+            coupon, registration.Email, toConfirm, now);
 
         // A coupon that bypasses the registration window (e.g. a waitlist offer issued before registration closed)
         // can still be claimed after close, but only for what it grants: any other ticket or waitlist change in the
@@ -94,11 +93,11 @@ internal sealed class UpdatePartnerRegistrationHandler(
                               || toReleaseConfirmed.Count > 0
                               || toWaitlistJoin.Count > 0
                               || toWaitlistLeave.Count > 0;
-        if (!RegisterAttendeeWithCouponHandler.WindowBypassApplies(coupon, hasOtherChanges))
+        if (!RegistrationCouponHelpers.WindowBypassApplies(coupon, hasOtherChanges))
             ticketedEvent.EnsureRegistrationOpen(now);
 
-        RegisterAttendeeSelfServiceHandler.EnsureRequestedTicketStatesMatch(catalog, toConfirmPublicly, toWaitlistJoin);
-        RegisterAttendeeSelfServiceHandler.ValidateWaitlistRequests(catalog, toWaitlistJoin);
+        RegistrationTicketClassifier.EnsureRequestedTicketStatesMatch(catalog, toConfirmPublicly, toWaitlistJoin);
+        RegistrationTicketClassifier.ValidateWaitlistRequests(catalog, toWaitlistJoin);
 
         var claimedTickets = catalog.Claim(toConfirmPublicly, ClaimMode.Public);
         var couponClaimedTickets = coupon is null
@@ -159,7 +158,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         if (coupon is not null)
         {
-            await RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlistsAsync(
+            await RegistrationCouponHelpers.ApplyRedemptionToWaitlistsAsync(
                 writeStore, waitlists, catalog, coupon, registration.Email, couponGrantedIds,
                 now, cancellationToken);
         }

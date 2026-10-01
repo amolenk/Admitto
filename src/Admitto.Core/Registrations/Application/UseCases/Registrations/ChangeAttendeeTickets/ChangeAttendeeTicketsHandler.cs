@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -126,7 +126,7 @@ internal sealed class ChangeAttendeeTicketsHandler(
         if (coupon is null)
             return;
 
-        await RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlistsAsync(
+        await RegistrationCouponHelpers.ApplyRedemptionToWaitlistsAsync(
             writeStore, waitlists, catalog, coupon, registration.Email, couponGrantedIds,
             timeProvider.GetUtcNow(), cancellationToken);
     }

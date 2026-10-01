@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteWaitlistEntry;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -239,15 +239,16 @@ public sealed class WaitlistHeldCapacityTests(TestContext testContext) : AspireI
         Guid couponCode)
     {
         await using var dispatch = DispatchingRegistrationsContext.Create(Environment);
-        await new RegisterAttendeeWithCouponHandler(dispatch.Context, TimeProvider.System).HandleAsync(
-            new RegisterAttendeeWithCouponCommand(
+        await new RegisterAttendeeHandler(dispatch.Context, TimeProvider.System).HandleAsync(
+            new RegisterAttendeeCommand(
                 fixture.EventId.Value,
                 fixture.TeamId.Value,
                 email.Value,
                 "Coupon",
-                "Holder",
-                [fixture.TicketTypeId.Value],
-                couponCode),
+                 "Holder",
+                 [fixture.TicketTypeId.Value],
+                 [],
+                 CouponCode: couponCode),
             testContext.CancellationToken);
         await dispatch.SaveChangesAsync(testContext.CancellationToken);
     }

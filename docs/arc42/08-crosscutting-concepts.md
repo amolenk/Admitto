@@ -580,6 +580,7 @@ A ticket type has one enforced number, `TicketType.PublicCapacity` (`Domain/Enti
 - Lowering `PublicCapacity` below what's committed stays allowed. Availability then goes negative (see below), public sales are sold out, and cancellations make up the shortfall before anyone in the queue gets an offer.
 - `WaitlistEnabled` requires a bounded `PublicCapacity`. Raising `PublicCapacity` while in WaitlistMode raises `WaitlistCapacityAvailableDomainEvent` when it leaves seats available (see [waitlist-held capacity](#waitlist-held-capacity) below). When the same update also explicitly disables the waitlist, the available seats travel on `WaitlistDisabledDomainEvent` instead. What each capacity change and disable does to the people waiting is described in [§6.6](06-runtime-view.md#66-partner-attendee-registration-and-waitlist-submission-atomic-status--capacity-gate).
 - In the `ticket_types` JSON the counters are stored as `public_capacity`, `public_used_capacity` and `admin_used_count`; a registration ticket's `mode` is `Public` or `Admin`.
+- Partner registration creation uses one endpoint and one classification path: `POST /api/events/{eventSlug}/registrations` splits newly requested registration tickets into coupon-granted and public claims, while waitlist requests use the same public ticket-state classification. A coupon may cover only part of a request; it never bypasses the catalog's active-event check, and its registration-window bypass applies only when there are no other public or waitlist changes.
 
 ### Waitlist-held capacity
 

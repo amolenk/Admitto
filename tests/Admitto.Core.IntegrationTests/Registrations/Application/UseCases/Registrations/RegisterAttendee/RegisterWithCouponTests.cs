@@ -1,7 +1,8 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
@@ -13,6 +14,74 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class RegisterWithCouponTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a coupon-covered ticket and a separately publicly available ticket
+    // When an attendee registers for both in one request
+    // Then both tickets are confirmed using their respective capacity pools
+    [TestMethod]
+    public async ValueTask RegisterAttendee_CouponAndPublicTickets_ConfirmsBothWithPreservedClaimModes()
+    {
+        var fixture = RegisterAttendeeFixture.CouponAndPublicTicketTypes();
+        await fixture.SetupAsync(Environment);
+
+        var couponTicketId = fixture.GetTicketTypeId("coupon-ticket");
+        var publicTicketId = fixture.GetTicketTypeId("public-ticket");
+        var result = await NewHandler().HandleAsync(
+            new RegisterAttendeeCommand(
+                fixture.EventId.Value,
+                fixture.TeamId.Value,
+                fixture.CouponEmail.Value,
+                "Test",
+                "User",
+                [couponTicketId.Value, publicTicketId.Value],
+                [],
+                CouponCode: fixture.CouponCode),
+            testContext.CancellationToken);
+
+        result.RegisteredTicketTypeIds.ShouldBe([couponTicketId.Value, publicTicketId.Value]);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Tickets.ShouldContain(t => t.Id == couponTicketId && t.Mode == ClaimMode.Admin);
+            registration.Tickets.ShouldContain(t => t.Id == publicTicketId && t.Mode == ClaimMode.Public);
+        });
+    }
+
+    // Given a coupon-covered ticket and another ticket unavailable to self-service
+    // When an attendee requests both tickets in one registration
+    // Then the whole request fails before any claim or registration is persisted
+    [TestMethod]
+    public async ValueTask RegisterAttendee_CouponAndUnavailableTicket_RejectsAtomically()
+    {
+        var fixture = RegisterAttendeeFixture.CouponAndUnavailableTicket();
+        await fixture.SetupAsync(Environment);
+
+        var couponTicketId = fixture.GetTicketTypeId("coupon-ticket");
+        var unavailableTicketId = fixture.GetTicketTypeId("unavailable-ticket");
+        var result = await ErrorResult.CaptureAsync(async () => await NewHandler().HandleAsync(
+            new RegisterAttendeeCommand(
+                fixture.EventId.Value,
+                fixture.TeamId.Value,
+                fixture.CouponEmail.Value,
+                "Test",
+                "User",
+                [couponTicketId.Value, unavailableTicketId.Value],
+                [],
+                CouponCode: fixture.CouponCode),
+            testContext.CancellationToken));
+
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
+                [], [], [unavailableTicketId.Value], [], [])));
+        Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            (await dbContext.Coupons.SingleAsync(testContext.CancellationToken)).RedeemedAt.ShouldBeNull();
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.GetTicketType(couponTicketId)!.AdminUsedCount.ShouldBe(0);
+        });
+    }
+
     // Given an organiser coupon for a ticket type whose public capacity is already full
     // When an attendee registers using the coupon
     // Then the registration succeeds, the coupon is redeemed, and the ticket is an admin ticket on top of public capacity
@@ -31,7 +100,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
-            registration.Id.Value.ShouldBe(registrationId);
+            registration.Id.Value.ShouldBe(registrationId.RegistrationId);
             registration.Email.ShouldBe(fixture.CouponEmail);
 
             var coupon = await dbContext.Coupons.SingleOrDefaultAsync(testContext.CancellationToken);
@@ -82,32 +151,33 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(Coupon.Errors.AlreadyRedeemed);
     }
 
-    // Coupon rejected — ticket type not allowlisted
+    // Coupon rejected — no selected ticket type is allowlisted
     // Given a coupon that only allows a specific ticket type
     // When an attendee registers requesting a different ticket type
-    // Then it fails with a ticket-type-not-allowed error
+    // Then it fails with a no-coupon-ticket-selected error
     [TestMethod]
-    public async ValueTask RegisterWithCoupon_TicketTypeNotAllowlisted_ThrowsNotAllowlistedError()
+    public async ValueTask RegisterWithCoupon_TicketTypeNotAllowlisted_ThrowsNoCouponTicketSelectedError()
     {
         var fixture = RegisterAttendeeFixture.CouponTicketTypeNotAllowlisted();
         await fixture.SetupAsync(Environment);
 
         // Requesting "general-admission" but coupon only allows "speaker-pass".
-        var command = new RegisterAttendeeWithCouponCommand(
+        var command = new RegisterAttendeeCommand(
             fixture.EventId.Value,
             fixture.TeamId.Value,
             fixture.CouponEmail.Value,
             "Coupon",
             "User",
-            [fixture.GetTicketTypeId("general-admission").Value],
-            CouponCode: fixture.CouponCode);
+             [fixture.GetTicketTypeId("general-admission").Value],
+             [],
+             CouponCode: fixture.CouponCode);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(
-            Coupon.Errors.TicketTypeNotAllowlisted([fixture.GetTicketTypeId("general-admission").Value]));
+        result.Error.ShouldMatch(Coupon.Errors.NoCouponTicketTypeSelected(
+            [fixture.GetTicketTypeId("speaker-pass").Value]));
     }
 
     // Coupon bypasses registration window when flag set
@@ -218,7 +288,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(RegisterAttendeeWithCouponHandler.Errors.EventNotActive);
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
     // Coupon rejected — supplied email does not match coupon target email
@@ -240,12 +310,11 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(Coupon.Errors.EmailMismatch);
     }
 
-    // Coupon mode does NOT require an email-verification token
-    // Given a valid coupon and no email-verification token supplied
-    // When an attendee registers using the coupon
-    // Then the registration succeeds
+    // Given a handler-level invocation with a valid coupon and no token argument
+    // When the handler processes the coupon registration
+    // Then it succeeds because verification-token enforcement belongs to RegisterAttendeeHttpEndpoint
     [TestMethod]
-    public async ValueTask RegisterWithCoupon_NoTokenRequired_Succeeds()
+    public async ValueTask RegisterWithCoupon_HandlerLevel_DoesNotCheckVerificationToken()
     {
         var fixture = RegisterAttendeeFixture.CouponHappyFlow();
         await fixture.SetupAsync(Environment);
@@ -259,6 +328,37 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
+        });
+    }
+
+    // Given a waitlisted registration with an active entry and an unrelated organiser coupon for that ticket type
+    // When the attendee redeems the coupon for the ticket type
+    // Then the newly coupon-granted ticket is confirmed on the existing registration
+    [TestMethod]
+    public async ValueTask RegisterWithCoupon_WaitlistedRegistrationWithOrganiserCoupon_ConfirmsGrantedTicket()
+    {
+        var fixture = RegisterAttendeeFixture.OrganiserCouponForExistingWaitlistedAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var ticketTypeId = fixture.GetTicketTypeId("workshop-c");
+        var result = await NewHandler().HandleAsync(
+            new RegisterAttendeeCommand(
+                fixture.EventId.Value,
+                fixture.TeamId.Value,
+                fixture.CouponEmail.Value,
+                "Test",
+                "User",
+                [ticketTypeId.Value],
+                [],
+                CouponCode: fixture.CouponCode),
+            testContext.CancellationToken);
+
+        result.RegisteredTicketTypeIds.ShouldBe([ticketTypeId.Value]);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(ticketTypeId);
         });
     }
 
@@ -286,7 +386,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        registrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
+        registrationId.RegistrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
@@ -434,17 +534,18 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static RegisterAttendeeWithCouponCommand NewCommand(RegisterAttendeeFixture fixture, string email)
+    private static RegisterAttendeeCommand NewCommand(RegisterAttendeeFixture fixture, string email)
         => new(
             fixture.EventId.Value,
             fixture.TeamId.Value,
             email,
             "Test",
-            "User",
-            [fixture.TicketTypeId.Value],
-            CouponCode: fixture.CouponCode);
+             "User",
+             [fixture.TicketTypeId.Value],
+             [],
+             CouponCode: fixture.CouponCode);
 
-    private static RegisterAttendeeWithCouponCommand NewCommand(
+    private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         IReadOnlyDictionary<string, string>? additionalDetails)
@@ -453,9 +554,10 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             fixture.TeamId.Value,
             email,
             "Test",
-            "User",
-            [fixture.TicketTypeId.Value],
-            CouponCode: fixture.CouponCode,
+             "User",
+             [fixture.TicketTypeId.Value],
+             [],
+             CouponCode: fixture.CouponCode,
             AdditionalDetails: additionalDetails);
 
     private static void AssertAttendeeRegisteredEvent(Registration registration)
@@ -470,6 +572,6 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         domainEvent.Tickets.ShouldBe(registration.Tickets);
     }
 
-    private static RegisterAttendeeWithCouponHandler NewHandler(TimeProvider? timeProvider = null)
+    private static RegisterAttendeeHandler NewHandler(TimeProvider? timeProvider = null)
         => new(Environment.RegistrationsDatabase.Context, timeProvider ?? TimeProvider.System);
 }

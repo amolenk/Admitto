@@ -3,7 +3,7 @@ using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.Pr
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetPartnerRegistrationDetails;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
@@ -152,23 +152,24 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
         await UpdateTicketTypeAsync(fixture, publicCapacity: UpdateTicketTypeWaitlistFixture.PublicCapacity, waitlistEnabled: false);
         Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
 
-        var registrationId = await new RegisterAttendeeWithCouponHandler(
+        var registrationId = await new RegisterAttendeeHandler(
                 Environment.RegistrationsDatabase.Context, TimeProvider.System)
             .HandleAsync(
-                new RegisterAttendeeWithCouponCommand(
+                new RegisterAttendeeCommand(
                     fixture.EventId.Value,
                     fixture.TeamId.Value,
                     UpdateTicketTypeWaitlistFixture.OfferedEmail.Value,
                     "Olivia",
                     "Offered",
                     [fixture.TicketTypeId.Value],
-                    fixture.OutstandingCouponCode),
+                    [],
+                    CouponCode: fixture.OutstandingCouponCode),
                 testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
-            registration.Id.Value.ShouldBe(registrationId);
+            registration.Id.Value.ShouldBe(registrationId.RegistrationId);
             registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
 
             var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);

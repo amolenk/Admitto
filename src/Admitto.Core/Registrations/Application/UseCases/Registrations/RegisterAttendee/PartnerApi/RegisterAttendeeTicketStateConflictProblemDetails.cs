@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PartnerApi;
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee.PartnerApi;
 
-public sealed class RegisterAttendeeSelfServiceTicketStateConflictProblemDetails : ProblemDetails
+public sealed class RegisterAttendeeTicketStateConflictProblemDetails : ProblemDetails
 {
     public string Code { get; init; } = "registration.ticket_state_conflict";
     public Guid[] RegisterableTicketTypeIds { get; init; } = [];
