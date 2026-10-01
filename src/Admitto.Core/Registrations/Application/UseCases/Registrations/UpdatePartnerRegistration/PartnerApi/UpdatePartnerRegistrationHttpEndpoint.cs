@@ -41,7 +41,7 @@ public static class UpdatePartnerRegistrationHttpEndpoint
             request.RegisterTicketTypeIds ?? [],
             request.WaitlistTicketTypeIds ?? [],
             request.AdditionalDetails,
-            request.WaitlistCouponCode);
+            request.CouponCode);
 
         await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

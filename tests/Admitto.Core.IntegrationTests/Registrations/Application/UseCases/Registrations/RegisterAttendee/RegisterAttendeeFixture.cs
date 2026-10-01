@@ -18,12 +18,14 @@ internal sealed class RegisterAttendeeFixture
     private TicketedEvent? _ticketedEvent;
     private TicketCatalog? _catalog;
     private Coupon? _coupon;
+    private Coupon? _outstandingOfferCoupon;
     private readonly List<global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist> _waitlists = [];
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
     public string TicketTypeSlug { get; private set; } = "general-admission";
     public Guid CouponCode { get; private set; }
+    public Guid OutstandingOfferCouponCode { get; private set; }
     public static EmailAddress OtherQueuedEmail { get; } = EmailAddress.From("queued@example.com");
     public EmailAddress CouponEmail { get; private set; } = EmailAddress.From("speaker@gmail.com");
     public RegistrationId ExistingRegistrationId =>
@@ -453,7 +455,7 @@ internal sealed class RegisterAttendeeFixture
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
                 f.EventId, workshopCId, f.TeamId);
             waitlist.AddEntry(ExistingAttendeeEmail, DateTimeOffset.UtcNow, catalog);
-            f._coupon = waitlist.IssueNextCoupon(f._ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
+            f._coupon = waitlist.IssueNextCoupon(f._ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null)!;
             f._coupon.ClearDomainEvents();
             f.CouponCode = f._coupon.Code.Value;
             waitlist.ClearDomainEvents();
@@ -519,7 +521,7 @@ internal sealed class RegisterAttendeeFixture
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, ticketTypeId, f.TeamId);
         waitlist.AddEntry(f.CouponEmail, DateTimeOffset.UtcNow, f._catalog);
         f._coupon = waitlist.IssueNextCoupon(
-            f._ticketedEvent, f._catalog, DateTimeOffset.UtcNow)!;
+            f._ticketedEvent, f._catalog, DateTimeOffset.UtcNow, _ => null)!;
         f._coupon.ClearDomainEvents();
         f.CouponCode = f._coupon.Code.Value;
         waitlist.ClearDomainEvents();
@@ -548,6 +550,40 @@ internal sealed class RegisterAttendeeFixture
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, ticketTypeId, f.TeamId);
         waitlist.ClearDomainEvents();
         f._waitlists.Add(waitlist);
+
+        return f;
+    }
+
+    /// <summary>
+    /// A waitlist-mode "general-admission" ticket type where the coupon email already holds an outstanding
+    /// automatic waitlist offer (a separate coupon, still active), and is separately issued an organiser coupon
+    /// for the same ticket type.
+    /// </summary>
+    public static RegisterAttendeeFixture OrganiserCouponSettlesOutstandingWaitlistOffer()
+    {
+        var f = new RegisterAttendeeFixture { TicketTypeSlug = "general-admission" };
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+        f._catalog = f.MakeWaitlistModeCatalog("general-admission", "General Admission", publicCapacity: 2, preFill: 1);
+        var ticketTypeId = f.GetTicketTypeId("general-admission");
+
+        var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
+            f.EventId, ticketTypeId, f.TeamId);
+        waitlist.AddEntry(f.CouponEmail, DateTimeOffset.UtcNow, f._catalog);
+        f._outstandingOfferCoupon = waitlist.IssueNextCoupon(f._ticketedEvent, f._catalog, DateTimeOffset.UtcNow, _ => null)!;
+        f._outstandingOfferCoupon.ClearDomainEvents();
+        f.OutstandingOfferCouponCode = f._outstandingOfferCoupon.Code.Value;
+        waitlist.ClearDomainEvents();
+        f._waitlists.Add(waitlist);
+
+        f._coupon = new CouponBuilder()
+            .WithEventId(f.EventId)
+            .WithTeamId(f.TeamId)
+            .WithEmail(f.CouponEmail)
+            .WithRequestedTicketTypeIds(ticketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
+            .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
+            .Build(); // Source=Organiser by default
+        f.CouponCode = f._coupon.Code.Value;
 
         return f;
     }
@@ -616,6 +652,8 @@ internal sealed class RegisterAttendeeFixture
                     dbContext.TicketCatalogs.Add(_catalog);
                 if (_coupon is not null)
                     dbContext.Coupons.Add(_coupon);
+                if (_outstandingOfferCoupon is not null)
+                    dbContext.Coupons.Add(_outstandingOfferCoupon);
                 dbContext.Waitlists.AddRange(_waitlists);
             });
         }

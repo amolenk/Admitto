@@ -79,5 +79,5 @@ public sealed class ListCouponsTests(TestContext testContext) : AspireIntegratio
     }
 
     private static ListCouponsHandler NewListCouponsHandler() =>
-        new(Environment.RegistrationsDatabase.Context);
+        new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 }

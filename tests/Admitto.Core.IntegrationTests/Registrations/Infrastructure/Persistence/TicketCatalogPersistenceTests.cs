@@ -61,6 +61,36 @@ public sealed class TicketCatalogPersistenceTests(TestContext testContext) : Asp
         });
     }
 
+    // Given a stored ticket type written before the waitlist queued count was tracked
+    // When the catalog is loaded
+    // Then its queued count reads as zero
+    [TestMethod]
+    public async ValueTask Load_TicketTypeJsonWithoutWaitlistQueuedCount_ReadsAsZero()
+    {
+        // Arrange — persist a queued entry, then strip the key from the stored JSON
+        var (catalog, ticketTypeId) = CreateCatalog();
+        catalog.JoinWaitlistQueue(ticketTypeId);
+
+        await Environment.RegistrationsDatabase.SeedAsync(
+            dbContext => dbContext.TicketCatalogs.Add(catalog), testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.Context.Database.ExecuteSqlAsync(
+            $"""
+             UPDATE registrations.ticket_catalog
+             SET ticket_types = (SELECT jsonb_agg(t - 'waitlist_queued_count') FROM jsonb_array_elements(ticket_types) t)
+             WHERE event_id = {catalog.Id.Value}
+             """,
+            testContext.CancellationToken);
+        Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
+
+        // Act & Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
+        {
+            var loaded = await ctx.TicketCatalogs.SingleAsync(c => c.Id == catalog.Id, testContext.CancellationToken);
+            loaded.FindTicketType(ticketTypeId).WaitlistQueuedCount.ShouldBe(0);
+        });
+    }
+
     // Given a ticket type with public tickets and admin tickets
     // When the catalog is saved
     // Then the counters are stored under the public-capacity JSON keys, without the reserved-capacity keys

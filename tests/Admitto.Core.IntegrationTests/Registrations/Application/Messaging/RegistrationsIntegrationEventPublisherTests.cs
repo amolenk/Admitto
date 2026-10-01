@@ -344,7 +344,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             EmailAddress.From("alice@example.com"),
             couponCode,
             "Conference Pass",
-            expiresAt);
+            expiresAt,
+            WaitlistOfferReason.AutomaticPromotion,
+            RegistrationId: null);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -356,5 +358,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.CouponCode.ShouldBe(couponCode.Value.ToString());
         evt.TicketTypeName.ShouldBe("Conference Pass");
         evt.ExpiresAt.ShouldBe(expiresAt);
+        evt.Reason.ShouldBe(nameof(WaitlistOfferReason.AutomaticPromotion));
+        evt.RegistrationId.ShouldBeNull();
     }
 }

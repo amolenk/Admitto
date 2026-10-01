@@ -159,6 +159,26 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.NoTicketTypes);
     }
 
+    // Given a coupon created with the same ticket type listed twice
+    // When the coupon is created
+    // Then it returns a DuplicateTicketTypes error naming the repeated id
+    [TestMethod]
+    public void Create_DuplicateTicketType_ThrowsDuplicateTicketTypesError()
+    {
+        // Arrange
+        var ticketTypeId = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            new CouponBuilder()
+                .WithRequestedTicketTypeIds(ticketTypeId, ticketTypeId)
+                .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
+                .Build());
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.DuplicateTicketTypes(new List<Guid> { ticketTypeId.Value }));
+    }
+
     // Given coupons that are active, redeemed, or past their expiry date
     // When their status is queried at the relevant time
     // Then each returns the matching status (Active, Redeemed, or Expired)

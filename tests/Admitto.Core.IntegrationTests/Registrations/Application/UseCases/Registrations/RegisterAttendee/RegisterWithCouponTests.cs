@@ -397,6 +397,41 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
+    // Given an attendee who holds an outstanding automatic waitlist offer and is separately issued an organiser
+    // coupon for the same ticket type
+    // When the attendee registers using the organiser coupon
+    // Then the organiser coupon is redeemed, the outstanding offer is settled (expired, no email) and its public
+    // hold is released
+    [TestMethod]
+    public async ValueTask RegisterWithCoupon_OutstandingWaitlistOfferForSameTicketType_SettlesOffer()
+    {
+        var fixture = RegisterAttendeeFixture.OrganiserCouponSettlesOutstandingWaitlistOffer();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, fixture.CouponEmail.Value);
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var coupon = await dbContext.Coupons.SingleAsync(
+                c => c.Code == CouponCode.From(fixture.CouponCode), testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var offer = await dbContext.Coupons.SingleAsync(
+                c => c.Code == CouponCode.From(fixture.OutstandingOfferCouponCode), testContext.CancellationToken);
+            offer.RedeemedAt.ShouldBeNull();
+            offer.GetStatus(DateTimeOffset.UtcNow).ShouldBe(CouponStatus.Expired);
+
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Coupons.ShouldContain(c => c.Id == offer.Id && c.Status == WaitlistCouponStatus.Expired);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.TicketTypes.Single().WaitlistHeldCapacity.ShouldBe(0);
+        });
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static RegisterAttendeeWithCouponCommand NewCommand(RegisterAttendeeFixture fixture, string email)

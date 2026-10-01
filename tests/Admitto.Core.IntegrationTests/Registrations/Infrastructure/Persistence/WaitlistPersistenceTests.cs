@@ -16,7 +16,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
     {
         // Arrange — persist a VIP coupon, then strip the origin key from the stored JSON
         var (waitlist, ticketedEvent, catalog) = CreateWaitlistWithOneEntry();
-        waitlist.IssueCouponToEntry(waitlist.Entries.Single().Id, ticketedEvent, catalog, DateTimeOffset.UtcNow);
+        waitlist.IssueCouponToEntry(waitlist.Entries.Single().Id, ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null);
         var ticketTypeId = waitlist.Id;
 
         await Environment.RegistrationsDatabase.SeedAsync(
@@ -47,7 +47,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
     {
         // Arrange
         var (waitlist, ticketedEvent, catalog) = CreateWaitlistWithOneEntry();
-        var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
+        var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null)!;
         var ticketTypeId = waitlist.Id;
 
         await Environment.RegistrationsDatabase.SeedAsync(

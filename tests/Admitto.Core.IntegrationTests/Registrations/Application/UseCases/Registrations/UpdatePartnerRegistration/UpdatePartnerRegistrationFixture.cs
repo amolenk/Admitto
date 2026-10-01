@@ -118,7 +118,7 @@ internal sealed class UpdatePartnerRegistrationFixture
         waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog);
         waitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow, catalog);
         f._coupon = waitlist.IssueNextCoupon(
-            f._ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
+            f._ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null)!;
         f._coupon.ClearDomainEvents();
         waitlist.ClearDomainEvents();
         f._waitlists.Add(waitlist);

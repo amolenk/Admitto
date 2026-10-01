@@ -80,7 +80,9 @@ internal sealed class CouponEmailAdapterFixture
             "bob@example.com",
             "WAIT-456",
             "Conference Pass",
-            expiresAt);
+            expiresAt,
+            nameof(Amolenk.Admitto.Core.Registrations.Domain.ValueObjects.WaitlistOfferReason.AutomaticPromotion),
+            RegistrationId: null);
 
         return new CouponEmailAdapterFixture(
             teamId,

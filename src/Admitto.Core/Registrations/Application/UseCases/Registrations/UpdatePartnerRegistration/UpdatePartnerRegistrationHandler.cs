@@ -160,8 +160,9 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         if (coupon is not null)
         {
-            RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlists(
-                waitlists, catalog, coupon, registration.Email, couponGrantedIds);
+            await RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlistsAsync(
+                writeStore, waitlists, catalog, coupon, registration.Email, couponGrantedIds,
+                now, cancellationToken);
         }
     }
 

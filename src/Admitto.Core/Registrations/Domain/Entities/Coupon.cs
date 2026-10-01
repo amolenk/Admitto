@@ -85,6 +85,18 @@ public class Coupon : Aggregate<CouponId>
             throw new BusinessRuleViolationException(Errors.NoTicketTypes);
         }
 
+        // Validate no ticket type is listed more than once.
+        var duplicateIds = requestedTicketTypeIds
+            .GroupBy(id => id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key.Value)
+            .ToList();
+
+        if (duplicateIds.Count > 0)
+        {
+            throw new BusinessRuleViolationException(Errors.DuplicateTicketTypes(duplicateIds));
+        }
+
         // Validate all requested ticket types exist.
         var availableLookup = availableTicketTypes.ToDictionary(t => t.Id);
         var unknownIds = requestedTicketTypeIds
@@ -203,6 +215,11 @@ public class Coupon : Aggregate<CouponId>
         public static Error UnknownTicketTypes(IReadOnlyList<Guid> ids) => new(
             "coupon.unknown_ticket_types",
             "One or more ticket types do not exist.",
+            new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
+
+        public static Error DuplicateTicketTypes(IReadOnlyList<Guid> ids) => new(
+            "coupon.duplicate_ticket_types",
+            "Ticket types must not be listed more than once.",
             new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
 
         public static readonly Error ExpiryMustBeInFuture = new(

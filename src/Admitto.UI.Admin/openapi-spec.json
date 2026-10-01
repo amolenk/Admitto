@@ -9761,7 +9761,7 @@
               "type": "string"
             }
           },
-          "waitlistCouponCode": {
+          "couponCode": {
             "type": [
               "null",
               "string"

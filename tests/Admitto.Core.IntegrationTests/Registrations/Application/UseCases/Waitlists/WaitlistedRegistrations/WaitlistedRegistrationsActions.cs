@@ -130,7 +130,7 @@ internal sealed class WaitlistedRegistrationsActions(
     {
         await using var dispatch = DispatchingRegistrationsContext.Create(environment, Clock);
         var job = new ProcessExpiredWaitlistCouponsJob(
-            dispatch.Context, dispatch.UnitOfWork, Clock, NullLogger<ProcessExpiredWaitlistCouponsJob>.Instance);
+            dispatch.Context, dispatch.ScopeFactory, Clock, NullLogger<ProcessExpiredWaitlistCouponsJob>.Instance);
         var jobContext = Substitute.For<IJobExecutionContext>();
         jobContext.CancellationToken.Returns(cancellationToken);
 

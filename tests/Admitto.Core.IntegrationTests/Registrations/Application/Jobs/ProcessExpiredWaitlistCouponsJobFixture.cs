@@ -189,6 +189,27 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     }
 
     /// <summary>
+    /// Archives the ticketed event and its catalog, as happens once an organizer archives a finished event.
+    /// </summary>
+    public async ValueTask ArchiveEventAsync(
+        IntegrationTestEnvironment environment,
+        CancellationToken cancellationToken = default)
+    {
+        var context = environment.RegistrationsDatabase.Context;
+
+        var ticketedEvent = await context.TicketedEvents
+            .SingleAsync(e => e.Id == EventId && e.TeamId == TeamId, cancellationToken);
+        ticketedEvent.Archive();
+
+        var catalog = await context.TicketCatalogs
+            .SingleAsync(c => c.Id == EventId && c.TeamId == TeamId, cancellationToken);
+        catalog.MarkEventArchived();
+
+        await context.SaveChangesAsync(cancellationToken);
+        context.ChangeTracker.Clear();
+    }
+
+    /// <summary>
     /// Backdates the expiry of the outstanding waitlist coupons — all of them, or only the one sent to
     /// <paramref name="recipient"/> — to be <paramref name="offsetFromNow"/> before now, bypassing the domain model:
     /// both the coupon rows and the issued coupons tracked in the waitlist's <c>waitlist_coupons</c> JSON (which is

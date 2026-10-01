@@ -573,7 +573,7 @@ export type UpdatePartnerRegistrationHttpRequest = {
     additionalDetails?: null | {
         [key: string]: string;
     };
-    waitlistCouponCode?: null | string;
+    couponCode?: null | string;
 };
 
 export type UpdateTeamHttpRequest = {

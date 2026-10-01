@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
@@ -108,9 +109,11 @@ public class Waitlist : Aggregate<TicketTypeId>
         int freedSlots,
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow)
+        DateTimeOffset utcNow,
+        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
     {
-        var coupons = IssueNextCoupons(freedSlots, ticketedEvent, catalog, utcNow);
+        var coupons = IssueNextCoupons(
+            freedSlots, ticketedEvent, catalog, utcNow, WaitlistOfferReason.AutomaticPromotion, resolveRegistrationId);
 
         var remainingEntries = _entries.Where(e => e.Status == WaitlistEntryStatus.Active).ToList();
         foreach (var entry in remainingEntries)
@@ -132,17 +135,23 @@ public class Waitlist : Aggregate<TicketTypeId>
     public IReadOnlyList<Coupon> IssueCouponsToAllEntries(
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow)
-        => IssueNextCoupons(ActiveEntryCount, ticketedEvent, catalog, utcNow);
+        DateTimeOffset utcNow,
+        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
+        => IssueNextCoupons(
+            ActiveEntryCount, ticketedEvent, catalog, utcNow, WaitlistOfferReason.CapacityOpenedForEveryone,
+            resolveRegistrationId);
 
     private List<Coupon> IssueNextCoupons(
         int maxCount,
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow)
+        DateTimeOffset utcNow,
+        WaitlistOfferReason reason,
+        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
     {
         var coupons = new List<Coupon>();
-        while (coupons.Count < maxCount && IssueNextCoupon(ticketedEvent, catalog, utcNow) is { } coupon)
+        while (coupons.Count < maxCount
+               && IssueNextCouponCore(ticketedEvent, catalog, utcNow, reason, resolveRegistrationId) is { } coupon)
             coupons.Add(coupon);
 
         return coupons;
@@ -156,7 +165,16 @@ public class Waitlist : Aggregate<TicketTypeId>
     public Coupon? IssueNextCoupon(
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow)
+        DateTimeOffset utcNow,
+        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
+        => IssueNextCouponCore(ticketedEvent, catalog, utcNow, WaitlistOfferReason.AutomaticPromotion, resolveRegistrationId);
+
+    private Coupon? IssueNextCouponCore(
+        TicketedEvent ticketedEvent,
+        TicketCatalog catalog,
+        DateTimeOffset utcNow,
+        WaitlistOfferReason reason,
+        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
     {
         var entry = _entries
             .Where(e => e.Status == WaitlistEntryStatus.Active)
@@ -164,7 +182,9 @@ public class Waitlist : Aggregate<TicketTypeId>
 
         return entry is null
             ? null
-            : IssueCoupon(entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Automatic);
+            : IssueCoupon(
+                entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Automatic, reason,
+                resolveRegistrationId(entry.Email));
     }
 
     /// <summary>
@@ -176,13 +196,16 @@ public class Waitlist : Aggregate<TicketTypeId>
         WaitlistEntryId entryId,
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow)
+        DateTimeOffset utcNow,
+        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
     {
         var entry = _entries.FirstOrDefault(e => e.Id == entryId && e.Status == WaitlistEntryStatus.Active);
         if (entry is null)
             throw new BusinessRuleViolationException(Errors.EntryNotActive);
 
-        return IssueCoupon(entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Manual);
+        return IssueCoupon(
+            entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Manual, WaitlistOfferReason.VipPromotion,
+            resolveRegistrationId(entry.Email));
     }
 
     private Coupon IssueCoupon(
@@ -190,7 +213,9 @@ public class Waitlist : Aggregate<TicketTypeId>
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
         DateTimeOffset utcNow,
-        WaitlistCouponOrigin origin)
+        WaitlistCouponOrigin origin,
+        WaitlistOfferReason reason,
+        RegistrationId? registrationId)
     {
         var ticketType = catalog.FindTicketType(Id);
         if (origin == WaitlistCouponOrigin.Automatic)
@@ -204,7 +229,8 @@ public class Waitlist : Aggregate<TicketTypeId>
             ticketedEvent.TimeZone,
             ticketedEvent.WaitlistPolicy.QuietHoursStart,
             ticketedEvent.WaitlistPolicy.QuietHoursEnd,
-            ticketType.ClaimWindowHours);
+            ticketType.ClaimWindowHours,
+            ticketedEvent.StartsAt);
 
         var coupon = Coupon.Create(
             EventId,
@@ -221,7 +247,8 @@ public class Waitlist : Aggregate<TicketTypeId>
         _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow, expiresAt, origin));
 
         AddDomainEvent(new WaitlistCouponIssuedDomainEvent(
-            TeamId, EventId, ticketType.Id, entry.Email, coupon.Code, ticketType.Name.Value, expiresAt));
+            TeamId, EventId, ticketType.Id, entry.Email, coupon.Code, ticketType.Name.Value, expiresAt, reason,
+            registrationId));
 
         return coupon;
     }

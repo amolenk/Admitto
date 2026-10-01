@@ -81,5 +81,5 @@ public sealed class GetCouponDetailsTests(TestContext testContext) : AspireInteg
     }
 
     private static GetCouponDetailsHandler NewGetCouponDetailsHandler() =>
-        new(Environment.RegistrationsDatabase.Context);
+        new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 }

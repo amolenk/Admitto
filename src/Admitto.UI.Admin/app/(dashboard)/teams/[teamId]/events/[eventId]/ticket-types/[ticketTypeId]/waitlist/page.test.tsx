@@ -274,6 +274,9 @@ describe("WaitlistPage", () => {
         await user.click(
             within(bea.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
         );
+        await user.click(
+            (await screen.findAllByRole("button", { name: "Promote to VIP" })).at(-1)!,
+        );
 
         await waitFor(() =>
             expect(post).toHaveBeenCalledWith(
@@ -326,6 +329,9 @@ describe("WaitlistPage", () => {
         await user.click(
             within(ali.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
         );
+        await user.click(
+            (await screen.findAllByRole("button", { name: "Promote to VIP" })).at(-1)!,
+        );
 
         await waitFor(() =>
             expect(toast.error).toHaveBeenCalledWith("The waitlist entry is no longer active."),
@@ -334,5 +340,85 @@ describe("WaitlistPage", () => {
         expect(
             await screen.findByText("No one is currently on the waitlist."),
         ).toBeInTheDocument();
+    });
+
+    // Given an active waitlist entry
+    // When the organizer clicks "Promote to VIP"
+    // Then a confirmation dialog explains the offer can't be revoked and that it's an admin
+    // ticket on top of public capacity, and no request is sent until it's confirmed
+    it("asks for confirmation before promoting an entry to VIP", async () => {
+        mockEndpoints(
+            waitlistDetailsDto({
+                activeEntries: [waitlistEntryRow({ entryId: "aaaa1111-0000-0000-0000-000000000001" })],
+            }),
+        );
+
+        const { user } = renderPage();
+
+        const ali = await screen.findByText("ali***@example.com");
+        await user.click(
+            within(ali.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
+        );
+
+        expect(
+            await screen.findByText(/can't be revoked once sent/),
+        ).toBeInTheDocument();
+        expect(screen.getByText(/doesn't use a public seat/)).toBeInTheDocument();
+        expect(post).not.toHaveBeenCalled();
+
+        await user.click(screen.getByRole("button", { name: "Cancel" }));
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    // Given an active entry
+    // When the organizer removes it and the backend rejects the request
+    // Then an error toast is shown instead of failing silently, and the entry stays visible
+    it("shows an error toast when removing an entry fails", async () => {
+        mockEndpoints(
+            waitlistDetailsDto({
+                activeEntries: [waitlistEntryRow({ entryId: "aaaa1111-0000-0000-0000-000000000001" })],
+            }),
+        );
+        del.mockRejectedValue(
+            new FormError({
+                status: 409,
+                title: "Conflict",
+                detail: "The waitlist entry is no longer active.",
+                errors: {},
+            }),
+        );
+
+        const { user } = renderPage();
+
+        const ali = await screen.findByText("ali***@example.com");
+        await user.click(
+            within(ali.closest("tr")!).getByRole("button", { name: "Remove from waitlist" }),
+        );
+
+        await waitFor(() =>
+            expect(toast.error).toHaveBeenCalledWith("The waitlist entry is no longer active."),
+        );
+        expect(toast.success).not.toHaveBeenCalled();
+        expect(screen.getByText("ali***@example.com")).toBeInTheDocument();
+    });
+
+    // Given the waitlist query fails
+    // When the page loads
+    // Then an error state is shown instead of the empty-waitlist copy
+    it("shows an error state when the waitlist fails to load", async () => {
+        get.mockImplementation((url: string) => {
+            if (url === WAITLIST_URL) return Promise.reject(new Error("boom"));
+            if (url === TICKET_TYPES_URL) return Promise.resolve([ticketType]);
+            return Promise.reject(new Error(`unexpected GET ${url}`));
+        });
+
+        renderPage();
+
+        expect(
+            await screen.findByText("Failed to load the waitlist. Please refresh and try again."),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText("No one is currently on the waitlist."),
+        ).not.toBeInTheDocument();
     });
 });

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -15,6 +16,7 @@ public sealed class WaitlistTests
     private static readonly TicketTypeId DefaultTicketTypeId = TicketTypeId.New();
     private static readonly TeamId DefaultTeamId = TeamId.New();
     private static readonly EmailAddress RedeemerEmail = EmailAddress.From("redeemer@example.com");
+    private static readonly Func<EmailAddress, RegistrationId?> NoRegistrationId = _ => null;
 
     private static Waitlist CreateWaitlist() =>
         Waitlist.Create(DefaultEventId, DefaultTicketTypeId, DefaultTeamId);
@@ -52,7 +54,7 @@ public sealed class WaitlistTests
     private Coupon IssueCoupon(Waitlist sut)
     {
         sut.AddEntry(EmailAddress.From($"{Guid.NewGuid():N}@example.com"), DateTimeOffset.UtcNow, _catalog);
-        return sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        return sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
     }
 
     // Given an empty waitlist
@@ -262,7 +264,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
 
         // Assert
         sut.Coupons.ShouldHaveSingleItem().ExpiresAt.ShouldBe(coupon.ExpiresAt);
@@ -280,7 +282,7 @@ public sealed class WaitlistTests
         var entryId = sut.Entries.Single().Id;
 
         // Act
-        var coupon = sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        var coupon = sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         sut.Coupons.ShouldHaveSingleItem().ExpiresAt.ShouldBe(coupon.ExpiresAt);
@@ -299,7 +301,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
         sut.Entries.ShouldNotContain(e => e.Status == WaitlistEntryStatus.Active);
         result.ShouldNotBeNull();
         sut.Coupons.ShouldHaveSingleItem().Id.ShouldBe(result.Id);
@@ -320,7 +322,7 @@ public sealed class WaitlistTests
         var now = DateTimeOffset.UtcNow;
 
         // Act
-        var result = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, now);
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, now, NoRegistrationId);
 
         // Assert
         result.ShouldNotBeNull();
@@ -348,7 +350,7 @@ public sealed class WaitlistTests
         var email = EmailAddress.From("alice@example.com");
         sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog);
         var catalog = _catalog;
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
         sut.ClearDomainEvents();
 
         // Act
@@ -378,7 +380,7 @@ public sealed class WaitlistTests
         var sut = CreateWaitlist();
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
         var catalog = _catalog;
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
         sut.ApplyCouponRedemption(coupon.Id, RedeemerEmail, _catalog);
         sut.ClearDomainEvents();
 
@@ -399,7 +401,7 @@ public sealed class WaitlistTests
         // Arrange
         var sut = CreateWaitlist();
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
         sut.ClearDomainEvents();
         var catalogWithoutTicketType = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
 
@@ -421,7 +423,7 @@ public sealed class WaitlistTests
         var sut = CreateWaitlist();
         var catalog = _catalog;
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
-        var couponId = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow)!.Id;
+        var couponId = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId)!.Id;
         sut.ClearDomainEvents();
 
         // Act
@@ -443,7 +445,7 @@ public sealed class WaitlistTests
         var sut = CreateWaitlist();
         var catalog = _catalog;
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
         sut.ClearDomainEvents();
 
         // Act
@@ -464,7 +466,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         sut.Coupons.ShouldHaveSingleItem().Origin.ShouldBe(WaitlistCouponOrigin.Automatic);
@@ -482,7 +484,7 @@ public sealed class WaitlistTests
         var entryId = sut.Entries.Single().Id;
 
         // Act
-        sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         sut.Coupons.ShouldHaveSingleItem().Origin.ShouldBe(WaitlistCouponOrigin.Manual);
@@ -500,7 +502,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow);
+        sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(1);
@@ -521,7 +523,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, catalog);
 
         // Act
-        sut.IssueCouponToEntry(sut.Entries.Single().Id, CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow);
+        sut.IssueCouponToEntry(sut.Entries.Single().Id, CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(0);
@@ -539,10 +541,10 @@ public sealed class WaitlistTests
         var catalog = _catalog;
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
         sut.AddEntry(EmailAddress.From("bob@example.com"), DateTimeOffset.UtcNow, _catalog);
-        var automatic = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow)!;
+        var automatic = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
         var manual = sut.IssueCouponToEntry(
             sut.Entries.Single(e => e.Status == WaitlistEntryStatus.Active).Id,
-            CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow);
+            CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         TicketTypeOf(catalog).WaitlistHeldCapacity.ShouldBe(1);
 
@@ -570,7 +572,7 @@ public sealed class WaitlistTests
         catalog.Release(tickets);
         var sut = CreateWaitlist();
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, catalog);
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
         sut.ClearDomainEvents();
         catalog.ClearDomainEvents();
 
@@ -593,7 +595,7 @@ public sealed class WaitlistTests
     {
         var sut = CreateWaitlist();
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
         sut.ApplyCouponRedemption(coupon.Id, RedeemerEmail, _catalog);
 
         var withdrawn = sut.WithdrawCoupon(coupon.Id, _catalog);
@@ -612,7 +614,7 @@ public sealed class WaitlistTests
     {
         var sut = CreateWaitlist();
         sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog);
-        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId)!;
 
         sut.ExpireCoupon(coupon.Id, coupon, _catalog, registrationClosed);
 
@@ -635,7 +637,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, now);
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, now, NoRegistrationId);
         result.ShouldNotBeNull();
         result.Email.Value.ShouldBe("first@example.com");
     }
@@ -651,7 +653,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
         sut.GetDomainEvents().ShouldBeEmpty();
         sut.Coupons.ShouldBeEmpty();
     }
@@ -671,7 +673,7 @@ public sealed class WaitlistTests
         var target = sut.Entries.Single(e => e.Email.Value == "second@example.com");
 
         // Act
-        var result = sut.IssueCouponToEntry(target.Id, CreateTicketedEvent(), _catalog, now);
+        var result = sut.IssueCouponToEntry(target.Id, CreateTicketedEvent(), _catalog, now, NoRegistrationId);
 
         // Assert
         result.Email.Value.ShouldBe("second@example.com");
@@ -699,7 +701,7 @@ public sealed class WaitlistTests
         var entryId = sut.Entries.Single(e => e.Email == email).Id;
 
         // Act
-        var result = sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow);
+        var result = sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         sut.GetDomainEvents()
@@ -732,10 +734,11 @@ public sealed class WaitlistTests
             ticketedEvent.TimeZone,
             ticketedEvent.WaitlistPolicy.QuietHoursStart,
             ticketedEvent.WaitlistPolicy.QuietHoursEnd,
-            TicketTypeOf(catalog).ClaimWindowHours);
+            TicketTypeOf(catalog).ClaimWindowHours,
+            ticketedEvent.StartsAt);
 
         // Act
-        var result = sut.IssueCouponToEntry(sut.Entries.Single().Id, ticketedEvent, catalog, now);
+        var result = sut.IssueCouponToEntry(sut.Entries.Single().Id, ticketedEvent, catalog, now, NoRegistrationId);
 
         // Assert
         result.ExpiresAt.ShouldBe(expected);
@@ -757,7 +760,7 @@ public sealed class WaitlistTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow));
+            sut.IssueCouponToEntry(entryId, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId));
 
         // Assert
         result.Error.ShouldMatch(Waitlist.Errors.EntryNotActive);
@@ -776,7 +779,7 @@ public sealed class WaitlistTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.IssueCouponToEntry(WaitlistEntryId.New(), CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow));
+            sut.IssueCouponToEntry(WaitlistEntryId.New(), CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId));
 
         // Assert
         result.Error.ShouldMatch(Waitlist.Errors.EntryNotActive);
@@ -827,7 +830,7 @@ public sealed class WaitlistTests
         sut.ApplyCouponRedemption(redeemed.Id, RedeemerEmail, _catalog);
         var cutoff = lapsed.ExpiresAt;
         sut.AddEntry(EmailAddress.From("late@example.com"), DateTimeOffset.UtcNow, _catalog);
-        var notYetLapsed = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, cutoff)!;
+        var notYetLapsed = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, cutoff, NoRegistrationId)!;
 
         // Act
         var result = sut.GetLapsedCouponIds(cutoff);
@@ -931,7 +934,7 @@ public sealed class WaitlistTests
 
         // Act
         var catalog = _catalog;
-        var coupons = sut.IssueCouponsToAllEntries(CreateTicketedEvent(), catalog, now);
+        var coupons = sut.IssueCouponsToAllEntries(CreateTicketedEvent(), catalog, now, NoRegistrationId);
 
         // Assert
         coupons.Select(c => c.Email.Value).ShouldBe(["first@example.com", "second@example.com", "third@example.com"]);
@@ -952,7 +955,7 @@ public sealed class WaitlistTests
         var sut = CreateWaitlist();
 
         // Act
-        var coupons = sut.IssueCouponsToAllEntries(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        var coupons = sut.IssueCouponsToAllEntries(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         coupons.ShouldBeEmpty();
@@ -976,7 +979,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var coupons = sut.Disable(freedSlots: 1, CreateTicketedEvent(), _catalog, now);
+        var coupons = sut.Disable(freedSlots: 1, CreateTicketedEvent(), _catalog, now, NoRegistrationId);
 
         // Assert
         coupons.ShouldHaveSingleItem().Email.Value.ShouldBe("first@example.com");
@@ -1004,7 +1007,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var coupons = sut.Disable(freedSlots: 0, CreateTicketedEvent(), _catalog, now);
+        var coupons = sut.Disable(freedSlots: 0, CreateTicketedEvent(), _catalog, now, NoRegistrationId);
 
         // Assert
         coupons.ShouldBeEmpty();
@@ -1025,7 +1028,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("first@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        var coupons = sut.Disable(freedSlots: 3, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        var coupons = sut.Disable(freedSlots: 3, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         coupons.ShouldHaveSingleItem();
@@ -1123,7 +1126,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("bob@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         QueuedCount.ShouldBe(1);
@@ -1142,7 +1145,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("vip@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        sut.IssueCouponToEntry(sut.Entries[1].Id, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        sut.IssueCouponToEntry(sut.Entries[1].Id, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         QueuedCount.ShouldBe(1);
@@ -1180,7 +1183,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("third@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        sut.Disable(freedSlots: 1, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        sut.Disable(freedSlots: 1, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         QueuedCount.ShouldBe(0);
@@ -1199,7 +1202,7 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("third@example.com"), DateTimeOffset.UtcNow, _catalog);
 
         // Act
-        sut.IssueCouponsToAllEntries(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        sut.IssueCouponsToAllEntries(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow, NoRegistrationId);
 
         // Assert
         QueuedCount.ShouldBe(0);

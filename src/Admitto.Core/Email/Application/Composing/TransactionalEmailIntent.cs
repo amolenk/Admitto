@@ -31,12 +31,21 @@ internal sealed record CouponInvitationIntent(
     string CouponCode)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
+internal enum WaitlistOfferReason
+{
+    AutomaticPromotion,
+    VipPromotion,
+    CapacityOpenedForEveryone,
+}
+
 internal sealed record WaitlistOfferIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     string CouponCode,
     string TicketTypeName,
-    DateTimeOffset ExpiresAt)
+    DateTimeOffset ExpiresAt,
+    WaitlistOfferReason Reason,
+    RegistrationId? RegistrationId)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal sealed record WaitlistOfferExpiredIntent(

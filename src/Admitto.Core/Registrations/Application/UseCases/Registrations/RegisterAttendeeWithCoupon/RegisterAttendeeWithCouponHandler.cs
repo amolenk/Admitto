@@ -62,7 +62,8 @@ internal sealed class RegisterAttendeeWithCouponHandler(
         var waitlists = await writeStore.Waitlists
             .Where(w => w.EventId == eventId && w.TeamId == teamId)
             .ToListAsync(cancellationToken);
-        ApplyRedemptionToWaitlists(waitlists, catalog, coupon, email, couponGrantedIds);
+        await ApplyRedemptionToWaitlistsAsync(
+            writeStore, waitlists, catalog, coupon, email, couponGrantedIds, now, cancellationToken);
 
         // A waitlisted attendee claiming their offer keeps their other waitlist entries.
         var waitlistedTickets = DescribeActiveWaitlistEntries(waitlists, catalog, email);
@@ -104,18 +105,40 @@ internal sealed class RegisterAttendeeWithCouponHandler(
     /// Redemption-time waitlist cleanup shared by every coupon redemption path: for each ticket type the
     /// redemption actually granted, removes the redeeming email's active waitlist entry and settles the
     /// coupon on the waitlist that issued it — uniformly, whatever the coupon's source. Removed entries leave the
-    /// <paramref name="catalog"/>'s queued count.
+    /// <paramref name="catalog"/>'s queued count. Also settles any other unredeemed waitlist offer the same email
+    /// holds for that ticket type (e.g. redeeming an organiser coupon while an automatic offer is still
+    /// outstanding): the offer expires without an email and an automatic offer's public hold is released, same as
+    /// an admin registration settles one.
     /// </summary>
-    internal static void ApplyRedemptionToWaitlists(
+    internal static async ValueTask ApplyRedemptionToWaitlistsAsync(
+        IRegistrationsWriteStore writeStore,
         IEnumerable<Waitlist> eventWaitlists,
         TicketCatalog catalog,
         Coupon coupon,
         EmailAddress email,
-        IReadOnlyList<TicketTypeId> couponGrantedIds)
+        IReadOnlyList<TicketTypeId> couponGrantedIds,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
     {
         foreach (var waitlist in eventWaitlists.Where(w => couponGrantedIds.Contains(w.Id)))
         {
             waitlist.ApplyCouponRedemption(coupon.Id, email, catalog);
+
+            var otherIssuedCouponIds = waitlist.Coupons
+                .Where(c => c.Status == WaitlistCouponStatus.Issued && c.Id != coupon.Id)
+                .Select(c => c.Id)
+                .ToList();
+            if (otherIssuedCouponIds.Count == 0)
+                continue;
+
+            var otherOffers = await writeStore.Coupons
+                .Where(c => otherIssuedCouponIds.Contains(c.Id) && c.Email == email)
+                .ToListAsync(cancellationToken);
+            foreach (var offer in otherOffers)
+            {
+                if (waitlist.WithdrawCoupon(offer.Id, catalog))
+                    offer.Expire(now);
+            }
         }
     }
 

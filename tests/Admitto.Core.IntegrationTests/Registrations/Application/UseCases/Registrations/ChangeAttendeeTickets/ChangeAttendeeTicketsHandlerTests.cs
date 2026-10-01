@@ -311,4 +311,45 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
             coupon.RedeemedAt.ShouldBeNull();
         });
     }
+
+    // Given a single waitlist coupon offering a workshop ticket
+    // When two concurrent requests both redeem it for the same registration
+    // Then only the first to commit succeeds; the second fails with a concurrency conflict and the coupon stays
+    // redeemed exactly once
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_ConcurrentDoubleRedemption_OnlyFirstSucceeds()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("workshop").Value],
+            ChangeMode.SelfService,
+            fixture.WaitlistCouponCode);
+
+        await using var first = DispatchingRegistrationsContext.Create(Environment);
+        await using var second = DispatchingRegistrationsContext.Create(Environment);
+
+        await new ChangeAttendeeTicketsHandler(first.Context, TimeProvider.System).HandleAsync(
+            command, testContext.CancellationToken);
+        await new ChangeAttendeeTicketsHandler(second.Context, TimeProvider.System).HandleAsync(
+            command, testContext.CancellationToken);
+
+        await first.SaveChangesAsync(testContext.CancellationToken);
+
+        await Should.ThrowAsync<DbUpdateConcurrencyException>(
+            async () => await second.SaveChangesAsync(testContext.CancellationToken));
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("workshop"));
+        });
+    }
 }

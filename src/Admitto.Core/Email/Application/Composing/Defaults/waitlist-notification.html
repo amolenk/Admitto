@@ -16,7 +16,7 @@
         </h1>
 
         <p style="margin-top: 0;">Hi there,</p>
-        <p>Great news! A spot has opened up at <strong>{{ event_name }}</strong> and you've reached the top of the waitlist.</p>
+        <p>{{ intro_text }}</p>
     </div>
 
     <div style="background-color: #f0f4ff; border-radius: 6px; padding: 20px; margin: 20px 0; text-align: center;">
@@ -25,14 +25,14 @@
         <p style="margin: 8px 0 0 0; font-size: 13px; color: #555;">Ticket type: <strong>{{ ticket_type_name }}</strong></p>
     </div>
 
-    <p>Use this code when registering to claim your ticket.</p>
+    <p>Enter this code to claim your ticket.</p>
 
-    <p style="color: #c0392b;"><strong>This offer expires on {{ expires_at }}.</strong> After that, the spot may be offered to the next person on the waitlist.</p>
+    <p style="color: #c0392b;"><strong>This offer expires on {{ expires_at }}.</strong> {{ expiry_note }}</p>
 
     <div style="text-align: center; margin: 30px 0;">
-        <a href="{{ register_link }}"
+        <a href="{{ cta_link }}"
            style="display: inline-block; background-color: {{ accent_color }}; color: #ffffff; padding: 12px 32px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 16px;">
-            Register Now
+            {{ cta_label }}
         </a>
     </div>
 

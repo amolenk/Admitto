@@ -6,4 +6,4 @@ public sealed record UpdatePartnerRegistrationHttpRequest(
     Guid[]? RegisterTicketTypeIds,
     Guid[]? WaitlistTicketTypeIds,
     Dictionary<string, string>? AdditionalDetails = null,
-    Guid? WaitlistCouponCode = null);
+    Guid? CouponCode = null);

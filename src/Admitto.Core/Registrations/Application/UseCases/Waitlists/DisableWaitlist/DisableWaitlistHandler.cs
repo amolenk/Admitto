@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -39,7 +40,15 @@ internal sealed class DisableWaitlistHandler(
         // Once registration has closed, the freed slots aren't offered to anyone.
         var utcNow = timeProvider.GetUtcNow();
         var freedSlots = ticketedEvent.HasRegistrationClosed(utcNow) ? 0 : command.FreedSlots;
-        var coupons = waitlist.Disable(freedSlots, ticketedEvent, catalog, utcNow);
+
+        var activeEmails = waitlist.Entries
+            .Where(e => e.Status == WaitlistEntryStatus.Active)
+            .Select(e => e.Email)
+            .ToList();
+        var resolveRegistrationId = await WaitlistRegistrationIdResolver.BuildAsync(
+            writeStore, eventId, teamId, activeEmails, cancellationToken);
+
+        var coupons = waitlist.Disable(freedSlots, ticketedEvent, catalog, utcNow, resolveRegistrationId);
 
         await writeStore.Coupons.AddRangeAsync(coupons, cancellationToken);
     }

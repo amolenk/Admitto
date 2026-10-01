@@ -187,7 +187,9 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.CouponCode.Value.ToString(),
             domainEvent.TicketTypeName,
-            domainEvent.ExpiresAt));
+            domainEvent.ExpiresAt,
+            domainEvent.Reason.ToString(),
+            domainEvent.RegistrationId?.Value));
 
         return ValueTask.CompletedTask;
     }

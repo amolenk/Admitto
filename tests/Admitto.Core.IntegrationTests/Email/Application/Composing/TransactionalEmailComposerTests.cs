@@ -133,18 +133,55 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
         var expiresAt = new DateTimeOffset(2026, 9, 5, 14, 30, 0, TimeSpan.Zero);
 
         var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
-            new WaitlistOfferIntent(teamId, eventId, "WAIT-456", "Conference Pass", expiresAt),
+            new WaitlistOfferIntent(
+                teamId, eventId, "WAIT-456", "Conference Pass", expiresAt,
+                WaitlistOfferReason.AutomaticPromotion, RegistrationId: null),
             testContext.CancellationToken);
 
         rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistNotification);
         rendered.Subject.ShouldBe("Your spot at DevConf is ready — use your coupon");
         rendered.TextBody.ShouldContain("Your personal coupon code: WAIT-456");
         rendered.TextBody.ShouldContain("Ticket type: Conference Pass");
-        rendered.TextBody.ShouldContain("September 5, 2026");
+        rendered.TextBody.ShouldContain("5 September 2026, 14:30 (UTC)");
         rendered.HtmlBody.ShouldContain("Your spot at DevConf is ready!");
         rendered.HtmlBody.ShouldContain("WAIT-456");
         rendered.HtmlBody.ShouldContain("Conference Pass");
-        rendered.HtmlBody.ShouldContain("September 5, 2026");
+        rendered.HtmlBody.ShouldContain("5 September 2026, 14:30 (UTC)");
+    }
+
+    // Given a place has opened for an attendee via a VIP promotion
+    // When a waitlist offer email is created
+    // Then it does not claim the spot goes to "the next person", since a VIP offer skipped the queue
+    [TestMethod]
+    public async ValueTask ComposeAsync_WaitlistOfferVipPromotion_OmitsNextPersonWording()
+    {
+        await AssertOmitsNextPersonWordingAsync(WaitlistOfferReason.VipPromotion);
+    }
+
+    // Given a place has opened for an attendee via a capacity-opened-for-everyone release
+    // When a waitlist offer email is created
+    // Then it does not claim the spot goes to "the next person", since everyone already got their own offer
+    [TestMethod]
+    public async ValueTask ComposeAsync_WaitlistOfferCapacityOpenedForEveryone_OmitsNextPersonWording()
+    {
+        await AssertOmitsNextPersonWordingAsync(WaitlistOfferReason.CapacityOpenedForEveryone);
+    }
+
+    private async ValueTask AssertOmitsNextPersonWordingAsync(WaitlistOfferReason reason)
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var fixture = TransactionalEmailComposerFixture.CompleteEventContext();
+        await fixture.SetupAsync(Environment, teamId, eventId);
+        var expiresAt = new DateTimeOffset(2026, 9, 5, 14, 30, 0, TimeSpan.Zero);
+
+        var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
+            new WaitlistOfferIntent(
+                teamId, eventId, "WAIT-456", "Conference Pass", expiresAt, reason, RegistrationId: null),
+            testContext.CancellationToken);
+
+        rendered.TextBody.ShouldNotContain("next person");
+        rendered.HtmlBody.ShouldNotContain("next person");
     }
 
     // Given the queue has moved past an attendee whose waitlist offer went unclaimed

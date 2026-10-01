@@ -110,7 +110,7 @@ internal sealed class UpdateTicketTypeWaitlistFixture
             if (_withOutstandingCoupon)
             {
                 waitlist.AddEntry(OfferedEmail, now.AddMinutes(-1), catalog);
-                var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, now)!;
+                var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, now, _ => null)!;
                 coupon.ClearDomainEvents();
                 OutstandingCouponCode = coupon.Code.Value;
                 dbContext.Coupons.Add(coupon);
@@ -123,7 +123,7 @@ internal sealed class UpdateTicketTypeWaitlistFixture
             {
                 waitlist.AddEntry(VipEmail(i), now.AddMinutes(_waitingCount + i), catalog);
                 var vipEntry = waitlist.Entries.Single(e => e.Email == VipEmail(i) && e.Status == WaitlistEntryStatus.Active);
-                var vipCoupon = waitlist.IssueCouponToEntry(vipEntry.Id, ticketedEvent, catalog, now);
+                var vipCoupon = waitlist.IssueCouponToEntry(vipEntry.Id, ticketedEvent, catalog, now, _ => null);
                 vipCoupon.ClearDomainEvents();
                 dbContext.Coupons.Add(vipCoupon);
             }

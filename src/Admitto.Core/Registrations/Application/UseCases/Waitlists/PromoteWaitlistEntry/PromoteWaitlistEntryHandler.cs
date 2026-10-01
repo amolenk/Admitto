@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -37,11 +38,20 @@ internal sealed class PromoteWaitlistEntryHandler(
             w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
             cancellationToken);
 
+        var entryId = WaitlistEntryId.From(command.EntryId);
+        var entryEmails = waitlist.Entries
+            .Where(e => e.Id == entryId)
+            .Select(e => e.Email)
+            .ToList();
+        var resolveRegistrationId = await WaitlistRegistrationIdResolver.BuildAsync(
+            writeStore, eventId, teamId, entryEmails, cancellationToken);
+
         var coupon = waitlist.IssueCouponToEntry(
-            WaitlistEntryId.From(command.EntryId),
+            entryId,
             ticketedEvent,
             catalog,
-            timeProvider.GetUtcNow());
+            timeProvider.GetUtcNow(),
+            resolveRegistrationId);
 
         await writeStore.Coupons.AddAsync(coupon, cancellationToken);
 

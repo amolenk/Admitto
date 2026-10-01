@@ -92,7 +92,7 @@ internal sealed class ProcessWaitlistNotificationsFixture
             for (var i = 0; i < OutstandingVipOffers; i++)
             {
                 var vipEntry = waitlist.Entries.Where(e => e.Status == WaitlistEntryStatus.Active).MaxBy(e => e.Position)!;
-                dbContext.Coupons.Add(waitlist.IssueCouponToEntry(vipEntry.Id, ticketedEvent, catalog, now));
+                dbContext.Coupons.Add(waitlist.IssueCouponToEntry(vipEntry.Id, ticketedEvent, catalog, now, _ => null));
             }
 
             foreach (var ticket in tickets.Take(FreeSeats))

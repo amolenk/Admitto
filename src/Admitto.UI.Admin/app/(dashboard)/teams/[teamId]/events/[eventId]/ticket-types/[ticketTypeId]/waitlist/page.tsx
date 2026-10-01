@@ -14,6 +14,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
     Table,
     TableBody,
     TableCell,
@@ -42,6 +53,7 @@ export default function WaitlistPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const [promotingEntryId, setPromotingEntryId] = useState<string | null>(null);
+    const [removingEntryId, setRemovingEntryId] = useState<string | null>(null);
 
     const { data: ticketTypes } = useQuery({
         queryKey: ["ticket-types", teamId, eventId],
@@ -54,16 +66,31 @@ export default function WaitlistPage() {
     const waitlistUrl = `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketTypeId}/waitlist`;
     const waitlistQueryKey = ["waitlist", teamId, eventId, ticketTypeId];
 
-    const { data: waitlist, isLoading } = useQuery({
+    const {
+        data: waitlist,
+        isLoading,
+        isError,
+    } = useQuery({
         queryKey: waitlistQueryKey,
         queryFn: () => apiClient.get<WaitlistDetailsDto>(waitlistUrl),
         throwOnError: false,
     });
 
     async function removeEntry(entryId: string) {
-        await apiClient.delete(`${waitlistUrl}/${entryId}`);
-        await queryClient.invalidateQueries({ queryKey: waitlistQueryKey });
-        toast.success("Entry removed from waitlist.");
+        setRemovingEntryId(entryId);
+        try {
+            await apiClient.delete(`${waitlistUrl}/${entryId}`);
+            toast.success("Entry removed from waitlist.");
+        } catch (err) {
+            toast.error(
+                err instanceof FormError
+                    ? err.detail
+                    : "Failed to remove entry from waitlist. Please try again."
+            );
+        } finally {
+            setRemovingEntryId(null);
+            await queryClient.invalidateQueries({ queryKey: waitlistQueryKey });
+        }
     }
 
     // Issuing a VIP coupon takes the entry out of the queue immediately, so the refreshed
@@ -103,7 +130,11 @@ export default function WaitlistPage() {
                 </div>
             </div>
 
-            {isLoading ? (
+            {isError ? (
+                <Card className="p-8 text-center text-sm text-muted-foreground">
+                    Failed to load the waitlist. Please refresh and try again.
+                </Card>
+            ) : isLoading ? (
                 <div className="space-y-6">
                     <div className="grid grid-cols-3 gap-4">
                         <Skeleton className="h-24" />
@@ -164,22 +195,52 @@ export default function WaitlistPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center justify-end gap-1">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            disabled={promotingEntryId !== null}
-                                                            onClick={() => promoteEntry(entry.entryId)}
-                                                        >
-                                                            <Crown className="size-4" />
-                                                            {promotingEntryId === entry.entryId
-                                                                ? "Promoting…"
-                                                                : "Promote to VIP"}
-                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    disabled={
+                                                                        promotingEntryId !== null ||
+                                                                        removingEntryId !== null
+                                                                    }
+                                                                >
+                                                                    <Crown className="size-4" />
+                                                                    {promotingEntryId === entry.entryId
+                                                                        ? "Promoting…"
+                                                                        : "Promote to VIP"}
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Promote to VIP</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This issues {entry.maskedEmail} a VIP offer
+                                                                        right away. It can&apos;t be revoked once
+                                                                        sent. It&apos;s an admin ticket on top of
+                                                                        public capacity: it doesn&apos;t use a public
+                                                                        seat, and nobody else on the waitlist loses
+                                                                        their place because of it.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction
+                                                                        onClick={() => promoteEntry(entry.entryId)}
+                                                                    >
+                                                                        Promote to VIP
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
                                                             aria-label="Remove from waitlist"
-                                                            disabled={promotingEntryId !== null}
+                                                            disabled={
+                                                                promotingEntryId !== null ||
+                                                                removingEntryId !== null
+                                                            }
                                                             className="text-destructive hover:text-destructive"
                                                             onClick={() => removeEntry(entry.entryId)}
                                                         >

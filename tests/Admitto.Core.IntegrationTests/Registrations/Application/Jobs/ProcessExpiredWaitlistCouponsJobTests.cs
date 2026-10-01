@@ -307,9 +307,10 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 
     // Given a waitlist coupon expired past its grace period
     // When an organizer registers an attendee on the same ticket type while the job is running
-    // Then the job cannot commit on the catalog it read, and fails with a concurrency conflict
+    // Then that event's save fails with a concurrency conflict, which is logged and left for the next run — it
+    // does not fail the whole job
     [TestMethod]
-    public async ValueTask Execute_ConcurrentOrganiserRegistration_JobFailsWithConcurrencyConflict()
+    public async ValueTask Execute_ConcurrentOrganiserRegistration_LeavesCouponForNextRun()
     {
         // Arrange — the job's context has already read the catalog when the organizer's registration commits
         var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithTwoEntriesOnePendingCoupon();
@@ -333,12 +334,10 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
             await organiser.SaveChangesAsync(testContext.CancellationToken);
         }
 
-        // Act
-        var exception = await Should.ThrowAsync<JobExecutionException>(
-            async () => await CreateJob().Execute(QuartzContext()));
+        // Act — the job completes without throwing, despite the conflict on this event
+        await CreateJob().Execute(QuartzContext());
 
-        // Assert
-        exception.InnerException.ShouldBeOfType<DbUpdateConcurrencyException>();
+        // Assert — the coupon is left untouched, to be retried on the next run
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
             var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
@@ -400,11 +399,34 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         });
     }
 
+    // Given a lapsed waitlist coupon on an event that has since been archived
+    // When the process-expired-waitlist-coupons job runs
+    // Then the coupon is left untouched, since only active events' waitlists are considered
+    [TestMethod]
+    public async ValueTask Execute_WhenEventIsArchived_LeavesCouponUntouched()
+    {
+        // Arrange
+        var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithOneEntryOnePendingCoupon();
+        await fixture.SetupAsync(Environment, activeEntriesAfterCoupon: 0, testContext.CancellationToken);
+        await fixture.BackdateCouponExpiryAsync(Environment, TimeSpan.FromMinutes(10), testContext.CancellationToken);
+        await fixture.ArchiveEventAsync(Environment, testContext.CancellationToken);
+
+        // Act
+        await CreateJob().Execute(QuartzContext());
+
+        // Assert — the coupon is left issued; an archived event's waitlist is never touched
+        await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
+        {
+            var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
+            statuses.ShouldHaveSingleItem().Value.ShouldBe(WaitlistCouponStatus.Issued);
+        });
+    }
+
     // ─── helpers ───────────────────────────────────────────────────────────────
 
     private ProcessExpiredWaitlistCouponsJob CreateJob() =>
         new(_dispatch.Context,
-            _dispatch.UnitOfWork,
+            _dispatch.ScopeFactory,
             TimeProvider.System,
             NullLogger<ProcessExpiredWaitlistCouponsJob>.Instance);
 

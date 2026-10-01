@@ -14,6 +14,11 @@ public sealed class CreateCouponValidator : AbstractValidator<CreateCouponHttpRe
             .NotNull()
             .NotEmpty();
 
+        RuleFor(x => x.AllowedTicketTypeIds)
+            .Must(ids => ids.Distinct().Count() == ids.Length)
+            .When(x => x.AllowedTicketTypeIds is { Length: > 0 })
+            .WithMessage("'AllowedTicketTypeIds' must not contain duplicate ticket type ids.");
+
         RuleFor(x => x.ExpiresAt)
             .NotEmpty();
     }

@@ -126,8 +126,9 @@ internal sealed class ChangeAttendeeTicketsHandler(
         if (coupon is null)
             return;
 
-        RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlists(
-            waitlists, catalog, coupon, registration.Email, couponGrantedIds);
+        await RegisterAttendeeWithCouponHandler.ApplyRedemptionToWaitlistsAsync(
+            writeStore, waitlists, catalog, coupon, registration.Email, couponGrantedIds,
+            timeProvider.GetUtcNow(), cancellationToken);
     }
 
     internal static class Errors

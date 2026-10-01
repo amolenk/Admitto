@@ -22,12 +22,21 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
     {
         var idempotencyKey =
             $"waitlist-coupon-issued:{integrationEvent.TeamId}:{integrationEvent.TicketedEventId}:{integrationEvent.CouponCode}";
+        var reason = integrationEvent.Reason switch
+        {
+            nameof(WaitlistOfferReason.VipPromotion) => WaitlistOfferReason.VipPromotion,
+            nameof(WaitlistOfferReason.CapacityOpenedForEveryone) => WaitlistOfferReason.CapacityOpenedForEveryone,
+            _ => WaitlistOfferReason.AutomaticPromotion
+        };
         var rendered = await composer.ComposeAsync(new WaitlistOfferIntent(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
             integrationEvent.CouponCode,
             integrationEvent.TicketTypeName,
-            integrationEvent.ExpiresAt), cancellationToken);
+            integrationEvent.ExpiresAt,
+            reason,
+            integrationEvent.RegistrationId is { } registrationId ? RegistrationId.From(registrationId) : null),
+            cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,
             new TransactionalEmailDelivery(
@@ -35,7 +44,8 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
                 integrationEvent.TicketedEventId,
                 integrationEvent.RecipientEmail,
                 integrationEvent.RecipientEmail,
-                idempotencyKey),
+                idempotencyKey,
+                integrationEvent.RegistrationId),
             rendered,
             cancellationToken);
     }

@@ -39,6 +39,8 @@ internal sealed class DispatchingRegistrationsContext : IAsyncDisposable
 
     public IUnitOfWork UnitOfWork => new DbContextUnitOfWork(Context);
 
+    public IServiceScopeFactory ScopeFactory => _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+
     public IReadOnlyList<IIntegrationEvent> PublishedIntegrationEvents => _outbox.IntegrationEvents;
 
     public static DispatchingRegistrationsContext Create(
@@ -58,6 +60,7 @@ internal sealed class DispatchingRegistrationsContext : IAsyncDisposable
         services.AddKeyedSingleton<IOutbox>(RegistrationsModule.Key, outbox);
         services.AddSingleton<IRegistrationsWriteStore>(_ => context!);
         services.AddSingleton<IRegistrationsReadStore>(_ => context!);
+        services.AddKeyedSingleton<IUnitOfWork>(RegistrationsModule.Key, (_, _) => new DbContextUnitOfWork(context!));
         services.AddCommandHandlersFromAssembly(assembly, RegistrationsModule.NamespacePrefix, includeWorkerHandlers: true);
         services.AddDomainEventHandlersFromAssembly(assembly, RegistrationsModule.NamespacePrefix);
         var serviceProvider = services.BuildServiceProvider();
