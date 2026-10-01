@@ -4,15 +4,19 @@ using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Projections.ActivityLog;
 
-internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
+internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore, IRegistrationsWriteStore writeStore)
     : IDomainEventHandler<AttendeeRegisteredDomainEvent>,
       IDomainEventHandler<RegistrationReconfirmedDomainEvent>,
       IDomainEventHandler<RegistrationCancelledDomainEvent>,
       IDomainEventHandler<TicketsChangedDomainEvent>,
-      IDomainEventHandler<RegistrationCheckedInDomainEvent>
+      IDomainEventHandler<RegistrationCheckedInDomainEvent>,
+      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>,
+      IDomainEventHandler<WaitlistCouponExpiredDomainEvent>,
+      IDomainEventHandler<WaitlistEntryRemovedDomainEvent>
 {
     public ValueTask HandleAsync(
         AttendeeRegisteredDomainEvent domainEvent,
@@ -61,28 +65,44 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
         TicketsChangedDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
-        // The activity entry records the confirmed ticket change only; a change that merely moves the
-        // attendee between waitlists leaves the confirmed tickets as they were.
-        if (domainEvent.OldTickets.Select(t => t.Id).ToHashSet()
-            .SetEquals(domainEvent.NewTickets.Select(t => t.Id)))
-            return ValueTask.CompletedTask;
-
-        var metadata = JsonSerializer.Serialize(new
+        // Confirmed and waitlisted selections are recorded as separate activity entries, since either can
+        // change independently of the other (e.g. moving between waitlists leaves confirmed tickets as they were).
+        if (!SameSelection(domainEvent.OldTickets, domainEvent.NewTickets))
         {
-            from = domainEvent.OldTickets.Select(t => t.Name.Value).ToArray(),
-            to = domainEvent.NewTickets.Select(t => t.Name.Value).ToArray()
-        });
+            AddEntry(
+                domainEvent.TeamId,
+                domainEvent.TicketedEventId,
+                domainEvent.RegistrationId,
+                ActivityType.TicketsChanged,
+                domainEvent.ChangedAt,
+                SerializeSelectionChange(domainEvent.OldTickets, domainEvent.NewTickets));
+        }
 
-        AddEntry(
-            domainEvent.TeamId,
-            domainEvent.TicketedEventId,
-            domainEvent.RegistrationId,
-            ActivityType.TicketsChanged,
-            domainEvent.ChangedAt,
-            metadata);
+        if (!SameSelection(domainEvent.OldWaitlistedTickets, domainEvent.NewWaitlistedTickets))
+        {
+            AddEntry(
+                domainEvent.TeamId,
+                domainEvent.TicketedEventId,
+                domainEvent.RegistrationId,
+                ActivityType.WaitlistSelectionChanged,
+                domainEvent.ChangedAt,
+                SerializeSelectionChange(domainEvent.OldWaitlistedTickets, domainEvent.NewWaitlistedTickets));
+        }
 
         return ValueTask.CompletedTask;
     }
+
+    private static bool SameSelection(
+        IReadOnlyList<TicketTypeSnapshot> oldTickets, IReadOnlyList<TicketTypeSnapshot> newTickets)
+        => oldTickets.Select(t => t.Id).ToHashSet().SetEquals(newTickets.Select(t => t.Id));
+
+    private static string SerializeSelectionChange(
+        IReadOnlyList<TicketTypeSnapshot> oldTickets, IReadOnlyList<TicketTypeSnapshot> newTickets)
+        => JsonSerializer.Serialize(new
+        {
+            from = oldTickets.Select(t => t.Name.Value).ToArray(),
+            to = newTickets.Select(t => t.Name.Value).ToArray()
+        });
 
     public ValueTask HandleAsync(
         RegistrationCheckedInDomainEvent domainEvent,
@@ -104,6 +124,93 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
             metadata);
 
         return ValueTask.CompletedTask;
+    }
+
+    public async ValueTask HandleAsync(
+        WaitlistCouponIssuedDomainEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        // A coupon can be issued before the recipient has ever registered (e.g. a VIP promotion
+        // straight off the waitlist), in which case there is no registration to attach the entry to.
+        var registrationId = domainEvent.RegistrationId
+            ?? await ResolveRegistrationIdAsync(
+                domainEvent.TeamId, domainEvent.TicketedEventId, domainEvent.RecipientEmail, cancellationToken);
+        if (registrationId is null)
+            return;
+
+        var metadata = JsonSerializer.Serialize(new
+        {
+            ticketType = domainEvent.TicketTypeName,
+            expiresAt = domainEvent.ExpiresAt,
+            reason = domainEvent.Reason.ToString()
+        });
+
+        AddEntry(
+            domainEvent.TeamId,
+            domainEvent.TicketedEventId,
+            registrationId.Value,
+            ActivityType.WaitlistOfferSent,
+            domainEvent.OccurredOn,
+            metadata);
+    }
+
+    public async ValueTask HandleAsync(
+        WaitlistCouponExpiredDomainEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        var registrationId = await ResolveRegistrationIdAsync(
+            domainEvent.TeamId, domainEvent.TicketedEventId, domainEvent.RecipientEmail, cancellationToken);
+        if (registrationId is null)
+            return;
+
+        var metadata = JsonSerializer.Serialize(new { ticketType = domainEvent.TicketTypeName });
+
+        AddEntry(
+            domainEvent.TeamId,
+            domainEvent.TicketedEventId,
+            registrationId.Value,
+            ActivityType.WaitlistOfferExpired,
+            domainEvent.OccurredOn,
+            metadata);
+    }
+
+    public async ValueTask HandleAsync(
+        WaitlistEntryRemovedDomainEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        var registrationId = await ResolveRegistrationIdAsync(
+            domainEvent.TeamId, domainEvent.TicketedEventId, domainEvent.Email, cancellationToken);
+        if (registrationId is null)
+            return;
+
+        AddEntry(
+            domainEvent.TeamId,
+            domainEvent.TicketedEventId,
+            registrationId.Value,
+            ActivityType.WaitlistRemoved,
+            domainEvent.OccurredOn);
+    }
+
+    private async ValueTask<RegistrationId?> ResolveRegistrationIdAsync(
+        TeamId teamId,
+        TicketedEventId eventId,
+        EmailAddress email,
+        CancellationToken cancellationToken)
+    {
+        // Domain events are dispatched before SaveChanges persists anything, so a registration created earlier
+        // in the same unit of work (e.g. redeeming a waitlist coupon into a brand-new registration) only exists
+        // in the change tracker, not yet in the database — check there first before falling back to a query.
+        var tracked = writeStore.Registrations.Local
+            .FirstOrDefault(r => r.TeamId == teamId && r.EventId == eventId && r.Email == email);
+        if (tracked is not null)
+            return tracked.Id;
+
+        var registration = await writeStore.Registrations
+            .Where(r => r.TeamId == teamId && r.EventId == eventId && r.Email == email)
+            .Select(r => new { r.Id })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return registration?.Id;
     }
 
     private void AddEntry(

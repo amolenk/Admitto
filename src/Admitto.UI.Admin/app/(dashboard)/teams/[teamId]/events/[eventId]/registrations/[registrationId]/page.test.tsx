@@ -397,6 +397,29 @@ describe("AttendeeDetailPage", () => {
         expect(screen.getByText("Early Bird → Half-Price")).toBeInTheDocument();
     });
 
+    // Given a registration whose waitlisted ticket selection changed
+    // When the page renders
+    // Then the timeline shows the old and new waitlisted ticket type names
+    it("shows the ticket type names for a waitlist-selection-changed entry", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({ activityType: "Registered", occurredAt: "2026-08-10T09:00:00Z" }),
+                    activityEntry({
+                        activityType: "WaitlistSelectionChanged",
+                        occurredAt: "2026-08-11T09:00:00Z",
+                        metadata: JSON.stringify({ from: ["Workshop A"], to: ["Workshop B"] }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Waitlist selection changed")).toBeInTheDocument();
+        expect(screen.getByText("Workshop A → Workshop B")).toBeInTheDocument();
+    });
+
     // Given a cancelled registration with a recorded reason
     // When the page renders
     // Then the timeline surfaces the cancellation with its human-readable reason, and the

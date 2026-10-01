@@ -8,11 +8,13 @@ import {
     ArrowLeft,
     ArrowRightLeft,
     CheckCircle,
+    Clock,
     LogIn,
     Mail,
     Sparkles,
     Trash2,
     RotateCcw,
+    UserMinus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, RegistrationStatus, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
@@ -127,7 +129,17 @@ function isSharedScannerSource(metadata?: string | null): boolean {
 
 // ── Timeline item definition ──────────────────────────────────────────────────
 
-type TimelineKind = "registered" | "reconfirmed" | "cancelled" | "ticketschanged" | "checkedin" | "email";
+type TimelineKind =
+    | "registered"
+    | "reconfirmed"
+    | "cancelled"
+    | "ticketschanged"
+    | "checkedin"
+    | "waitlistoffersent"
+    | "waitlistofferexpired"
+    | "waitlistremoved"
+    | "waitlistselectionchanged"
+    | "email";
 
 interface TimelineEntry {
     kind: TimelineKind;
@@ -170,6 +182,39 @@ function buildTimeline(
             detail = isSharedScannerSource(a.metadata)
                 ? "Attendee was checked in at the door via the shared scanner."
                 : "Attendee was checked in at the door.";
+        } else if (kind === "waitlistoffersent") {
+            title = "Waitlist offer sent";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { ticketType?: string };
+                detail = meta.ticketType
+                    ? `Offered a ${meta.ticketType} ticket off the waitlist.`
+                    : "Offered a ticket off the waitlist.";
+            } catch {
+                detail = "Offered a ticket off the waitlist.";
+            }
+        } else if (kind === "waitlistofferexpired") {
+            title = "Waitlist offer expired";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { ticketType?: string };
+                detail = meta.ticketType
+                    ? `The ${meta.ticketType} waitlist offer lapsed unclaimed.`
+                    : "The waitlist offer lapsed unclaimed.";
+            } catch {
+                detail = "The waitlist offer lapsed unclaimed.";
+            }
+        } else if (kind === "waitlistremoved") {
+            title = "Removed from waitlist";
+            detail = "Attendee left the waitlist.";
+        } else if (kind === "waitlistselectionchanged") {
+            title = "Waitlist selection changed";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { from?: string[]; to?: string[] };
+                const from = (meta.from ?? []).join(", ") || "—";
+                const to = (meta.to ?? []).join(", ") || "—";
+                detail = `${from} → ${to}`;
+            } catch {
+                detail = "Waitlisted ticket selection was updated.";
+            }
         }
         return { kind, ts: a.occurredAt, title, detail };
     });
@@ -857,6 +902,30 @@ const kindMeta: Record<
         borderClass: "border-emerald-200",
         Icon: LogIn,
     },
+    waitlistoffersent: {
+        color: "text-sky-600",
+        bgClass: "bg-sky-50",
+        borderClass: "border-sky-200",
+        Icon: Clock,
+    },
+    waitlistofferexpired: {
+        color: "text-muted-foreground",
+        bgClass: "bg-muted/60",
+        borderClass: "border-border",
+        Icon: Clock,
+    },
+    waitlistremoved: {
+        color: "text-destructive",
+        bgClass: "bg-destructive/6",
+        borderClass: "border-destructive/25",
+        Icon: UserMinus,
+    },
+    waitlistselectionchanged: {
+        color: "text-amber-600",
+        bgClass: "bg-amber-50",
+        borderClass: "border-amber-200",
+        Icon: ArrowRightLeft,
+    },
     email: {
         color: "text-muted-foreground",
         bgClass: "bg-muted/60",
@@ -881,7 +950,19 @@ function TimelineItem({ entry }: { entry: TimelineEntry }) {
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[14px] font-medium">{entry.title}</span>
                         <Badge variant="outline" className="text-[0.65rem] text-muted-foreground capitalize">
-                            {entry.kind === "ticketschanged" ? "tickets changed" : entry.kind === "checkedin" ? "Checked-in" : entry.kind}
+                            {entry.kind === "ticketschanged"
+                                ? "tickets changed"
+                                : entry.kind === "checkedin"
+                                  ? "Checked-in"
+                                  : entry.kind === "waitlistoffersent"
+                                    ? "waitlist offer sent"
+                                    : entry.kind === "waitlistofferexpired"
+                                      ? "waitlist offer expired"
+                                      : entry.kind === "waitlistremoved"
+                                        ? "waitlist removed"
+                                        : entry.kind === "waitlistselectionchanged"
+                                          ? "waitlist changed"
+                                          : entry.kind}
                         </Badge>
                     </div>
                     <div className="text-[12.5px] text-muted-foreground mt-0.5">{entry.detail}</div>
