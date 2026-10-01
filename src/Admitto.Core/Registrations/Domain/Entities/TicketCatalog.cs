@@ -147,8 +147,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         // Enabling waitlist
         if (waitlistEnabled == true && !ticketType.WaitlistEnabled)
         {
-            var effectivePublicCapacity = publicCapacity ?? ticketType.PublicCapacity;
-            if (effectivePublicCapacity is null)
+            if (publicCapacity is null)
                 throw new BusinessRuleViolationException(Errors.WaitlistRequiresBoundedCapacity(id));
 
             ticketType.EnableWaitlist();

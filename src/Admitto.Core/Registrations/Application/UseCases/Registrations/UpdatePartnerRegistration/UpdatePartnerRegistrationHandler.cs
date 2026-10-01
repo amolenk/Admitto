@@ -90,12 +90,11 @@ internal sealed class UpdatePartnerRegistrationHandler(
         // A coupon that bypasses the registration window (e.g. a waitlist offer issued before registration closed)
         // can still be claimed after close, but only for what it grants: any other ticket or waitlist change in the
         // same request still needs the window to be open.
-        var windowBypassed = coupon?.BypassRegistrationWindow == true
-                             && toConfirmPublicly.Count == 0
-                             && toReleaseConfirmed.Count == 0
-                             && toWaitlistJoin.Count == 0
-                             && toWaitlistLeave.Count == 0;
-        if (!windowBypassed)
+        var hasOtherChanges = toConfirmPublicly.Count > 0
+                              || toReleaseConfirmed.Count > 0
+                              || toWaitlistJoin.Count > 0
+                              || toWaitlistLeave.Count > 0;
+        if (!RegisterAttendeeWithCouponHandler.WindowBypassApplies(coupon, hasOtherChanges))
             ticketedEvent.EnsureRegistrationOpen(now);
 
         RegisterAttendeeSelfServiceHandler.EnsureRequestedTicketStatesMatch(catalog, toConfirmPublicly, toWaitlistJoin);

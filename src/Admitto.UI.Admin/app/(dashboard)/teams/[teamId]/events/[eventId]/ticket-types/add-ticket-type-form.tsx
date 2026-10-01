@@ -30,6 +30,14 @@ const addSchema = z.object({
     claimWindowHours: z.number().int().min(1).optional(),
     maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
     timeSlots: z.array(z.string().regex(slugRegex)),
+}).superRefine((data, ctx) => {
+    if (data.limitCapacity && data.publicCapacity === undefined) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["publicCapacity"],
+            message: "Required while capacity is limited",
+        });
+    }
 });
 
 type AddValues = z.infer<typeof addSchema>;

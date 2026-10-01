@@ -15,12 +15,22 @@ import { TicketTypeDto } from "@/lib/admitto-api/generated";
 import { formatCapacitySummary, PUBLIC_CAPACITY_HELP, ticketCapacity } from "@/lib/ticket-capacity";
 
 
+const requirePublicCapacityWhenLimited = (data: { limitCapacity: boolean; publicCapacity?: number }, ctx: z.RefinementCtx) => {
+    if (data.limitCapacity && data.publicCapacity === undefined) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["publicCapacity"],
+            message: "Required while capacity is limited",
+        });
+    }
+};
+
 const addSchema = z.object({
     name: z.string().min(1, "Name is required"),
     selfServiceEnabled: z.boolean(),
     limitCapacity: z.boolean(),
     publicCapacity: z.number().int().min(0).optional(),
-});
+}).superRefine(requirePublicCapacityWhenLimited);
 
 type AddValues = z.infer<typeof addSchema>;
 
@@ -29,7 +39,7 @@ const editSchema = z.object({
     selfServiceEnabled: z.boolean(),
     limitCapacity: z.boolean(),
     publicCapacity: z.number().int().min(0).optional(),
-});
+}).superRefine(requirePublicCapacityWhenLimited);
 
 type EditValues = z.infer<typeof editSchema>;
 

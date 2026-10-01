@@ -33,16 +33,21 @@ SET waitlist_origin = COALESCE(
     'Automatic')
 WHERE c.source = 'Waitlist';");
 
-            // Ticket types: max_capacity becomes public_capacity and reserved_used_capacity becomes admin_used_count.
-            // used_capacity counted reserved claims too, so the public count is what remains once those are moved
-            // to the admin pool. reserved_capacity is dropped.
+            // Ticket types: max_capacity minus the unspent reserved_capacity becomes public_capacity (the portion
+            // held back for admin/coupon claims was never available to the public pool), and reserved_used_capacity
+            // becomes admin_used_count. used_capacity counted reserved claims too, so the public count is what
+            // remains once those are moved to the admin pool. reserved_capacity is dropped.
             migrationBuilder.Sql(@"
 UPDATE registrations.ticket_catalog
 SET ticket_types = (
     SELECT COALESCE(jsonb_agg(
         (tt - 'max_capacity' - 'used_capacity' - 'reserved_capacity' - 'reserved_used_capacity')
         || jsonb_build_object(
-            'public_capacity', tt->'max_capacity',
+            'public_capacity', CASE
+                WHEN tt->'max_capacity' IS NULL THEN 'null'::jsonb
+                ELSE to_jsonb(GREATEST(0,
+                    (tt->>'max_capacity')::int - COALESCE((tt->>'reserved_capacity')::int, 0)))
+            END,
             'public_used_capacity', GREATEST(0,
                 COALESCE((tt->>'used_capacity')::int, 0) - COALESCE((tt->>'reserved_used_capacity')::int, 0)),
             'admin_used_count', COALESCE((tt->>'reserved_used_capacity')::int, 0))

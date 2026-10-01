@@ -39,7 +39,10 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
             additionalDetails = AdditionalDetails.Validate(
                 command.AdditionalDetails,
                 ticketedEvent.AdditionalDetailSchema);
+        }
 
+        if (registerTicketTypeIds.Count > 0 || waitlistTicketTypeIds.Count > 0)
+        {
             ticketedEvent.EnsureRegistrationOpen(now);
             ticketedEvent.EnsureEmailDomainAllowed(email);
         }

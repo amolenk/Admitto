@@ -43,7 +43,7 @@ internal sealed class RegisterAttendeeWithCouponHandler(
             command.AdditionalDetails,
             ticketedEvent.AdditionalDetailSchema);
 
-        if (!coupon.BypassRegistrationWindow)
+        if (!WindowBypassApplies(coupon, hasOtherChanges: false))
             ticketedEvent.EnsureRegistrationOpen(now);
 
         var existingRegistration = await writeStore.Registrations
@@ -120,27 +120,51 @@ internal sealed class RegisterAttendeeWithCouponHandler(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        foreach (var waitlist in eventWaitlists.Where(w => couponGrantedIds.Contains(w.Id)))
+        var grantedWaitlists = eventWaitlists.Where(w => couponGrantedIds.Contains(w.Id)).ToList();
+
+        foreach (var waitlist in grantedWaitlists)
         {
             waitlist.ApplyCouponRedemption(coupon.Id, email, catalog);
+        }
 
-            var otherIssuedCouponIds = waitlist.Coupons
-                .Where(c => c.Status == WaitlistCouponStatus.Issued && c.Id != coupon.Id)
-                .Select(c => c.Id)
-                .ToList();
-            if (otherIssuedCouponIds.Count == 0)
-                continue;
+        var otherIssuedCouponIdsByWaitlist = grantedWaitlists
+            .Select(waitlist => (
+                Waitlist: waitlist,
+                CouponIds: waitlist.Coupons
+                    .Where(c => c.Status == WaitlistCouponStatus.Issued && c.Id != coupon.Id)
+                    .Select(c => c.Id)
+                    .ToList()))
+            .Where(x => x.CouponIds.Count > 0)
+            .ToList();
+        if (otherIssuedCouponIdsByWaitlist.Count == 0)
+            return;
 
-            var otherOffers = await writeStore.Coupons
-                .Where(c => otherIssuedCouponIds.Contains(c.Id) && c.Email == email)
-                .ToListAsync(cancellationToken);
-            foreach (var offer in otherOffers)
+        var allOtherCouponIds = otherIssuedCouponIdsByWaitlist.SelectMany(x => x.CouponIds).ToList();
+        var otherOffersById = (await writeStore.Coupons
+                .Where(c => allOtherCouponIds.Contains(c.Id) && c.Email == email)
+                .ToListAsync(cancellationToken))
+            .ToDictionary(c => c.Id);
+
+        foreach (var (waitlist, couponIds) in otherIssuedCouponIdsByWaitlist)
+        {
+            foreach (var couponId in couponIds)
             {
+                if (!otherOffersById.TryGetValue(couponId, out var offer))
+                    continue;
+
                 if (waitlist.WithdrawCoupon(offer.Id, catalog))
                     offer.Expire(now);
             }
         }
     }
+
+    /// <summary>
+    /// Whether a registration-window check can be skipped because a window-bypassing coupon covers every
+    /// change in this request. The coupon only waives the window for what it grants: any other change
+    /// (another ticket, a waitlist join or leave) still needs the window open.
+    /// </summary>
+    internal static bool WindowBypassApplies(Coupon? coupon, bool hasOtherChanges) =>
+        coupon?.BypassRegistrationWindow == true && !hasOtherChanges;
 
     internal static class Errors
     {

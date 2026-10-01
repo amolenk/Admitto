@@ -38,6 +38,14 @@ const editSchema = z.object({
     waitlistEnabled: z.boolean(),
     claimWindowHours: z.number().int().min(1).optional(),
     maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
+}).superRefine((data, ctx) => {
+    if (data.limitCapacity && data.publicCapacity === undefined) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["publicCapacity"],
+            message: "Required while capacity is limited",
+        });
+    }
 });
 
 type EditValues = z.infer<typeof editSchema>;
