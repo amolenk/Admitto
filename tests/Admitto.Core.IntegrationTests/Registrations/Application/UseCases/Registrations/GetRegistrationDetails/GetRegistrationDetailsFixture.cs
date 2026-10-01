@@ -117,14 +117,19 @@ internal sealed class GetRegistrationDetailsFixture
 
         if (_withWaitlistEntry)
         {
-            // The read model doesn't read the catalog; it only counts the queued entries here.
+            // Persisted so the admin detail view can resolve the waitlisted ticket type's name.
             var catalog = TicketCatalog.Create(EventId, TeamId);
             catalog.AddTicketType(WaitlistedTicketTypeId, TicketTypeName.From("Workshop"), [], publicCapacity: 1, waitlistEnabled: true);
+            catalog.ClearDomainEvents();
             var waitlist = Waitlist.Create(EventId, WaitlistedTicketTypeId, TeamId);
             waitlist.AddEntry(EmailAddress.From("someone-else@example.com"), DateTimeOffset.UtcNow.AddDays(-1), catalog);
             waitlist.AddEntry(registration.Email, DateTimeOffset.UtcNow, catalog);
             waitlist.ClearDomainEvents();
-            await environment.RegistrationsDatabase.SeedAsync(db => db.Waitlists.Add(waitlist));
+            await environment.RegistrationsDatabase.SeedAsync(db =>
+            {
+                db.TicketCatalogs.Add(catalog);
+                db.Waitlists.Add(waitlist);
+            });
         }
 
         if (_withRegisteredActivity)

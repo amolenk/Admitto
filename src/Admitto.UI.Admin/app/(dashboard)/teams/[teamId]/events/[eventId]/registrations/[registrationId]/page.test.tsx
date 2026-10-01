@@ -72,6 +72,7 @@ const registrationDetail = (
     reconfirmedAt: null,
     cancellationReason: null,
     tickets: [{ id: "cccccccc-0000-0000-0000-000000000001", name: "General Admission" }],
+    waitlistEntries: [],
     additionalDetails: {},
     activities: [activityEntry()],
     ...overrides,
@@ -211,6 +212,35 @@ describe("AttendeeDetailPage", () => {
         const dl = (await screen.findByText("Full name")).closest("dl");
         expect(dl).not.toBeNull();
         expect(dl!.querySelectorAll("dt")).toHaveLength(5);
+    });
+
+    // Given the attendee holds an active waitlist entry for a ticket type
+    // When the page renders
+    // Then a Waitlist card shows the ticket type name and its queue position
+    it("shows the Waitlist card with ticket type and position when the attendee is on a waitlist", async () => {
+        mockApi({
+            detail: registrationDetail({
+                waitlistEntries: [{ ticketTypeName: "Workshop A", position: 2 }],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Waiting on")).toBeInTheDocument();
+        expect(screen.getByText("Workshop A")).toBeInTheDocument();
+        expect(screen.getByText("#2 in line")).toBeInTheDocument();
+    });
+
+    // Given the attendee is not on any waitlist
+    // When the page renders
+    // Then the Waitlist card is not shown
+    it("hides the Waitlist card when the attendee has no waitlist entries", async () => {
+        mockApi({ detail: registrationDetail({ waitlistEntries: [] }) });
+
+        renderPage();
+
+        await screen.findByText("Full name");
+        expect(screen.queryByText("Waiting on")).not.toBeInTheDocument();
     });
 
     // Given a registered attendee who has not reconfirmed
@@ -418,6 +448,54 @@ describe("AttendeeDetailPage", () => {
 
         expect(await screen.findByText("Waitlist selection changed")).toBeInTheDocument();
         expect(screen.getByText("Workshop A → Workshop B")).toBeInTheDocument();
+    });
+
+    // Given a registration whose registration entry carries a waitlisted ticket type in its metadata
+    // When the page renders
+    // Then the timeline's registration entry mentions the waitlisted ticket type
+    it("shows the waitlisted ticket type on the registration entry when the attendee joined a waitlist", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({
+                        activityType: "Registered",
+                        occurredAt: "2026-08-10T09:00:00Z",
+                        metadata: JSON.stringify({ waitlisted: ["Workshop A"] }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Started registration")).toBeInTheDocument();
+        expect(
+            screen.getByText("Attendee registered for the event. Waitlisted for: Workshop A."),
+        ).toBeInTheDocument();
+    });
+
+    // Given a registration whose registration entry carries two waitlisted ticket types in its metadata
+    // When the page renders
+    // Then the timeline's registration entry lists both waitlisted ticket type names
+    it("shows multiple waitlisted ticket types on the registration entry, comma-separated", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({
+                        activityType: "Registered",
+                        occurredAt: "2026-08-10T09:00:00Z",
+                        metadata: JSON.stringify({ waitlisted: ["Workshop A", "Workshop B"] }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Started registration")).toBeInTheDocument();
+        expect(
+            screen.getByText("Attendee registered for the event. Waitlisted for: Workshop A, Workshop B."),
+        ).toBeInTheDocument();
     });
 
     // Given a cancelled registration with a recorded reason

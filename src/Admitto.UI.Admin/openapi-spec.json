@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:39917/"
+      "url": "http://localhost:34643/"
     }
   ],
   "paths": {
@@ -8976,6 +8976,7 @@
           "checkedInAt",
           "cancellationReason",
           "tickets",
+          "waitlistEntries",
           "additionalDetails",
           "activities"
         ],
@@ -9028,6 +9029,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TicketDetailDto"
+            }
+          },
+          "waitlistEntries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaitlistEntryDetailDto"
             }
           },
           "additionalDetails": {
@@ -9934,6 +9941,26 @@
           },
           "stats": {
             "$ref": "#/components/schemas/WaitlistStats"
+          }
+        }
+      },
+      "WaitlistEntryDetailDto": {
+        "required": [
+          "ticketTypeName",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketTypeName": {
+            "type": "string"
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

@@ -160,6 +160,14 @@ function buildTimeline(
         if (kind === "registered") {
             title = "Started registration";
             detail = "Attendee registered for the event.";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { waitlisted?: string[] };
+                if (meta.waitlisted && meta.waitlisted.length > 0) {
+                    detail += ` Waitlisted for: ${meta.waitlisted.join(", ")}.`;
+                }
+            } catch {
+                // No metadata to parse; keep the base detail text.
+            }
         } else if (kind === "reconfirmed") {
             title = "Attendance reconfirmed";
             detail = "Registration was reconfirmed.";
@@ -671,6 +679,38 @@ export default function AttendeeDetailPage() {
                                     )}
                                 </div>
                             </Card>
+
+                            {/* Waitlist card — only shown when the attendee holds an active waitlist entry */}
+                            {registration.waitlistEntries.length > 0 && (
+                                <Card className="p-5">
+                                    <div className="mb-3">
+                                        <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
+                                            Waitlist
+                                        </div>
+                                        <h3 className="font-display text-[18px] font-semibold mt-0.5">
+                                            Waiting on
+                                        </h3>
+                                    </div>
+                                    <div className="flex flex-col gap-3">
+                                        {registration.waitlistEntries.map((entry) => (
+                                            <Card
+                                                key={entry.ticketTypeName}
+                                                className="ticket-card overflow-hidden py-3"
+                                            >
+                                                <div className="px-5">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h4 className="font-display text-lg font-semibold">{entry.ticketTypeName}</h4>
+                                                        <Badge variant="outline">
+                                                            #{entry.position} in line
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="ticket-perf" aria-hidden="true" />
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                </Card>
+                            )}
                         </div>
 
                         {/* Right column — Activity & emails */}

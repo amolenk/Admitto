@@ -49,6 +49,87 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given an AttendeeRegistered domain event with one waitlisted ticket
+    // When the projector handles the event
+    // Then a Registered activity log entry is created with metadata listing the waitlisted ticket name
+    [TestMethod]
+    public async ValueTask HandleAsync_AttendeeRegisteredWithWaitlistedTicket_CreatesRegisteredEntryWithMetadata()
+    {
+        var registrationId = RegistrationId.New();
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var occurredOn = DateTimeOffset.UtcNow.AddMinutes(-10);
+        var domainEvent = new AttendeeRegisteredDomainEvent(
+            teamId,
+            eventId,
+            registrationId,
+            EmailAddress.From("alice@example.com"),
+            FirstName.From("Alice"),
+            LastName.From("Doe"),
+            [],
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            occurredOn) with { OccurredOn = occurredOn };
+
+        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context, Environment.RegistrationsDatabase.Context);
+        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var entry = await db.ActivityLog
+                .SingleOrDefaultAsync(
+                    a => a.RegistrationId == registrationId.Value,
+                    testContext.CancellationToken);
+            entry.ShouldNotBeNull();
+            entry.ActivityType.ShouldBe(ActivityType.Registered);
+            entry.OccurredAt.ShouldBe(occurredOn);
+
+            using var doc = JsonDocument.Parse(entry.Metadata!);
+            var waitlisted = doc.RootElement.GetProperty("waitlisted").EnumerateArray().Select(e => e.GetString()).ToArray();
+            waitlisted.ShouldBe(["Workshop"]);
+        });
+    }
+
+    // Given an AttendeeRegistered domain event with two waitlisted tickets
+    // When the projector handles the event
+    // Then the Registered activity log entry's metadata lists both waitlisted ticket names
+    [TestMethod]
+    public async ValueTask HandleAsync_AttendeeRegisteredWithMultipleWaitlistedTickets_CreatesRegisteredEntryWithBothNames()
+    {
+        var registrationId = RegistrationId.New();
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var occurredOn = DateTimeOffset.UtcNow.AddMinutes(-10);
+        var domainEvent = new AttendeeRegisteredDomainEvent(
+            teamId,
+            eventId,
+            registrationId,
+            EmailAddress.From("alice@example.com"),
+            FirstName.From("Alice"),
+            LastName.From("Doe"),
+            [],
+            [
+                new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop A"), []),
+                new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop B"), [])
+            ],
+            occurredOn) with { OccurredOn = occurredOn };
+
+        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context, Environment.RegistrationsDatabase.Context);
+        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var entry = await db.ActivityLog
+                .SingleOrDefaultAsync(
+                    a => a.RegistrationId == registrationId.Value,
+                    testContext.CancellationToken);
+            entry.ShouldNotBeNull();
+
+            using var doc = JsonDocument.Parse(entry.Metadata!);
+            var waitlisted = doc.RootElement.GetProperty("waitlisted").EnumerateArray().Select(e => e.GetString()).ToArray();
+            waitlisted.ShouldBe(["Workshop A", "Workshop B"]);
+        });
+    }
+
     // Given a RegistrationReconfirmed domain event
     // When the projector handles the event
     // Then a Reconfirmed activity log entry is created with the reconfirmed-at timestamp and no metadata

@@ -28,6 +28,22 @@ internal sealed class GetRegistrationDetailsHandler(
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == query.EventId && w.TeamId == TeamId.From(query.TeamId))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var catalog = await writeStore.TicketCatalogs
+            .Where(c => c.Id == query.EventId && c.TeamId == TeamId.From(query.TeamId))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var waitlistEntries = waitlists
+            .Select(w => (TicketType: catalog?.GetTicketType(w.Id), Position: w.GetActivePosition(registration.Email)))
+            .Where(x => x.Position is not null && x.TicketType is not null)
+            .Select(x => new WaitlistEntryDetailDto(x.TicketType!.Name.Value, x.Position!.Value))
+            .ToList();
+
         return new RegistrationDetailDto(
             Id: registration.Id.Value,
             Email: registration.Email.Value,
@@ -42,6 +58,7 @@ internal sealed class GetRegistrationDetailsHandler(
             Tickets: registration.Tickets
                 .Select(t => new TicketDetailDto(t.Id.Value, t.Name.Value))
                 .ToList(),
+            WaitlistEntries: waitlistEntries,
             AdditionalDetails: registration.AdditionalDetails
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             Activities: activities

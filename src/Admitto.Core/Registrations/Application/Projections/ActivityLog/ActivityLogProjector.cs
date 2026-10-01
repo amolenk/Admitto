@@ -22,12 +22,20 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore, IR
         AttendeeRegisteredDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
+        var metadata = domainEvent.WaitlistedTickets.Count > 0
+            ? JsonSerializer.Serialize(new
+            {
+                waitlisted = domainEvent.WaitlistedTickets.Select(t => t.Name.Value).ToArray()
+            })
+            : null;
+
         AddEntry(
             domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.RegistrationId,
             ActivityType.Registered,
-            domainEvent.OccurredOn);
+            domainEvent.OccurredOn,
+            metadata);
 
         return ValueTask.CompletedTask;
     }

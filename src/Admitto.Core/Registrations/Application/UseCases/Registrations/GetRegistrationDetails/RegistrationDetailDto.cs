@@ -14,7 +14,10 @@ public sealed record RegistrationDetailDto(
     DateTimeOffset? CheckedInAt,
     string? CancellationReason,
     IReadOnlyList<TicketDetailDto> Tickets,
+    IReadOnlyList<WaitlistEntryDetailDto> WaitlistEntries,
     IReadOnlyDictionary<string, string> AdditionalDetails,
     IReadOnlyList<ActivityLogEntryDto> Activities);
 
 public sealed record TicketDetailDto(Guid Id, string Name);
+
+public sealed record WaitlistEntryDetailDto(string TicketTypeName, int Position);
