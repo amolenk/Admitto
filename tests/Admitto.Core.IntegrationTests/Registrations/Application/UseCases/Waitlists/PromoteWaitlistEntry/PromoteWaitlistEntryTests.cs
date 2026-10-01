@@ -11,6 +11,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 
@@ -102,7 +103,7 @@ public sealed class PromoteWaitlistEntryTests(TestContext testContext) : AspireI
         var composer = Substitute.For<ITransactionalEmailComposer>();
         composer.ReturnRenderedEmail(BuiltInEmailTemplateNames.WaitlistNotification);
         var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
-        await new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler)
+        await new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler, NullLogger<WaitlistCouponIssuedIntegrationEventHandler>.Instance)
             .HandleAsync(integrationEvent, testContext.CancellationToken);
 
         // Assert — the regular waitlist offer email goes to the VIP

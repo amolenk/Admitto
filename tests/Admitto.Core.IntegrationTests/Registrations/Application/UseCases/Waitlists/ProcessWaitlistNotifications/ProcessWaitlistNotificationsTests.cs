@@ -8,6 +8,7 @@ using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
@@ -260,7 +261,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         var composer = Substitute.For<ITransactionalEmailComposer>();
         composer.ReturnRenderedEmail(BuiltInEmailTemplateNames.WaitlistNotification);
         var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
-        var emailHandler = new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler);
+        var emailHandler = new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler, NullLogger<WaitlistCouponIssuedIntegrationEventHandler>.Instance);
 
         await emailHandler.HandleAsync(integrationEvent, testContext.CancellationToken);
 

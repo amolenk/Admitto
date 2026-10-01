@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -90,6 +91,6 @@ internal sealed class CouponEmailAdapterFixture
             composer,
             deliveryHandler,
             waitlistCouponIssuedEvent: integrationEvent,
-            waitlistCouponIssuedHandler: new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler));
+            waitlistCouponIssuedHandler: new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler, NullLogger<WaitlistCouponIssuedIntegrationEventHandler>.Instance));
     }
 }
