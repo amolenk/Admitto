@@ -40,12 +40,8 @@ internal sealed class RemoveWaitlistEntryHandler(IRegistrationsWriteStore writeS
         var registrationId = entry.RegistrationId;
 
         var withdrawnCouponId = waitlist.RemoveEntry(entryId, catalog);
-        if (withdrawnCouponId is { } couponId)
-        {
-            var offer = await writeStore.Coupons.FirstOrDefaultAsync(
-                c => c.Id == couponId, cancellationToken);
-            offer?.Expire(DateTimeOffset.UtcNow);
-        }
+        await RegistrationCouponHelpers.ExpireWithdrawnCouponAsync(
+            writeStore, withdrawnCouponId, DateTimeOffset.UtcNow, cancellationToken);
 
         var allEventWaitlists = await writeStore.Waitlists
             .Where(w => w.EventId == ticketedEventId && w.TeamId == teamId)

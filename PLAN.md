@@ -209,7 +209,30 @@ entry holding an outstanding, unclaimed offer correctly stays `Offered` across a
 
 </details>
 
-### 3. `UpdatePartnerRegistrationHandler` — Q10 (Offered as a current selection on partner update)
+### 3. `UpdatePartnerRegistrationHandler` — Q10 (Offered as a current selection on partner update) — DONE
+
+Implemented all 5 points: `currentWaitlistIds` now includes `HasOfferedEntry`; `toWaitlistLeave` excludes
+`couponGrantedIds` (regression-tested); the leave loop expires the real `Coupon` for any withdrawn offer
+(same pattern as the other handlers); and a `CancelIfExhausted` call was added at the end using
+`CancellationReason.LeftWaitlist` (new enum value, distinct from `TicketTypesRemoved` since this path is
+attendee self-service) — note the exhaustion check uses `waitlistsById.Values`, not the original `waitlists`
+list, since a brand-new waitlist created by the join loop (first entry for a ticket type) only exists in the
+former; using `waitlists` regressed `UpdatePartnerRegistration_ConfirmedToWaitlist_ReleasesClaimAndAddsWaitlistEntry`
+(falsely cancelled a registration that had just joined a fresh waitlist). `RegistrationCancelledIntegrationEventHandler`
+needed no change: `LeftWaitlist` already falls into its `_ => null` default case, same as `TicketTypesRemoved`.
+Added 4 new tests to `UpdatePartnerRegistrationHandlerTests.cs` (decline-with-other-selection,
+decline-as-last-selection → cancelled, claim-via-coupon-with-other-changes regression, keep-offered-ticket-type)
+plus a new fixture factory `WithSoleOutstandingOffer()`. Post-implementation code review (Standards + Spec axes)
+flagged duplicated coupon-withdrawal-then-expire logic across handlers; extracted a shared
+`RegistrationCouponHelpers.ExpireWithdrawnCouponAsync` helper and applied it to both `UpdatePartnerRegistrationHandler`
+and `RemoveWaitlistEntryHandler`. Full `UpdatePartnerRegistration` suite green (21/21),
+no regressions in `RegistrationCancelledIntegrationEventHandlerTests`, `GetWaitlistDetails`, `WaitlistQueuedCountTests`
+(15/15), and the full `Admitto.Core.IntegrationTests` suite (563/563) and `Admitto.Core.DomainTests` (408/408).
+`Admitto.Core.ArchTests` green (17/17). Updated `docs/arc42/06-runtime-view.md` §6.6 to describe `Offered`-aware
+diffing, offer decline/withdrawal, and the new auto-cancel.
+
+<details>
+<summary>Original task description (for reference)</summary>
 
 **Not started.** This is the most involved remaining piece. File:
 `src/Admitto.Core/Registrations/Application/UseCases/Registrations/UpdatePartnerRegistration/UpdatePartnerRegistrationHandler.cs`.

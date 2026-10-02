@@ -59,7 +59,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         var currentConfirmedIds = registration.Tickets.Select(t => t.Id).ToHashSet();
         var currentWaitlistIds = waitlists
-            .Where(w => w.HasActiveEntry(registration.Email))
+            .Where(w => w.HasActiveEntry(registration.Email) || w.HasOfferedEntry(registration.Email))
             .Select(w => w.Id)
             .ToHashSet();
 
@@ -69,7 +69,6 @@ internal sealed class UpdatePartnerRegistrationHandler(
         var toConfirm = registerSet.Except(currentConfirmedIds).ToList();
         var toReleaseConfirmed = currentConfirmedIds.Except(registerSet).ToList();
         var toWaitlistJoin = waitlistSet.Except(currentWaitlistIds).ToList();
-        var toWaitlistLeave = currentWaitlistIds.Except(waitlistSet).ToList();
 
         // Any coupon, whatever its source, can back the newly confirmed ticket types. The ones it grants bypass
         // the self-service ticket-state classification and capacity gate, like every coupon claim. Tickets the
@@ -85,6 +84,12 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         var (couponGrantedIds, toConfirmPublicly) = RegistrationCouponHelpers.SplitCouponGranted(
             coupon, registration.Email, toConfirm, now);
+
+        // Ticket types the submitted coupon grants are excluded even if they're also dropped from the submitted
+        // waitlist list: moving an offered ticket type into the register list (claimed via the coupon) must not
+        // also run it through the "leave" path, which would withdraw and expire the coupon the redemption below
+        // is about to consume.
+        var toWaitlistLeave = currentWaitlistIds.Except(waitlistSet).Except(couponGrantedIds).ToList();
 
         // A coupon that bypasses the registration window (e.g. a waitlist offer issued before registration closed)
         // can still be claimed after close, but only for what it grants: any other ticket or waitlist change in the
@@ -140,8 +145,12 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         foreach (var ticketTypeId in toWaitlistLeave)
         {
-            if (waitlistsById.TryGetValue(ticketTypeId, out var waitlist))
-                waitlist.RemoveEntry(registration.Email, catalog);
+            if (!waitlistsById.TryGetValue(ticketTypeId, out var waitlist))
+                continue;
+
+            var withdrawnCouponId = waitlist.RemoveEntry(registration.Email, catalog);
+            await RegistrationCouponHelpers.ExpireWithdrawnCouponAsync(
+                writeStore, withdrawnCouponId, now, cancellationToken);
         }
 
         foreach (var ticketTypeId in toWaitlistJoin)
@@ -162,6 +171,13 @@ internal sealed class UpdatePartnerRegistrationHandler(
                 writeStore, waitlists, catalog, coupon, registration.Email, couponGrantedIds,
                 now, cancellationToken);
         }
+
+        // The attendee may have just given up their last remaining selection (dropped their last active queue
+        // entry, or declined their last outstanding offer) without registering for anything else. Self-service,
+        // so silent: no cancellation email, distinct reason from the organizer-driven TicketTypesRemoved.
+        // Uses waitlistsById's values rather than the original `waitlists` list, since a brand-new waitlist
+        // created by the join loop above (first entry for a ticket type) only exists there.
+        RegistrationCouponHelpers.CancelIfExhausted(registration, waitlistsById.Values, CancellationReason.LeftWaitlist);
     }
 
     internal static class Errors

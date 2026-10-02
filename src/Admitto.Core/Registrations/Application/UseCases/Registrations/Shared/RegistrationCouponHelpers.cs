@@ -55,6 +55,24 @@ internal static class RegistrationCouponHelpers
         return true;
     }
 
+    /// <summary>
+    /// Expires the real <see cref="Coupon"/> aggregate backing a waitlist offer that <see cref="Waitlist.RemoveEntry"/>
+    /// just withdrew, if any. A no-op when <paramref name="withdrawnCouponId"/> is null (the removed entry held no
+    /// outstanding offer) or the coupon no longer exists.
+    /// </summary>
+    public static async ValueTask ExpireWithdrawnCouponAsync(
+        IRegistrationsWriteStore writeStore,
+        CouponId? withdrawnCouponId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (withdrawnCouponId is not { } couponId)
+            return;
+
+        var offer = await writeStore.Coupons.FirstOrDefaultAsync(c => c.Id == couponId, cancellationToken);
+        offer?.Expire(now);
+    }
+
     public static async ValueTask ApplyRedemptionToWaitlistsAsync(
         IRegistrationsWriteStore writeStore,
         IEnumerable<Waitlist> eventWaitlists,
