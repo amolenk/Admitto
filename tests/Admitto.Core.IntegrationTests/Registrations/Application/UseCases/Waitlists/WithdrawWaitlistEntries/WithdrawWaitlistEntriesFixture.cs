@@ -11,7 +11,8 @@ internal sealed class WithdrawWaitlistEntriesFixture
     {
         TwoTicketTypes,
         SurroundingActiveEntries,
-        NoWaitlists
+        NoWaitlists,
+        OutstandingOffer
     }
 
     private Scenario _scenario;
@@ -22,6 +23,8 @@ internal sealed class WithdrawWaitlistEntriesFixture
     public List<TicketTypeId> TicketTypeIds { get; } = [];
     public EmailAddress OtherAttendeeBeforeEmail { get; } = EmailAddress.From("before@example.com");
     public EmailAddress OtherAttendeeAfterEmail { get; } = EmailAddress.From("after@example.com");
+    public EmailAddress NextQueuedEmail { get; } = EmailAddress.From("next@example.com");
+    public CouponId OfferedCouponId { get; private set; }
 
     private WithdrawWaitlistEntriesFixture()
     {
@@ -46,6 +49,13 @@ internal sealed class WithdrawWaitlistEntriesFixture
     /// </summary>
     public static WithdrawWaitlistEntriesFixture WithNoWaitlists() =>
         new() { _scenario = Scenario.NoWaitlists };
+
+    /// <summary>
+    /// A sold-out, waitlist-mode ticket type where the cancelled attendee holds an outstanding automatic offer
+    /// (its hold hasn't been redeemed yet), with another attendee still queued behind them.
+    /// </summary>
+    public static WithdrawWaitlistEntriesFixture WithOutstandingOffer() =>
+        new() { _scenario = Scenario.OutstandingOffer };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -81,6 +91,32 @@ internal sealed class WithdrawWaitlistEntriesFixture
                     waitlist.AddEntry(CancelledAttendeeEmail, now.AddMinutes(1), catalog, RegistrationId.New()); // position 2 - withdrawn
                     waitlist.AddEntry(OtherAttendeeAfterEmail, now.AddMinutes(2), catalog, RegistrationId.New()); // position 3 -> becomes 2
                     dbContext.Waitlists.Add(waitlist);
+                    break;
+                }
+
+                case Scenario.OutstandingOffer:
+                {
+                    var ticketTypeId = TicketTypeId.New();
+                    TicketTypeIds.Add(ticketTypeId);
+                    catalog.AddTicketType(ticketTypeId, TicketTypeName.From("Workshop"), [], publicCapacity: 1, waitlistEnabled: true);
+                    catalog.Claim([ticketTypeId], ClaimMode.Public);
+
+                    var waitlist = Waitlist.Create(EventId, ticketTypeId, TeamId);
+                    waitlist.AddEntry(CancelledAttendeeEmail, now, catalog, RegistrationId.New());
+                    waitlist.AddEntry(NextQueuedEmail, now.AddMinutes(1), catalog, RegistrationId.New());
+
+                    var ticketedEvent = TicketedEvent.Create(
+                        CreationRequestId.From(Guid.NewGuid()),
+                        EventId, TeamId,
+                        EventName.From("DevConf"),
+                        AbsoluteUrl.From("https://example.com"),
+                        AbsoluteUrl.From("https://tickets.example.com"),
+                        now.AddDays(10), now.AddDays(11),
+                        TimeZoneId.From("UTC"));
+                    var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, now)!;
+                    OfferedCouponId = coupon.Id;
+                    dbContext.Waitlists.Add(waitlist);
+                    dbContext.Coupons.Add(coupon);
                     break;
                 }
 

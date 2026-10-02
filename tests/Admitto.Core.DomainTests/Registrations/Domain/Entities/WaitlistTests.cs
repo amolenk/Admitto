@@ -680,7 +680,8 @@ public sealed class WaitlistTests
         result.Email.Value.ShouldBe("second@example.com");
         result.Source.ShouldBe(CouponSource.Waitlist);
         result.AllowedTicketTypeIds.ShouldBe([DefaultTicketTypeId]);
-        target.Status.ShouldBe(WaitlistEntryStatus.Removed);
+        target.Status.ShouldBe(WaitlistEntryStatus.Offered);
+        target.CouponId.ShouldBe(result.Id);
         sut.GetActivePosition(EmailAddress.From("first@example.com")).ShouldBe(1);
         sut.GetActivePosition(EmailAddress.From("third@example.com")).ShouldBe(2);
         sut.Coupons.ShouldHaveSingleItem().Id.ShouldBe(result.Id);
@@ -1035,6 +1036,224 @@ public sealed class WaitlistTests
         // Assert
         coupons.ShouldHaveSingleItem();
         sut.ActiveEntryCount.ShouldBe(0);
+    }
+
+    // ─── Offered entries (outstanding waitlist offers) ───────────────────────
+
+    // Given an attendee holding an outstanding automatic offer
+    // When the next coupon is issued
+    // Then the entry becomes Offered, not Removed, and still carries the offer's coupon id
+    [TestMethod]
+    public void IssueNextCoupon_ActiveEntry_MarksEntryOfferedWithCouponId()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+
+        // Act
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+
+        // Assert
+        var entry = sut.Entries.Single();
+        entry.Status.ShouldBe(WaitlistEntryStatus.Offered);
+        entry.CouponId.ShouldBe(coupon.Id);
+    }
+
+    // Given an attendee who already holds an outstanding offer on this waitlist
+    // When they are added to the waitlist again
+    // Then nothing changes: the offer is still a current selection, not a queue slot to duplicate
+    [TestMethod]
+    public void AddEntry_WhenEmailHoldsOutstandingOffer_ReturnsFalse()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+
+        // Act
+        var result = sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+
+        // Assert
+        result.ShouldBeFalse();
+        sut.Entries.Count(e => e.Email == email).ShouldBe(1);
+    }
+
+    // Given an attendee holding an outstanding offer
+    // When their entry is removed by email (e.g. they decline it on a partner update)
+    // Then the offer's coupon is returned so the caller can expire it, and the entry is Removed
+    [TestMethod]
+    public void RemoveEntry_ByEmail_OfferedEntry_ExpiresCouponAndReturnsCouponId()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+
+        // Act
+        var withdrawnCouponId = sut.RemoveEntry(email, _catalog);
+
+        // Assert
+        withdrawnCouponId.ShouldBe(coupon.Id);
+        sut.Entries.Single().Status.ShouldBe(WaitlistEntryStatus.Removed);
+        sut.Coupons.Single(c => c.Id == coupon.Id).Status.ShouldBe(WaitlistCouponStatus.Expired);
+    }
+
+    // Given an attendee still queued (no offer yet)
+    // When their entry is removed by email
+    // Then no coupon id is returned
+    [TestMethod]
+    public void RemoveEntry_ByEmail_ActiveEntry_ReturnsNoCouponId()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+
+        // Act
+        var withdrawnCouponId = sut.RemoveEntry(email, _catalog);
+
+        // Assert
+        withdrawnCouponId.ShouldBeNull();
+    }
+
+    // Given an attendee holding an automatic offer that holds a public seat
+    // When their entry is removed by email
+    // Then the held seat is released back to the catalog
+    [TestMethod]
+    public void RemoveEntry_ByEmail_OfferedEntryAutomatic_ReleasesHold()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+
+        // Act
+        sut.RemoveEntry(EmailAddress.From("alice@example.com"), _catalog);
+
+        // Assert
+        TicketTypeOf(_catalog).WaitlistHeldCapacity.ShouldBe(0);
+    }
+
+    // Given an attendee whose offer was redeemed into a coupon
+    // When the coupon is applied to this waitlist's ticket type
+    // Then the Offered entry is removed without double-decrementing the queued count
+    [TestMethod]
+    public void ApplyCouponRedemption_OfferedEntry_RemovesEntryWithoutDoubleCountingQueue()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+
+        // Act
+        sut.ApplyCouponRedemption(coupon.Id, email, _catalog);
+
+        // Assert
+        sut.Entries.Single().Status.ShouldBe(WaitlistEntryStatus.Removed);
+        QueuedCount.ShouldBe(0);
+        sut.Coupons.Single().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
+    }
+
+    // Given an attendee holding an outstanding offer
+    // When that offer expires unclaimed
+    // Then the Offered entry is also removed and returned to the caller
+    [TestMethod]
+    public void ExpireCoupon_OfferedEntry_RemovesEntryAndReturnsIt()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+
+        // Act
+        var removedEntry = sut.ExpireCoupon(coupon.Id, coupon, _catalog, registrationClosed: false);
+
+        // Assert
+        removedEntry.ShouldNotBeNull();
+        removedEntry.Email.ShouldBe(email);
+        removedEntry.RegistrationId.ShouldBe(DefaultRegistrationId);
+        sut.Entries.Single().Status.ShouldBe(WaitlistEntryStatus.Removed);
+    }
+
+    // Given an admin who withdraws an attendee's outstanding offer (e.g. by registering them directly)
+    // When the coupon is withdrawn
+    // Then the Offered entry is removed too, without raising an expired-offer event
+    [TestMethod]
+    public void WithdrawCoupon_OfferedEntry_RemovesEntryWithoutExpiredEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        sut.ClearDomainEvents();
+
+        // Act
+        var withdrawn = sut.WithdrawCoupon(coupon.Id, _catalog);
+
+        // Assert
+        withdrawn.ShouldBeTrue();
+        sut.Entries.Single().Status.ShouldBe(WaitlistEntryStatus.Removed);
+        sut.GetDomainEvents().OfType<WaitlistCouponExpiredDomainEvent>().ShouldBeEmpty();
+        sut.GetDomainEvents().OfType<WaitlistEntryRemovedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    // Given a sold-out ticket type with one attendee holding the only outstanding (automatic) offer
+    // When that offer is the registration's last selection and it is withdrawn
+    // Then the waitlist reports itself exhausted
+    [TestMethod]
+    public void WithdrawCoupon_LastOutstandingOffer_RaisesWaitlistExhaustedDomainEvent()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+        sut.ClearDomainEvents();
+
+        // Act
+        sut.WithdrawCoupon(coupon.Id, _catalog);
+
+        // Assert
+        sut.GetDomainEvents().OfType<WaitlistExhaustedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    // Given an attendee holding an outstanding offer
+    // When checked for an offered entry by email
+    // Then the outstanding coupon id and its tracked expiry are returned
+    [TestMethod]
+    public void GetOfferedEntry_WhenOfferOutstanding_ReturnsCouponIdAndExpiry()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
+        var coupon = sut.IssueNextCoupon(CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow)!;
+
+        // Act
+        var offered = sut.GetOfferedEntry(email);
+
+        // Assert
+        offered.ShouldNotBeNull();
+        offered.Value.CouponId.ShouldBe(coupon.Id);
+        offered.Value.ExpiresAt.ShouldBe(coupon.ExpiresAt);
+    }
+
+    // Given an attendee with no outstanding offer
+    // When checked for an offered entry by email
+    // Then nothing is returned
+    [TestMethod]
+    public void GetOfferedEntry_WhenNoOffer_ReturnsNull()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+
+        // Act & Assert
+        sut.GetOfferedEntry(EmailAddress.From("alice@example.com")).ShouldBeNull();
     }
 
     // ─── Queued count on the catalog ─────────────────────────────────────────

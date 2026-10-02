@@ -51,16 +51,37 @@ public class Waitlist : Aggregate<TicketTypeId>
     public bool HasActiveEntry(EmailAddress email)
         => _entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Active);
 
+    /// <summary>
+    /// Returns whether the given email currently holds an outstanding, unredeemed waitlist offer on this
+    /// waitlist (an <see cref="WaitlistEntryStatus.Offered"/> entry).
+    /// </summary>
+    public bool HasOfferedEntry(EmailAddress email)
+        => _entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Offered);
+
+    /// <summary>
+    /// Returns the outstanding offer (coupon id and its tracked expiry) for the given email, if any.
+    /// </summary>
+    public (CouponId CouponId, DateTimeOffset ExpiresAt)? GetOfferedEntry(EmailAddress email)
+    {
+        var entry = _entries.FirstOrDefault(e => e.Email == email && e.Status == WaitlistEntryStatus.Offered);
+        if (entry?.CouponId is not { } couponId)
+            return null;
+
+        var waitlistCoupon = _coupons.FirstOrDefault(c => c.Id == couponId);
+        return waitlistCoupon is null ? null : (couponId, waitlistCoupon.ExpiresAt);
+    }
+
     public static Waitlist Create(TicketedEventId eventId, TicketTypeId ticketTypeId, TeamId teamId)
         => new(eventId, ticketTypeId, teamId);
 
     /// <summary>
     /// Adds an active waitlist entry immediately and counts it on the <paramref name="catalog"/>'s ticket type.
-    /// Idempotent — returns false without adding a duplicate when the email already has an active entry.
+    /// Idempotent — returns false without adding a duplicate when the email already holds an active entry or an
+    /// outstanding offer (an <see cref="WaitlistEntryStatus.Offered"/> entry is still a current selection).
     /// </summary>
     public bool AddEntry(EmailAddress email, DateTimeOffset addedAt, TicketCatalog catalog, RegistrationId registrationId)
     {
-        if (_entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Active))
+        if (_entries.Any(e => e.Email == email && e.Status != WaitlistEntryStatus.Removed))
             return false;
 
         catalog.JoinWaitlistQueue(Id);
@@ -71,32 +92,72 @@ public class Waitlist : Aggregate<TicketTypeId>
     }
 
     /// <summary>
-    /// Removes the active entry for the given email, and its count on the <paramref name="catalog"/>'s ticket type.
-    /// Idempotent if not found.
+    /// Leaves the queue or withdraws the outstanding offer for the given email, whichever applies, and its count
+    /// on the <paramref name="catalog"/>'s ticket type. An outstanding offer's <see cref="WaitlistCoupon"/> is
+    /// expired and its hold (if automatic) released, same as <see cref="WithdrawCoupon"/>. Idempotent if not
+    /// found. Returns the id of the coupon whose offer was withdrawn, if any, so the caller can also expire the
+    /// matching <see cref="Coupon"/> aggregate.
     /// </summary>
-    public void RemoveEntry(EmailAddress email, TicketCatalog catalog)
+    public CouponId? RemoveEntry(EmailAddress email, TicketCatalog catalog)
     {
-        if (RemoveActiveEntry(email, catalog))
-            CheckExhausted();
+        var entry = _entries.FirstOrDefault(e => e.Email == email && e.Status != WaitlistEntryStatus.Removed);
+        if (entry is null)
+            return null;
+
+        var withdrawnCouponId = RemoveEntryCore(entry, catalog);
+        CheckExhausted();
+        return withdrawnCouponId;
     }
 
     /// <summary>
-    /// Removes the entry with the given ID, and its count on the <paramref name="catalog"/>'s ticket type.
-    /// Idempotent if already removed.
+    /// Removes the entry with the given ID — whether still queued or holding an outstanding offer — and its count
+    /// on the <paramref name="catalog"/>'s ticket type. Idempotent if already removed. Returns the id of the
+    /// coupon whose offer was withdrawn, if any, so the caller can also expire the matching <see cref="Coupon"/>
+    /// aggregate.
     /// </summary>
-    public void RemoveEntry(WaitlistEntryId entryId, TicketCatalog catalog)
+    public CouponId? RemoveEntry(WaitlistEntryId entryId, TicketCatalog catalog)
     {
         var entry = _entries.FirstOrDefault(e => e.Id == entryId);
         if (entry is null)
             throw new BusinessRuleViolationException(Errors.EntryNotFound);
 
         if (entry.Status == WaitlistEntryStatus.Removed)
-            return;
+            return null;
 
-        LeaveQueue(entry, catalog);
-        RenumberPositions();
-        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
+        var withdrawnCouponId = RemoveEntryCore(entry, catalog);
         CheckExhausted();
+        return withdrawnCouponId;
+    }
+
+    /// <summary>
+    /// Takes an entry out of the waitlist, whatever its current status, raising
+    /// <see cref="WaitlistEntryRemovedDomainEvent"/>. An <see cref="WaitlistEntryStatus.Active"/> entry leaves the
+    /// queue and is renumbered; an <see cref="WaitlistEntryStatus.Offered"/> entry has its outstanding
+    /// <see cref="WaitlistCoupon"/> expired and its hold (if automatic) released. Returns the withdrawn coupon's
+    /// id when the entry held one.
+    /// </summary>
+    private CouponId? RemoveEntryCore(WaitlistEntry entry, TicketCatalog catalog)
+    {
+        CouponId? withdrawnCouponId = null;
+
+        if (entry.Status == WaitlistEntryStatus.Active)
+        {
+            LeaveQueue(entry, catalog);
+            RenumberPositions();
+        }
+        else if (entry.Status == WaitlistEntryStatus.Offered)
+        {
+            withdrawnCouponId = entry.CouponId;
+            if (withdrawnCouponId is { } couponId
+                && _coupons.FirstOrDefault(c => c.Id == couponId) is { Status: WaitlistCouponStatus.Issued } waitlistCoupon)
+            {
+                ExpireAndReleaseHold(waitlistCoupon, catalog);
+            }
+        }
+
+        entry.Remove();
+        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
+        return withdrawnCouponId;
     }
 
     /// <summary>
@@ -213,9 +274,6 @@ public class Waitlist : Aggregate<TicketTypeId>
         if (origin == WaitlistCouponOrigin.Automatic)
             catalog.HoldForWaitlistOffer(Id);
 
-        LeaveQueue(entry, catalog);
-        RenumberPositions();
-
         var expiresAt = WaitlistClaimWindowCalculator.ComputeExpiresAt(
             utcNow,
             ticketedEvent.TimeZone,
@@ -238,6 +296,12 @@ public class Waitlist : Aggregate<TicketTypeId>
 
         _coupons.Add(new WaitlistCoupon(coupon.Id, utcNow, expiresAt, origin));
 
+        // The entry leaves the queue (and its count) but is not removed: it becomes Offered, still a current
+        // selection on the registration, until the offer is redeemed, withdrawn, or expires.
+        entry.Offer(coupon.Id);
+        catalog.LeaveWaitlistQueue(Id);
+        RenumberPositions();
+
         AddDomainEvent(new WaitlistCouponIssuedDomainEvent(
             TeamId, EventId, ticketType.Id, entry.Email, coupon.Code, ticketType.Name.Value, expiresAt, reason,
             registrationId));
@@ -246,13 +310,31 @@ public class Waitlist : Aggregate<TicketTypeId>
     }
 
     /// <summary>
-    /// Applies a coupon redemption that granted this waitlist's ticket type, whatever the coupon's source:
-    /// removes the redeeming email's active entry (if any) and its count on the <paramref name="catalog"/>'s ticket
-    /// type, and marks the coupon redeemed if it was issued from this waitlist.
+    /// Applies a coupon redemption that granted this waitlist's ticket type, whatever the coupon's source: removes
+    /// the redeeming email's entry (whether still queued or holding this/another outstanding offer) and its count
+    /// on the <paramref name="catalog"/>'s ticket type where applicable, and marks the coupon redeemed if it was
+    /// issued from this waitlist.
     /// </summary>
     public void ApplyCouponRedemption(CouponId couponId, EmailAddress email, TicketCatalog catalog)
     {
-        var entryRemoved = RemoveActiveEntry(email, catalog);
+        var entry = _entries.FirstOrDefault(e => e.Email == email && e.Status != WaitlistEntryStatus.Removed);
+        var entryRemoved = entry is not null;
+        if (entry is not null)
+        {
+            if (entry.Status == WaitlistEntryStatus.Active)
+            {
+                LeaveQueue(entry, catalog);
+                RenumberPositions();
+            }
+            else
+            {
+                // Offered: the entry already left the queue at offer issuance, so there's nothing further
+                // to release here beyond the entry itself.
+                entry.Remove();
+            }
+
+            AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, email));
+        }
 
         var issuedCoupon = _coupons.FirstOrDefault(c => c.Id == couponId);
         issuedCoupon?.Redeem();
@@ -271,20 +353,24 @@ public class Waitlist : Aggregate<TicketTypeId>
             .ToList();
 
     /// <summary>
-    /// Marks the given waitlist coupon as expired because it lapsed unclaimed, gives back the seat an automatic offer
-    /// held on the <paramref name="catalog"/> (which decides whether that leaves a seat for the next person waiting;
-    /// a VIP offer held none, so its lapse offers nobody a seat), and
-    /// raises <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer expired. The
-    /// <paramref name="coupon"/> only supplies that email's recipient and code; when it or the ticket type
-    /// no longer exists there is nothing to send, so the coupon is expired without raising the event.
+    /// Marks the given waitlist coupon as expired because it lapsed unclaimed, removes the <see cref="Offered"/>
+    /// entry that held it, gives back the seat an automatic offer held on the <paramref name="catalog"/> (which
+    /// decides whether that leaves a seat for the next person waiting; a VIP offer held none, so its lapse offers
+    /// nobody a seat), and raises <see cref="WaitlistCouponExpiredDomainEvent"/> so its recipient is told the offer
+    /// expired. The <paramref name="coupon"/> only supplies that email's recipient and code; when it or the ticket
+    /// type no longer exists there is nothing to send, so the coupon is expired without raising the event. Returns
+    /// the removed entry, if its email/registration are still needed by the caller (e.g. to check whether the
+    /// registration now has no selection left at all).
     /// </summary>
     /// <remarks>
     /// <paramref name="registrationClosed"/> tells the recipient's email not to invite them to register again.
     /// </remarks>
-    public void ExpireCoupon(CouponId couponId, Coupon? coupon, TicketCatalog catalog, bool registrationClosed)
+    public WaitlistEntry? ExpireCoupon(CouponId couponId, Coupon? coupon, TicketCatalog catalog, bool registrationClosed)
     {
         var waitlistCoupon = FindCoupon(couponId);
         ExpireAndReleaseHold(waitlistCoupon, catalog);
+
+        var entry = RemoveEntryForCoupon(couponId);
 
         var ticketType = catalog.GetTicketType(Id);
         if (coupon is not null && ticketType is not null)
@@ -294,12 +380,14 @@ public class Waitlist : Aggregate<TicketTypeId>
         }
 
         CheckExhausted();
+        return entry;
     }
 
     /// <summary>
     /// Withdraws an outstanding offer without telling its recipient, e.g. because an admin registered them for this
-    /// ticket type: the coupon expires and an automatic offer gives back its hold on the <paramref name="catalog"/>,
-    /// so the seat can go to the next person waiting. Returns <c>false</c> when the coupon is not outstanding.
+    /// ticket type, or the registration holding it was cancelled: the coupon expires, the <see cref="Offered"/>
+    /// entry is removed, and an automatic offer gives back its hold on the <paramref name="catalog"/>, so the seat
+    /// can go to the next person waiting. Returns <c>false</c> when the coupon is not outstanding.
     /// </summary>
     public bool WithdrawCoupon(CouponId couponId, TicketCatalog catalog)
     {
@@ -308,8 +396,26 @@ public class Waitlist : Aggregate<TicketTypeId>
             return false;
 
         ExpireAndReleaseHold(waitlistCoupon, catalog);
+        RemoveEntryForCoupon(couponId);
         CheckExhausted();
         return true;
+    }
+
+    /// <summary>
+    /// Removes the <see cref="WaitlistEntryStatus.Offered"/> entry holding the given coupon, if any, raising
+    /// <see cref="WaitlistEntryRemovedDomainEvent"/>. No queue count is touched: an offered entry already left
+    /// the queue when the offer was issued.
+    /// </summary>
+    private WaitlistEntry? RemoveEntryForCoupon(CouponId couponId)
+    {
+        var entry = _entries.FirstOrDefault(
+            e => e.CouponId == couponId && e.Status == WaitlistEntryStatus.Offered);
+        if (entry is null)
+            return null;
+
+        entry.Remove();
+        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
+        return entry;
     }
 
     private void ExpireAndReleaseHold(WaitlistCoupon waitlistCoupon, TicketCatalog catalog)
@@ -326,18 +432,6 @@ public class Waitlist : Aggregate<TicketTypeId>
             throw new BusinessRuleViolationException(Errors.CouponNotFound);
 
         return coupon;
-    }
-
-    private bool RemoveActiveEntry(EmailAddress email, TicketCatalog catalog)
-    {
-        var entry = _entries.FirstOrDefault(e => e.Email == email && e.Status == WaitlistEntryStatus.Active);
-        if (entry is null)
-            return false;
-
-        LeaveQueue(entry, catalog);
-        RenumberPositions();
-        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, email));
-        return true;
     }
 
     /// <summary>

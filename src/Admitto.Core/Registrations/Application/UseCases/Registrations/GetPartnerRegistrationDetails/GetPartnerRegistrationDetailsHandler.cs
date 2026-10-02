@@ -32,6 +32,12 @@ internal sealed class GetPartnerRegistrationDetailsHandler(IRegistrationsWriteSt
             .Select(x => new PartnerWaitlistedTicketTypeDto(x.TicketTypeId, x.Position!.Value))
             .ToList();
 
+        var offeredTicketTypes = waitlists
+            .Select(w => (TicketTypeId: w.Id.Value, Offer: w.GetOfferedEntry(registration.Email)))
+            .Where(x => x.Offer is not null)
+            .Select(x => new PartnerOfferedTicketTypeDto(x.TicketTypeId, x.Offer!.Value.ExpiresAt))
+            .ToList();
+
         return new PartnerRegistrationDetailDto(
             Id: registration.Id.Value,
             Email: registration.Email.Value,
@@ -45,6 +51,7 @@ internal sealed class GetPartnerRegistrationDetailsHandler(IRegistrationsWriteSt
                 .Select(t => new PartnerTicketDetailDto(t.Id.Value, t.Name.Value))
                 .ToList(),
             WaitlistedTicketTypes: waitlistedTicketTypes,
+            OfferedTicketTypes: offeredTicketTypes,
             AdditionalDetails: registration.AdditionalDetails
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
     }

@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -113,6 +115,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                 .FirstOrDefaultAsync(e => e.Id == eventId && e.TeamId == teamId, cancellationToken);
             var registrationClosed = ticketedEvent?.HasRegistrationClosed(now) ?? false;
 
+            var affectedRegistrationIds = new HashSet<RegistrationId>();
             foreach (var waitlist in waitlists)
             {
                 var lapsedCouponIds = waitlist.GetLapsedCouponIds(cutoff);
@@ -131,8 +134,28 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                 // aggregate still expires the waitlist coupon and gives back its hold.
                 foreach (var couponId in lapsedCouponIds)
                 {
-                    waitlist.ExpireCoupon(
+                    var removedEntry = waitlist.ExpireCoupon(
                         couponId, lapsedCoupons.GetValueOrDefault(couponId), catalog, registrationClosed);
+                    if (removedEntry is not null)
+                        affectedRegistrationIds.Add(removedEntry.RegistrationId);
+                }
+            }
+
+            if (affectedRegistrationIds.Count > 0)
+            {
+                // Checked against every waitlist for the event, not just the ones with a lapsed coupon: an
+                // attendee may still hold a queue position or another outstanding offer elsewhere.
+                var allEventWaitlists = await eventWriteStore.Waitlists
+                    .Where(w => w.EventId == eventId && w.TeamId == teamId)
+                    .ToListAsync(cancellationToken);
+
+                var affectedRegistrations = await eventWriteStore.Registrations
+                    .Where(r => affectedRegistrationIds.Contains(r.Id))
+                    .ToListAsync(cancellationToken);
+                foreach (var registration in affectedRegistrations)
+                {
+                    RegistrationCouponHelpers.CancelIfExhausted(
+                        registration, allEventWaitlists, CancellationReason.WaitlistOfferExpired);
                 }
             }
 

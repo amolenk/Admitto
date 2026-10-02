@@ -62,6 +62,10 @@ public class WaitlistEntityConfiguration : IEntityTypeConfiguration<Waitlist>
                 .HasJsonPropertyName("status")
                 .HasConversion<string>()
                 .IsRequired();
+
+            b.Property(e => e.CouponId)
+                .HasJsonPropertyName("coupon_id")
+                .HasConversion<CouponId.EfCoreValueConverter>();
         });
 
         builder.OwnsMany(e => e.Coupons, b =>

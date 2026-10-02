@@ -17,9 +17,11 @@ internal sealed class GetRegistrationDetailsFixture
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
     public TicketTypeId VipId { get; } = TicketTypeId.New();
     public TicketTypeId WaitlistedTicketTypeId { get; } = TicketTypeId.New();
+    public TicketTypeId OfferedTicketTypeId { get; } = TicketTypeId.New();
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public DateTimeOffset RegisteredAt { get; private set; }
     public DateTimeOffset ReconfirmedAt { get; private set; }
+    public DateTimeOffset OfferExpiresAt { get; private set; }
 
     private bool _withRegistration;
     private bool _withReconfirmed;
@@ -27,6 +29,7 @@ internal sealed class GetRegistrationDetailsFixture
     private bool _withAdditionalDetails;
     private bool _withMultipleTickets;
     private bool _withWaitlistEntry;
+    private bool _withOfferedEntry;
     private bool _withRegisteredActivity;
     private bool _withReconfirmedActivity;
     private bool _withCancelledActivity;
@@ -74,6 +77,13 @@ internal sealed class GetRegistrationDetailsFixture
         _withRegistration = true,
         _withRegisteredActivity = true,
         _withWaitlistEntry = true,
+    };
+
+    public static GetRegistrationDetailsFixture WithOfferedTicketType() => new()
+    {
+        _withRegistration = true,
+        _withRegisteredActivity = true,
+        _withOfferedEntry = true,
     };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -129,6 +139,33 @@ internal sealed class GetRegistrationDetailsFixture
             {
                 db.TicketCatalogs.Add(catalog);
                 db.Waitlists.Add(waitlist);
+            });
+        }
+
+        if (_withOfferedEntry)
+        {
+            var catalog = TicketCatalog.Create(EventId, TeamId);
+            catalog.AddTicketType(OfferedTicketTypeId, TicketTypeName.From("Conference Pass"), [], publicCapacity: 1, waitlistEnabled: true);
+            catalog.ClearDomainEvents();
+            var waitlist = Waitlist.Create(EventId, OfferedTicketTypeId, TeamId);
+            waitlist.AddEntry(registration.Email, DateTimeOffset.UtcNow, catalog, RegistrationId);
+            var ticketedEvent = TicketedEvent.Create(
+                CreationRequestId.From(Guid.NewGuid()),
+                EventId, TeamId,
+                EventName.From("Test Event"),
+                AbsoluteUrl.From("https://example.com"),
+                AbsoluteUrl.From("https://tickets.example.com"),
+                DateTimeOffset.UtcNow.AddDays(10), DateTimeOffset.UtcNow.AddDays(11),
+                TimeZoneId.From("UTC"));
+            var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
+            OfferExpiresAt = coupon.ExpiresAt;
+            coupon.ClearDomainEvents();
+            waitlist.ClearDomainEvents();
+            await environment.RegistrationsDatabase.SeedAsync(db =>
+            {
+                db.TicketCatalogs.Add(catalog);
+                db.Waitlists.Add(waitlist);
+                db.Coupons.Add(coupon);
             });
         }
 

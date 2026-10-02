@@ -82,8 +82,10 @@ internal sealed class RegisterAttendeeHandler(
             .Where(w => w.EventId == eventId && w.TeamId == teamId)
             .ToListAsync(cancellationToken);
         var currentWaitlistIds = waitlists.Where(w => w.HasActiveEntry(email)).Select(w => w.Id).ToList();
-        var outstandingOfferTicketTypeIds = await GetOutstandingOfferTicketTypeIdsAsync(
-            waitlists, email, cancellationToken);
+        var outstandingOfferTicketTypeIds = waitlists
+            .Where(w => w.HasOfferedEntry(email))
+            .Select(w => w.Id)
+            .ToList();
 
         // Pre-generated so the same id can back both the waitlist entries joined below and the registration
         // created afterward (waitlisted tickets are only known once that loop completes).
@@ -166,31 +168,5 @@ internal sealed class RegisterAttendeeHandler(
             registration.Id.Value,
             registerTicketTypeIds.Select(id => id.Value).ToArray(),
             waitlistTicketTypeIds.Select(id => id.Value).ToArray());
-    }
-
-    private async ValueTask<IReadOnlyList<TicketTypeId>> GetOutstandingOfferTicketTypeIdsAsync(
-        IReadOnlyList<Waitlist> eventWaitlists,
-        EmailAddress email,
-        CancellationToken cancellationToken)
-    {
-        var issuedCouponIds = eventWaitlists
-            .SelectMany(w => w.Coupons)
-            .Where(c => c.Status == WaitlistCouponStatus.Issued)
-            .Select(c => c.Id)
-            .ToList();
-
-        if (issuedCouponIds.Count == 0)
-            return [];
-
-        var offerIds = (await writeStore.Coupons
-                .Where(c => issuedCouponIds.Contains(c.Id) && c.Email == email)
-                .Select(c => c.Id)
-                .ToListAsync(cancellationToken))
-            .ToHashSet();
-
-        return eventWaitlists
-            .Where(w => w.Coupons.Any(c => offerIds.Contains(c.Id) && c.Status == WaitlistCouponStatus.Issued))
-            .Select(w => w.Id)
-            .ToList();
     }
 }

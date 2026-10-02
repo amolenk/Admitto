@@ -95,26 +95,21 @@ internal sealed class AdminRegisterAttendeeHandler(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        var withdrawnCouponIds = new List<CouponId>();
         foreach (var waitlist in eventWaitlists.Where(w => ticketTypeIds.Contains(w.Id)))
         {
-            waitlist.RemoveEntry(email, catalog);
-
-            var issuedCouponIds = waitlist.Coupons
-                .Where(c => c.Status == WaitlistCouponStatus.Issued)
-                .Select(c => c.Id)
-                .ToList();
-            if (issuedCouponIds.Count == 0)
-                continue;
-
-            var offers = await writeStore.Coupons
-                .Where(c => issuedCouponIds.Contains(c.Id) && c.Email == email)
-                .ToListAsync(cancellationToken);
-            foreach (var offer in offers)
-            {
-                if (waitlist.WithdrawCoupon(offer.Id, catalog))
-                    offer.Expire(now);
-            }
+            if (waitlist.RemoveEntry(email, catalog) is { } couponId)
+                withdrawnCouponIds.Add(couponId);
         }
+
+        if (withdrawnCouponIds.Count == 0)
+            return;
+
+        var offers = await writeStore.Coupons
+            .Where(c => withdrawnCouponIds.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+        foreach (var offer in offers)
+            offer.Expire(now);
     }
 
     internal static class Errors

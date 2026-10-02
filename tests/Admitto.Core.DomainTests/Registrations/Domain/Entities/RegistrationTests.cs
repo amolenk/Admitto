@@ -98,6 +98,21 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<RegistrationCancelledDomainEvent>().ShouldHaveSingleItem();
     }
 
+    // Given a waitlisted registration whose only outstanding offer just lapsed unclaimed
+    // When it is cancelled with the waitlist-offer-expired reason
+    // Then its status becomes Cancelled recording that reason
+    [TestMethod]
+    public void Registration_Cancel_WaitlistOfferExpiredReason_TransitionsAndRecordsReason()
+    {
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, []);
+        ClearEvents(sut);
+
+        sut.Cancel(CancellationReason.WaitlistOfferExpired);
+
+        sut.Status.ShouldBe(RegistrationStatus.Cancelled);
+        sut.CancellationReason.ShouldBe(CancellationReason.WaitlistOfferExpired);
+    }
+
     // Given an active registration
     // When it is cancelled
     // Then CancelledAt is set to the cancellation moment

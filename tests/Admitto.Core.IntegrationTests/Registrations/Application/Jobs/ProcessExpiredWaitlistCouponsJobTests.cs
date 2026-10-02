@@ -9,6 +9,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -419,6 +420,55 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         {
             var statuses = await WaitlistCouponStatusesByEmailAsync(ctx, fixture.TicketTypeId);
             statuses.ShouldHaveSingleItem().Value.ShouldBe(WaitlistCouponStatus.Issued);
+        });
+    }
+
+    // Given a waitlisted registration whose only selection is one outstanding waitlist offer
+    // When that offer expires unclaimed and the process-expired-waitlist-coupons job runs
+    // Then the registration is cancelled with the waitlist-offer-expired reason
+    [TestMethod]
+    public async ValueTask Execute_WhenLastSelectionExpires_CancelsRegistration()
+    {
+        // Arrange — the registration's only selection is this one outstanding offer
+        var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithSoleSelectionOneEntryOnePendingCoupon();
+        await fixture.SetupAsync(Environment, activeEntriesAfterCoupon: 0, testContext.CancellationToken);
+        await fixture.BackdateCouponExpiryAsync(Environment, TimeSpan.FromMinutes(10), testContext.CancellationToken);
+
+        // Act
+        await CreateJob().Execute(QuartzContext());
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
+        {
+            var registration = await ctx.Registrations.SingleAsync(
+                r => r.Id == fixture.MatchingRegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Cancelled);
+            registration.CancellationReason.ShouldBe(CancellationReason.WaitlistOfferExpired);
+        });
+    }
+
+    // Given a waitlisted registration holding an outstanding offer on one ticket type and still queued on another
+    // When the offer expires unclaimed and the process-expired-waitlist-coupons job runs
+    // Then the registration is not cancelled, since it still has a selection on the other waitlist
+    [TestMethod]
+    public async ValueTask Execute_WhenAnotherSelectionRemains_DoesNotCancelRegistration()
+    {
+        // Arrange — same registration also actively queued on a second ticket type
+        var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithSoleSelectionOneEntryOnePendingCoupon();
+        await fixture.SetupAsync(Environment, activeEntriesAfterCoupon: 0, testContext.CancellationToken);
+        await fixture.AddOtherWaitlistEntryForMatchingRegistrationAsync(Environment, testContext.CancellationToken);
+        await fixture.BackdateCouponExpiryAsync(Environment, TimeSpan.FromMinutes(10), testContext.CancellationToken);
+
+        // Act
+        await CreateJob().Execute(QuartzContext());
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
+        {
+            var registration = await ctx.Registrations.SingleAsync(
+                r => r.Id == fixture.MatchingRegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
+            registration.CancellationReason.ShouldBeNull();
         });
     }
 

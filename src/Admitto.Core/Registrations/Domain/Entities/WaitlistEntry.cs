@@ -37,6 +37,18 @@ public class WaitlistEntry : Entity<WaitlistEntryId>
     /// </summary>
     public RegistrationId RegistrationId { get; private set; }
 
+    /// <summary>
+    /// The outstanding <see cref="WaitlistCoupon"/> this entry is holding while <see cref="Status"/> is
+    /// <see cref="WaitlistEntryStatus.Offered"/>. <c>null</c> otherwise.
+    /// </summary>
+    public CouponId? CouponId { get; private set; }
+
+    internal void Offer(CouponId couponId)
+    {
+        Status = WaitlistEntryStatus.Offered;
+        CouponId = couponId;
+    }
+
     internal void Remove()
     {
         Status = WaitlistEntryStatus.Removed;

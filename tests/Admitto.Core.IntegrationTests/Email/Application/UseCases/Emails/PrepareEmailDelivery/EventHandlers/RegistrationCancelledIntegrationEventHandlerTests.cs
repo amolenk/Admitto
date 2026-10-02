@@ -174,4 +174,21 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         await composer.DidNotReceiveWithAnyArgs().ComposeAsync(default!, default);
         await deliveryHandler.DidNotReceiveWithAnyArgs().HandleAsync(default!, default);
     }
+
+    // Given a registration's only remaining selection was an outstanding waitlist offer that lapsed
+    // When the waitlist-offer-expired cancellation event is processed
+    // Then no cancellation email is sent, since the attendee already got the waitlist-offer-expired email
+    [TestMethod]
+    public async Task HandleAsync_WaitlistOfferExpired_SilentlySkipsCancellationEmail()
+    {
+        var composer = Substitute.For<ITransactionalEmailComposer>();
+        composer.ReturnRenderedEmail();
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        var sut = new RegistrationCancelledIntegrationEventHandler(composer, deliveryHandler);
+
+        await sut.HandleAsync(Event("WaitlistOfferExpired", wasWaitlisted: true), testContext.CancellationToken);
+
+        await composer.DidNotReceiveWithAnyArgs().ComposeAsync(default!, default);
+        await deliveryHandler.DidNotReceiveWithAnyArgs().HandleAsync(default!, default);
+    }
 }

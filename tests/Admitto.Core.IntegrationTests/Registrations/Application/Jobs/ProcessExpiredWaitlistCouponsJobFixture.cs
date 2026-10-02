@@ -16,6 +16,10 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
     public TimeZoneId TimeZone { get; } = TimeZoneId.From("UTC");
+    public RegistrationId? MatchingRegistrationId { get; private set; }
+    public EmailAddress? RegistrationEmail { get; private set; }
+
+    private bool _withMatchingRegistration;
 
     private ProcessExpiredWaitlistCouponsJobFixture()
     {
@@ -30,6 +34,13 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
     /// One waitlist entry, one issued coupon — no further entries after expiry.
     /// </summary>
     public static ProcessExpiredWaitlistCouponsJobFixture WithOneEntryOnePendingCoupon() => new();
+
+    /// <summary>
+    /// One waitlist entry backed by a real <c>Waitlisted</c> registration with no confirmed tickets and no other
+    /// waitlist selection — so once its only outstanding offer lapses, the registration has nothing left.
+    /// </summary>
+    public static ProcessExpiredWaitlistCouponsJobFixture WithSoleSelectionOneEntryOnePendingCoupon() =>
+        new() { _withMatchingRegistration = true };
 
     /// <summary>
     /// Three waitlist entries, two issued coupons — one more person waiting after both lapse.
@@ -120,7 +131,24 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
             var now = DateTimeOffset.UtcNow;
             for (var i = 0; i < totalEntries; i++)
-                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i), catalog, RegistrationId.New());
+            {
+                var email = EmailAddress.From($"attendee{i + 1}@example.com");
+                var registrationId = RegistrationId.New();
+                waitlist.AddEntry(email, now.AddMinutes(i), catalog, registrationId);
+
+                // Only the first entry gets a matching persisted Registration (the one whose offer this
+                // fixture's tests track); the others just need distinct ids for the entry itself.
+                if (_withMatchingRegistration && i == 0)
+                {
+                    MatchingRegistrationId = registrationId;
+                    RegistrationEmail = email;
+                    var registration = Registration.Create(
+                        TeamId, EventId, email, FirstName.From("Alice"), LastName.From("Doe"), [],
+                        registeredAt: now, id: registrationId);
+                    registration.ClearDomainEvents();
+                    dbContext.Registrations.Add(registration);
+                }
+            }
 
             dbContext.Waitlists.Add(waitlist);
         }, cancellationToken);
@@ -163,6 +191,32 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             await context.SaveChangesAsync(cancellationToken);
             context.ChangeTracker.Clear();
         }
+    }
+
+    /// <summary>
+    /// Adds a second, distinct, sold-out waitlist-mode ticket type with an active (still-queued) entry for the
+    /// <see cref="MatchingRegistrationId"/>'s email, so that registration has a selection elsewhere even after
+    /// its tracked offer lapses. Requires <see cref="WithSoleSelectionOneEntryOnePendingCoupon"/>.
+    /// </summary>
+    public async ValueTask AddOtherWaitlistEntryForMatchingRegistrationAsync(
+        IntegrationTestEnvironment environment,
+        CancellationToken cancellationToken = default)
+    {
+        var otherTicketTypeId = TicketTypeId.New();
+        var context = environment.RegistrationsDatabase.Context;
+
+        var catalog = await context.TicketCatalogs
+            .SingleAsync(c => c.Id == EventId && c.TeamId == TeamId, cancellationToken);
+        catalog.AddTicketType(otherTicketTypeId, TicketTypeName.From("Workshop"), [], publicCapacity: 1, waitlistEnabled: true);
+        catalog.Claim([otherTicketTypeId], ClaimMode.Public);
+        catalog.ClearDomainEvents();
+
+        var waitlist = Waitlist.Create(EventId, otherTicketTypeId, TeamId);
+        waitlist.AddEntry(RegistrationEmail!.Value, DateTimeOffset.UtcNow, catalog, MatchingRegistrationId!.Value);
+        context.Waitlists.Add(waitlist);
+
+        await context.SaveChangesAsync(cancellationToken);
+        context.ChangeTracker.Clear();
     }
 
     /// <summary>

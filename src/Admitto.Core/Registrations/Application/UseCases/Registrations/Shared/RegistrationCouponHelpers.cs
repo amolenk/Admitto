@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 
@@ -26,6 +27,33 @@ internal static class RegistrationCouponHelpers
         TicketCatalog catalog,
         EmailAddress email) =>
         catalog.DescribeTicketTypes(eventWaitlists.Where(w => w.HasActiveEntry(email)).Select(w => w.Id));
+
+    /// <summary>
+    /// Whether the given email still has a selection on any of the event's waitlists: either actively queued, or
+    /// holding an outstanding, unredeemed offer. Both count as a current selection on the registration.
+    /// </summary>
+    public static bool HasOutstandingWaitlistSelection(IEnumerable<Waitlist> eventWaitlists, EmailAddress email) =>
+        eventWaitlists.Any(w => w.HasActiveEntry(email) || w.HasOfferedEntry(email));
+
+    /// <summary>
+    /// Cancels the registration with the given reason when it is <see cref="RegistrationStatus.Waitlisted"/> (no
+    /// confirmed tickets) and has no selection left on any of the event's waitlists either. Leaves a registration
+    /// that still holds a queue position or an outstanding offer untouched. Returns whether it cancelled.
+    /// </summary>
+    public static bool CancelIfExhausted(
+        Registration registration,
+        IEnumerable<Waitlist> eventWaitlists,
+        CancellationReason reason)
+    {
+        if (registration.Status != RegistrationStatus.Waitlisted)
+            return false;
+
+        if (HasOutstandingWaitlistSelection(eventWaitlists, registration.Email))
+            return false;
+
+        registration.Cancel(reason);
+        return true;
+    }
 
     public static async ValueTask ApplyRedemptionToWaitlistsAsync(
         IRegistrationsWriteStore writeStore,

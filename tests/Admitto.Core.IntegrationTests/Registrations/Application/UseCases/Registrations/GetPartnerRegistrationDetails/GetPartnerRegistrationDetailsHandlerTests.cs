@@ -116,6 +116,29 @@ public sealed class GetPartnerRegistrationDetailsHandlerTests(TestContext testCo
         result.WaitlistedTicketTypes.ShouldBeEmpty();
     }
 
+    // Given a registration holding an outstanding waitlist offer
+    // When the partner registration details are queried
+    // Then the offered ticket type appears with its expiry, separate from the queued waitlisted ticket types
+    [TestMethod]
+    public async ValueTask GetPartnerRegistrationDetails_OutstandingOffer_ReturnsOfferedTicketType()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithOfferedTicketType();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetPartnerRegistrationDetailsQuery(
+                fixture.TeamId.Value,
+                fixture.EventId,
+                fixture.RegistrationId.Value),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.WaitlistedTicketTypes.ShouldBeEmpty();
+        var offered = result.OfferedTicketTypes.ShouldHaveSingleItem();
+        offered.TicketTypeId.ShouldBe(fixture.OfferedTicketTypeId.Value);
+        offered.ExpiresAt.ShouldBe(fixture.OfferExpiresAt, TimeSpan.FromSeconds(1));
+    }
+
     private static GetPartnerRegistrationDetailsHandler NewHandler() =>
         new(Environment.RegistrationsDatabase.Context);
 }
