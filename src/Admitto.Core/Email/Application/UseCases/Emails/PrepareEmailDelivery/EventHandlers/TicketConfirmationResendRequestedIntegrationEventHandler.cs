@@ -23,7 +23,8 @@ internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
             TicketedEventId.From(integrationEvent.TicketedEventId),
             registrationId,
             integrationEvent.FirstName,
-            integrationEvent.TicketNames);
+            integrationEvent.TicketNames,
+            []);
         var rendered = await composer.ComposeAsync(intent, cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,

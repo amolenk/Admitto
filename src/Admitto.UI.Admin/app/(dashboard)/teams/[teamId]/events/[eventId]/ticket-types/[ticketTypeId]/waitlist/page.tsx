@@ -1,16 +1,35 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
-import { ArrowLeft, Clock, Trash2, ListOrdered } from "lucide-react";
+import { ArrowLeft, Clock, Crown, Trash2, ListOrdered } from "lucide-react";
 import { toast } from "sonner";
-import { WaitlistDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { FormError } from "@/components/form-error";
+import {
+    WaitlistDetailsDto,
+    WaitlistEntryRow,
+    PendingNotificationRow,
+    TicketTypeDto,
+} from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
     Table,
     TableBody,
@@ -19,6 +38,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+
+function attendeeFullName(entry: { firstName: string; lastName: string; email: string }) {
+    const full = [entry.firstName, entry.lastName].filter(Boolean).join(" ").trim();
+    if (full) return full;
+    const at = entry.email.indexOf("@");
+    return at > 0 ? entry.email.slice(0, at) : entry.email;
+}
 
 function StatCard({ label, value }: { label: string; value: number | string }) {
     return (
@@ -31,6 +57,22 @@ function StatCard({ label, value }: { label: string; value: number | string }) {
     );
 }
 
+/** Same name/email rendering and link-to-registration behavior as the Registrations table. */
+function AttendeeCell({
+    entry,
+    href,
+}: {
+    entry: { firstName: string; lastName: string; email: string };
+    href: string;
+}) {
+    return (
+        <Link href={href} className="hover:underline">
+            <div className="font-medium">{attendeeFullName(entry)}</div>
+            <div className="text-xs text-muted-foreground">{entry.email}</div>
+        </Link>
+    );
+}
+
 export default function WaitlistPage() {
     const { teamId, eventId, ticketTypeId } = useParams<{
         teamId: string;
@@ -39,6 +81,8 @@ export default function WaitlistPage() {
     }>();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const [promotingEntryId, setPromotingEntryId] = useState<string | null>(null);
+    const [removingEntryId, setRemovingEntryId] = useState<string | null>(null);
 
     const { data: ticketTypes } = useQuery({
         queryKey: ["ticket-types", teamId, eventId],
@@ -48,33 +92,67 @@ export default function WaitlistPage() {
 
     const ticketType = ticketTypes?.find((t) => t.id === ticketTypeId);
 
-    const { data: waitlist, isLoading } = useQuery({
-        queryKey: ["waitlist", teamId, eventId, ticketTypeId],
-        queryFn: () =>
-            apiClient.get<WaitlistDetailsDto>(
-                `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketTypeId}/waitlist`
-            ),
+    const waitlistUrl = `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketTypeId}/waitlist`;
+    const waitlistQueryKey = ["waitlist", teamId, eventId, ticketTypeId];
+
+    const {
+        data: waitlist,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: waitlistQueryKey,
+        queryFn: () => apiClient.get<WaitlistDetailsDto>(waitlistUrl),
         throwOnError: false,
     });
 
     async function removeEntry(entryId: string) {
-        await apiClient.delete(
-            `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketTypeId}/waitlist/${entryId}`
-        );
-        await queryClient.invalidateQueries({
-            queryKey: ["waitlist", teamId, eventId, ticketTypeId],
-        });
-        toast.success("Entry removed from waitlist.");
+        setRemovingEntryId(entryId);
+        try {
+            await apiClient.delete(`${waitlistUrl}/${entryId}`);
+            toast.success("Entry removed from waitlist.");
+        } catch (err) {
+            toast.error(
+                err instanceof FormError
+                    ? err.detail
+                    : "Failed to remove entry from waitlist. Please try again."
+            );
+        } finally {
+            setRemovingEntryId(null);
+            await queryClient.invalidateQueries({ queryKey: waitlistQueryKey });
+        }
+    }
+
+    // Issuing a VIP coupon takes the entry out of the queue immediately, so the refreshed
+    // list drops it and its coupon shows up under pending notifications instead.
+    async function promoteEntry(entryId: string) {
+        setPromotingEntryId(entryId);
+        try {
+            await apiClient.post(`${waitlistUrl}/${entryId}/promote`);
+            toast.success("VIP coupon issued. The attendee will be emailed their offer.");
+        } catch (err) {
+            toast.error(
+                err instanceof FormError
+                    ? err.detail
+                    : "Failed to issue VIP coupon. Please try again."
+            );
+        } finally {
+            setPromotingEntryId(null);
+            await queryClient.invalidateQueries({ queryKey: waitlistQueryKey });
+        }
     }
 
     const stats = waitlist?.stats;
+
+    function registrationHref(registrationId: string) {
+        return `/teams/${teamId}/events/${eventId}/registrations/${registrationId}?from=waitlist&ticketTypeId=${ticketTypeId}`;
+    }
 
     return (
         <PageLayout>
             <div className="flex items-center gap-3 mb-6">
                 <Button variant="ghost" size="sm" onClick={() => router.back()}>
-                        <ArrowLeft className="size-4" />
-                    </Button>
+                    <ArrowLeft className="size-4" />
+                </Button>
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                         Waitlist
@@ -85,7 +163,11 @@ export default function WaitlistPage() {
                 </div>
             </div>
 
-            {isLoading ? (
+            {isError ? (
+                <Card className="p-8 text-center text-sm text-muted-foreground">
+                    Failed to load the waitlist. Please refresh and try again.
+                </Card>
+            ) : isLoading ? (
                 <div className="space-y-6">
                     <div className="grid grid-cols-3 gap-4">
                         <Skeleton className="h-24" />
@@ -94,6 +176,10 @@ export default function WaitlistPage() {
                     </div>
                     <Skeleton className="h-48" />
                 </div>
+            ) : !waitlist?.waitlistEnabled ? (
+                <Card className="p-8 text-center text-sm text-muted-foreground">
+                    This ticket type doesn&apos;t use a waitlist.
+                </Card>
             ) : (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -127,32 +213,103 @@ export default function WaitlistPage() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="w-16">#</TableHead>
-                                            <TableHead>Email</TableHead>
+                                            <TableHead>Attendee</TableHead>
                                             <TableHead>Joined</TableHead>
-                                            <TableHead className="w-12" />
+                                            <TableHead className="w-48" />
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {waitlist.activeEntries.map((entry) => (
+                                        {waitlist.activeEntries.map((entry: WaitlistEntryRow) => (
                                             <TableRow key={entry.entryId}>
                                                 <TableCell className="font-mono text-muted-foreground">
                                                     {entry.position}
                                                 </TableCell>
-                                                <TableCell className="font-mono">
-                                                    {entry.maskedEmail}
+                                                <TableCell>
+                                                    <AttendeeCell
+                                                        entry={entry}
+                                                        href={registrationHref(entry.registrationId)}
+                                                    />
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
                                                     {format(new Date(entry.joinedAt), "d MMM yyyy")}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive hover:text-destructive"
-                                                        onClick={() => removeEntry(entry.entryId)}
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    disabled={
+                                                                        promotingEntryId !== null ||
+                                                                        removingEntryId !== null
+                                                                    }
+                                                                >
+                                                                    <Crown className="size-4" />
+                                                                    {promotingEntryId === entry.entryId
+                                                                        ? "Promoting…"
+                                                                        : "Promote to VIP"}
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Promote to VIP</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This issues {entry.email} a VIP offer
+                                                                        right away. It can&apos;t be revoked once
+                                                                        sent. It&apos;s an admin ticket on top of
+                                                                        public capacity: it doesn&apos;t use a public
+                                                                        seat, and nobody else on the waitlist loses
+                                                                        their place because of it.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction
+                                                                        onClick={() => promoteEntry(entry.entryId)}
+                                                                    >
+                                                                        Promote to VIP
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    aria-label="Remove from waitlist"
+                                                                    disabled={
+                                                                        promotingEntryId !== null ||
+                                                                        removingEntryId !== null
+                                                                    }
+                                                                    className="text-destructive hover:text-destructive"
+                                                                >
+                                                                    <Trash2 className="size-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Remove from waitlist</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This removes {entry.email} from the
+                                                                        waitlist entirely. They&apos;ll need to
+                                                                        join again if they still want a ticket.
+                                                                        This can&apos;t be undone.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction
+                                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                        onClick={() => removeEntry(entry.entryId)}
+                                                                    >
+                                                                        Remove
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -177,16 +334,19 @@ export default function WaitlistPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Email</TableHead>
+                                            <TableHead>Attendee</TableHead>
                                             <TableHead>Expires</TableHead>
                                             <TableHead>Time left</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {waitlist.pendingNotifications.map((n) => (
+                                        {waitlist.pendingNotifications.map((n: PendingNotificationRow) => (
                                             <TableRow key={n.couponId}>
-                                                <TableCell className="font-mono">
-                                                    {n.maskedEmail}
+                                                <TableCell>
+                                                    <AttendeeCell
+                                                        entry={n}
+                                                        href={registrationHref(n.registrationId)}
+                                                    />
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
                                                     {format(new Date(n.expiresAt), "d MMM yyyy, HH:mm")}

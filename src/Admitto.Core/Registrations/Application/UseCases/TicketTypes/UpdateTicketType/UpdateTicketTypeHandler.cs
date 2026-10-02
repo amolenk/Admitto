@@ -26,8 +26,8 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
              tc => tc.Id == eventId && tc.TeamId == teamId,
              cancellationToken);
 
-        catalog.UpdateTicketType(ticketTypeId, name, command.MaxCapacity, command.SelfServiceEnabled,
+        catalog.UpdateTicketType(ticketTypeId, name, command.PublicCapacity, command.SelfServiceEnabled,
             command.WaitlistEnabled, command.ClaimWindowHours, reconfirmationEmailLimit,
-            command.UpdateMaxReconfirmationEmails, command.ReservedCapacity);
+            command.UpdateMaxReconfirmationEmails);
     }
 }

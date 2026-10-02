@@ -115,10 +115,6 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("redeemed_at");
 
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("revoked_at");
-
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -134,6 +130,11 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
+
+                    b.Property<string>("WaitlistOrigin")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("waitlist_origin");
 
                     b.HasKey("Id");
 
@@ -570,6 +571,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<Guid>("Id")
                                 .HasJsonPropertyName("id");
 
+                            b1.Property<string>("Mode")
+                                .IsRequired()
+                                .HasJsonPropertyName("mode");
+
                             b1.Property<string>("Name")
                                 .IsRequired()
                                 .HasJsonPropertyName("name");
@@ -602,14 +607,14 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd();
 
+                            b1.Property<int>("AdminUsedCount")
+                                .HasJsonPropertyName("admin_used_count");
+
                             b1.Property<int>("ClaimWindowHours")
                                 .HasJsonPropertyName("claim_window_hours");
 
                             b1.Property<Guid>("Id")
                                 .HasJsonPropertyName("id");
-
-                            b1.Property<int?>("MaxCapacity")
-                                .HasJsonPropertyName("max_capacity");
 
                             b1.Property<int?>("MaxReconfirmationEmails")
                                 .HasJsonPropertyName("max_reconfirm_attempts");
@@ -618,6 +623,12 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                                 .IsRequired()
                                 .HasJsonPropertyName("name");
 
+                            b1.Property<int?>("PublicCapacity")
+                                .HasJsonPropertyName("public_capacity");
+
+                            b1.Property<int>("PublicUsedCapacity")
+                                .HasJsonPropertyName("public_used_capacity");
+
                             b1.Property<bool>("SelfServiceEnabled")
                                 .HasJsonPropertyName("self_service_enabled");
 
@@ -625,14 +636,17 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                                 .IsRequired()
                                 .HasJsonPropertyName("time_slots");
 
-                            b1.Property<int>("UsedCapacity")
-                                .HasJsonPropertyName("used_capacity");
-
                             b1.Property<bool>("WaitlistEnabled")
                                 .HasJsonPropertyName("waitlist_enabled");
 
+                            b1.Property<int>("WaitlistHeldCapacity")
+                                .HasJsonPropertyName("waitlist_held_capacity");
+
                             b1.Property<bool>("WaitlistMode")
                                 .HasJsonPropertyName("waitlist_mode");
+
+                            b1.Property<int>("WaitlistQueuedCount")
+                                .HasJsonPropertyName("waitlist_queued_count");
 
                             b1.HasKey("TicketCatalogId", "__synthesizedOrdinal");
 
@@ -780,11 +794,18 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd();
 
+                            b1.Property<DateTimeOffset>("ExpiresAt")
+                                .HasJsonPropertyName("expires_at");
+
                             b1.Property<Guid>("Id")
                                 .HasJsonPropertyName("id");
 
                             b1.Property<DateTimeOffset>("IssuedAt")
                                 .HasJsonPropertyName("issued_at");
+
+                            b1.Property<string>("Origin")
+                                .IsRequired()
+                                .HasJsonPropertyName("origin");
 
                             b1.Property<string>("Status")
                                 .IsRequired()
@@ -812,6 +833,9 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<DateTimeOffset>("AddedAt")
                                 .HasJsonPropertyName("added_at");
 
+                            b1.Property<Guid?>("CouponId")
+                                .HasJsonPropertyName("coupon_id");
+
                             b1.Property<string>("Email")
                                 .IsRequired()
                                 .HasJsonPropertyName("email");
@@ -821,6 +845,9 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
 
                             b1.Property<int>("Position")
                                 .HasJsonPropertyName("position");
+
+                            b1.Property<Guid>("RegistrationId")
+                                .HasJsonPropertyName("registration_id");
 
                             b1.Property<string>("Status")
                                 .IsRequired()

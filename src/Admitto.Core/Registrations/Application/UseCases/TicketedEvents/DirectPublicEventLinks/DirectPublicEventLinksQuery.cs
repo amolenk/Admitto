@@ -5,7 +5,8 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents
 internal sealed record DirectPublicEventLinksQuery(
     string EventSlug,
     string? ActionPath,
-    Guid? RegistrationId)
+    Guid? RegistrationId,
+    string? CouponCode = null)
     : Query<DirectPublicEventLinkDto?>;
 
 public sealed record DirectPublicEventLinkDto(string RedirectUrl);

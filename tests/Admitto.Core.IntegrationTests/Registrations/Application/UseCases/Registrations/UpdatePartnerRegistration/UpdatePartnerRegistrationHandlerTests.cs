@@ -1,6 +1,8 @@
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReleaseTickets;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
+using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -54,18 +56,18 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.UsedCapacity.ShouldBe(49);
-            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(11);
+            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.PublicUsedCapacity.ShouldBe(49);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.PublicUsedCapacity.ShouldBe(11);
         });
     }
 
-    // Given a registration holding a ticket originally claimed under the admin/reserved pool
-    // When the attendee updates their tickets via the partner API, keeping the reserved ticket
-    // Then the kept ticket's claim mode is preserved, so releasing it later credits the reserved buffer back
+    // Given a registration holding an admin ticket
+    // When the attendee updates their tickets via the partner API, keeping the admin ticket
+    // Then the kept ticket stays an admin ticket, so releasing it later frees no public seat
     [TestMethod]
-    public async ValueTask UpdatePartnerRegistration_KeepsExistingReservedTicket_PreservesClaimModeOnRelease()
+    public async ValueTask UpdatePartnerRegistration_KeepsExistingAdminTicket_PreservesClaimModeOnRelease()
     {
-        var fixture = UpdatePartnerRegistrationFixture.WithReservedCapacityTicket();
+        var fixture = UpdatePartnerRegistrationFixture.WithAdminTicket();
         await fixture.SetupAsync(Environment);
 
         var command = new UpdatePartnerRegistrationCommand(
@@ -87,7 +89,7 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             registration.ShouldNotBeNull();
             registration.Tickets.Count.ShouldBe(2);
             var vipTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("vip"));
-            vipTicket.Mode.ShouldBe(ClaimMode.Reserved);
+            vipTicket.Mode.ShouldBe(ClaimMode.Admin);
             var earlyBirdTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("early-bird"));
             earlyBirdTicket.Mode.ShouldBe(ClaimMode.Public);
         });
@@ -103,8 +105,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
             var vip = catalog.GetTicketType(fixture.GetTicketTypeId("vip"))!;
-            vip.UsedCapacity.ShouldBe(0);
-            vip.ReservedUsedCapacity.ShouldBe(0);
+            vip.PublicUsedCapacity.ShouldBe(0);
+            vip.AdminUsedCount.ShouldBe(0);
         });
     }
 
@@ -190,8 +192,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(ValidWorkshopCommand(fixture), testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [],
                 WaitlistableTicketTypeIds: [],
                 UnavailableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
@@ -200,11 +202,113 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         await AssertRegistrationStillOriginal(fixture);
     }
 
-    // Given a partner registration with a waitlist coupon that offers a specific ticket type
-    // When an update command omits the ticket type offered by the waitlist coupon
-    // Then a waitlist-coupon-ticket-missing error is thrown and the registration is left unchanged
+    // Given a waitlist coupon for a sold-out workshop issued to the attendee, with another attendee still queued
+    // When the attendee updates their registration to add the workshop using the coupon
+    // Then the workshop is claimed from the public pool, the coupon and its waitlist coupon are redeemed, and the other attendee stays queued
     [TestMethod]
-    public async ValueTask UpdatePartnerRegistration_WaitlistCouponOfferedTicketMissing_ThrowsAndLeavesRegistrationUnchanged()
+    public async ValueTask UpdatePartnerRegistration_WaitlistCoupon_ClaimsOfferedTicketAndRedeemsCoupon()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value],
+            [],
+            new Dictionary<string, string> { ["dietary"] = "vegan" },
+            fixture.CouponCode);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Tickets.ShouldContain(t =>
+                t.Id == fixture.GetTicketTypeId("workshop") && t.Mode == ClaimMode.Public);
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var catalog = await dbContext.TicketCatalogs
+                .FirstAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            var workshop = catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!;
+            workshop.PublicUsedCapacity.ShouldBe(2);
+            workshop.AdminUsedCount.ShouldBe(0);
+            workshop.WaitlistHeldCapacity.ShouldBe(0);
+
+            var waitlist = await dbContext.Waitlists
+                .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
+            waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
+            waitlist.HasActiveEntry(UpdatePartnerRegistrationFixture.AttendeeEmail).ShouldBeFalse();
+            waitlist.GetActivePosition(UpdatePartnerRegistrationFixture.OtherQueuedEmail).ShouldBe(1);
+        });
+    }
+
+    // Given an organiser coupon covering two sold-out ticket types, both of whose waitlists the attendee is on
+    // When the attendee updates their registration to confirm only one of them using the coupon, staying queued for the other
+    // Then only that ticket type is granted as an admin ticket, its waitlist entry is removed, the other ticket type is forfeited, and the coupon is redeemed
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_OrganiserMultiTicketTypeCoupon_GrantsSelectedTicketAndRemovesItsWaitlistEntry()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithOrganiserMultiTicketTypeCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value],
+            [fixture.GetTicketTypeId("masterclass").Value],
+            new Dictionary<string, string> { ["dietary"] = "vegan" },
+            fixture.CouponCode);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Tickets.Select(t => t.Id).ShouldBe(
+                [fixture.GetTicketTypeId("early-bird"), fixture.GetTicketTypeId("workshop")],
+                ignoreOrder: true);
+            registration.Tickets.ShouldContain(t =>
+                t.Id == fixture.GetTicketTypeId("workshop") && t.Mode == ClaimMode.Admin);
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var catalog = await dbContext.TicketCatalogs
+                .FirstAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            var workshop = catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!;
+            workshop.PublicUsedCapacity.ShouldBe(1);
+            workshop.AdminUsedCount.ShouldBe(1);
+            catalog.GetTicketType(fixture.GetTicketTypeId("masterclass"))!.PublicUsedCapacity.ShouldBe(1);
+
+            var workshopWaitlist = await dbContext.Waitlists
+                .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
+            workshopWaitlist.HasActiveEntry(UpdatePartnerRegistrationFixture.AttendeeEmail).ShouldBeFalse();
+            workshopWaitlist.GetActivePosition(UpdatePartnerRegistrationFixture.OtherQueuedEmail).ShouldBe(1);
+
+            var masterclassWaitlist = await dbContext.Waitlists
+                .FirstAsync(w => w.Id == fixture.GetTicketTypeId("masterclass"), testContext.CancellationToken);
+            masterclassWaitlist.GetActivePosition(UpdatePartnerRegistrationFixture.AttendeeEmail).ShouldBe(1);
+        });
+    }
+
+    // Given a waitlist coupon that offers a specific ticket type
+    // When an update command's confirmed selection omits every ticket type the coupon covers
+    // Then a no-coupon-ticket-type-selected error is thrown and the registration is left unchanged
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_CouponTicketTypesNotSelected_ThrowsAndLeavesRegistrationUnchanged()
     {
         var fixture = UpdatePartnerRegistrationFixture.WithWaitlistCoupon();
         await fixture.SetupAsync(Environment);
@@ -218,12 +322,40 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
             [fixture.GetTicketTypeId("early-bird").Value],
             [],
             new Dictionary<string, string> { ["dietary"] = "vegan" },
-            fixture.WaitlistCouponCode);
+            fixture.CouponCode);
 
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(UpdatePartnerRegistrationHandler.Errors.WaitlistCouponTicketMissing(fixture.GetTicketTypeId("workshop")));
+        result.Error.ShouldMatch(Coupon.Errors.NoCouponTicketTypeSelected([fixture.GetTicketTypeId("workshop").Value]));
+        await AssertRegistrationStillOriginal(fixture);
+    }
+
+    // Given an organiser coupon whose only ticket type in the submission is one the registration already holds
+    // When the attendee updates their registration keeping that ticket, using the coupon
+    // Then a no-coupon-ticket-type-selected error is thrown so the coupon is not used up without granting anything
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_CouponOverlapsOnlyExistingTicket_ThrowsAndLeavesRegistrationUnchanged()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithOrganiserMultiTicketTypeCoupon(coverExistingTicket: true);
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [fixture.GetTicketTypeId("early-bird").Value],
+            [fixture.GetTicketTypeId("workshop").Value, fixture.GetTicketTypeId("masterclass").Value],
+            new Dictionary<string, string> { ["dietary"] = "vegan" },
+            fixture.CouponCode);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
+
+        result.Error.ShouldMatch(Coupon.Errors.NoCouponTicketTypeSelected(
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value]));
         await AssertRegistrationStillOriginal(fixture);
     }
 
@@ -239,8 +371,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(ValidWorkshopCommand(fixture), testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [],
                 WaitlistableTicketTypeIds: [],
                 UnavailableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
@@ -329,7 +461,7 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
 
             var catalog = await dbContext.TicketCatalogs
                 .FirstAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
-            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(1);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.PublicUsedCapacity.ShouldBe(1);
 
             var waitlist = await dbContext.Waitlists
                 .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
@@ -359,8 +491,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
                 WaitlistableTicketTypeIds: [],
                 UnavailableTicketTypeIds: [],
@@ -394,8 +526,8 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        result.Error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 RegisterableTicketTypeIds: [],
                 WaitlistableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value],
                 UnavailableTicketTypeIds: [],
@@ -405,6 +537,193 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var registration = await Environment.RegistrationsDatabase.Context.Registrations
             .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
         registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("early-bird"));
+    }
+
+    // Given a confirmed early-bird ticket and an active entry on the sold-out workshop's waitlist
+    // When the attendee keeps the early-bird ticket but switches to the sold-out masterclass's waitlist
+    // Then a ticket-changed email is sent listing the early-bird ticket as confirmed and the masterclass as waitlisted
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_WaitlistToWaitlist_SendsTicketChangedEmail()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithTwoWaitlistModeWorkshops();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Test",
+            [fixture.GetTicketTypeId("early-bird").Value],
+            [fixture.GetTicketTypeId("masterclass").Value],
+            new Dictionary<string, string> { ["dietary"] = "old" });
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        var registration = await Environment.RegistrationsDatabase.Context.Registrations
+            .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<TicketsChangedDomainEvent>()
+            .ShouldHaveSingleItem();
+
+        var delivery = await TicketConfirmationEmailPipeline.PrepareAsync(
+            Environment, fixture.TeamId, fixture.EventId, domainEvent, testContext.CancellationToken);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.RecipientAddress.ShouldBe(UpdatePartnerRegistrationFixture.AttendeeEmail.Value);
+        var text = delivery.TextBody;
+        text.IndexOf("- Early Bird", StringComparison.Ordinal).ShouldBeLessThan(
+            text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal));
+        text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal).ShouldBeLessThan(
+            text.IndexOf("- Masterclass", StringComparison.Ordinal));
+        text.ShouldNotContain("- Workshop");
+    }
+
+    // Given a waitlist coupon for a sold-out workshop issued to the attendee, who also holds a confirmed early-bird ticket
+    // When the attendee updates their registration omitting the workshop from both the register and waitlist lists
+    // Then the offer is withdrawn (its coupon expired), no coupon ticket type is claimed, and the registration is not cancelled since it still holds the early-bird ticket
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_DeclineOfferWithOtherSelectionRemaining_WithdrawsOfferAndDoesNotCancel()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [fixture.GetTicketTypeId("early-bird").Value],
+            [],
+            new Dictionary<string, string> { ["dietary"] = "vegan" });
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.CancellationReason.ShouldBeNull();
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.GetStatus(DateTimeOffset.UtcNow).ShouldBe(CouponStatus.Expired);
+
+            var waitlist = await dbContext.Waitlists
+                .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
+            waitlist.HasOfferedEntry(UpdatePartnerRegistrationFixture.AttendeeEmail).ShouldBeFalse();
+            waitlist.GetActivePosition(UpdatePartnerRegistrationFixture.OtherQueuedEmail).ShouldBe(1);
+        });
+    }
+
+    // Given a waitlisted registration (no confirmed tickets) whose only selection is an outstanding workshop offer
+    // When the attendee updates their registration omitting the workshop from both the register and waitlist lists
+    // Then the offer is withdrawn and the registration is auto-cancelled, with no selection left anywhere
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_DeclineOfferAsLastSelection_CancelsRegistrationWithLeftWaitlist()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithSoleOutstandingOffer();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [],
+            [],
+            new Dictionary<string, string> { ["dietary"] = "vegan" });
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Cancelled);
+            registration.CancellationReason.ShouldBe(CancellationReason.LeftWaitlist);
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.GetStatus(DateTimeOffset.UtcNow).ShouldBe(CouponStatus.Expired);
+        });
+    }
+
+    // Given a waitlist coupon issued to the attendee for a sold-out workshop, with the attendee also holding a confirmed early-bird ticket
+    // When the attendee claims the offer via coupon in the same request that also changes additional details
+    // Then the coupon is redeemed for the workshop and not also expired by the waitlist-leave path
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_ClaimOfferedTicketWithOtherChanges_RedeemsCouponWithoutDoubleExpiry()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value],
+            [],
+            new Dictionary<string, string> { ["dietary"] = "vegan" },
+            fixture.CouponCode);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Tickets.ShouldContain(t => t.Id == fixture.GetTicketTypeId("workshop"));
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var waitlist = await dbContext.Waitlists
+                .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
+            waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
+        });
+    }
+
+    // Given a waitlist coupon issued to the attendee for a sold-out workshop
+    // When the attendee updates unrelated fields while keeping the workshop in the submitted waitlist list
+    // Then the outstanding offer entry is left untouched: no new entry is created and the coupon stays unredeemed
+    [TestMethod]
+    public async ValueTask UpdatePartnerRegistration_KeepsOfferedTicketType_LeavesOfferEntryUntouched()
+    {
+        var fixture = UpdatePartnerRegistrationFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdatePartnerRegistrationCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            "Alice",
+            "Anderson",
+            [fixture.GetTicketTypeId("early-bird").Value],
+            [fixture.GetTicketTypeId("workshop").Value],
+            new Dictionary<string, string> { ["dietary"] = "vegan" });
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldBeNull();
+            coupon.GetStatus(DateTimeOffset.UtcNow).ShouldBe(CouponStatus.Active);
+
+            var waitlist = await dbContext.Waitlists
+                .FirstAsync(w => w.Id == fixture.GetTicketTypeId("workshop"), testContext.CancellationToken);
+            waitlist.Entries.Count(e => e.Email == UpdatePartnerRegistrationFixture.AttendeeEmail).ShouldBe(1);
+            waitlist.HasOfferedEntry(UpdatePartnerRegistrationFixture.AttendeeEmail).ShouldBeTrue();
+        });
     }
 
     private static UpdatePartnerRegistrationCommand ValidWorkshopCommand(UpdatePartnerRegistrationFixture fixture) =>

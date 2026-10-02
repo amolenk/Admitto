@@ -12,7 +12,7 @@ public sealed class AttendeeTicketsChangedIntegrationEventHandlerTests
 {
     // Given an attendee has changed their ticket selection
     // When the ticket-change event is processed
-    // Then the attendee receives a ticket confirmation with the updated registration details
+    // Then the attendee receives a ticket confirmation with the updated confirmed and waitlisted ticket types
     [TestMethod]
     public async Task HandleAsync_TicketSelectionChanged_DelegatesRecipientAndIntent()
     {
@@ -25,6 +25,7 @@ public sealed class AttendeeTicketsChangedIntegrationEventHandlerTests
         var intent = (TicketConfirmationIntent)arguments[0]!;
         intent.FirstName.ShouldBe("Alice");
         intent.TicketTypes.ShouldBe(["General Admission"]);
+        intent.WaitlistedTicketTypes.ShouldBe(["Workshop"]);
         intent.RegistrationId.Value.ShouldBe(AttendeeTicketsChangedIntegrationEventHandlerFixture.RegistrationGuid);
 
         var delivery = fixture.DeliveryHandler.ReceivedDelivery();

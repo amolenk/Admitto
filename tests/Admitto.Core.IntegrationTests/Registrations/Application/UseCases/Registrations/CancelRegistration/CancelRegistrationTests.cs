@@ -1,4 +1,13 @@
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.Composing;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Application.Messaging;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration;
+using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
@@ -6,6 +15,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.CancelRegistration;
 
@@ -177,5 +187,93 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             registration.ShouldNotBeNull();
             registration.CancellationReason.ShouldBe(CancellationReason.AttendeeRequest);
         });
+    }
+
+    // Given a registration that holds no confirmed tickets and is only on a waitlist
+    // When the attendee cancels it
+    // Then the attendee is sent the waitlist-removal cancellation email rather than the ticket cancellation email
+    [TestMethod]
+    public async ValueTask CancelRegistration_WaitlistedRegistration_SendsWaitlistCancellationEmail()
+    {
+        var fixture = CancelRegistrationFixture.WaitlistedRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await CancelAndPrepareEmailAsync(fixture);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistCancellation);
+        delivery.Subject.ShouldBe("You've been removed from the DevConf waitlist");
+        delivery.TextBody.ShouldContain("removed you from the waitlist for DevConf");
+        delivery.TextBody.ShouldNotContain("cancel your registration");
+    }
+
+    // Given a registration that holds a confirmed ticket and is also on another ticket type's waitlist
+    // When the attendee cancels it
+    // Then the attendee is sent the existing ticket cancellation email
+    [TestMethod]
+    public async ValueTask CancelRegistration_RegisteredWithWaitlistEntry_SendsExistingCancellationEmail()
+    {
+        var fixture = CancelRegistrationFixture.RegisteredWithWaitlistEntry();
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await CancelAndPrepareEmailAsync(fixture);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.Cancellation);
+        delivery.Subject.ShouldBe("Your DevConf Registration Has Been Cancelled");
+        delivery.TextBody.ShouldContain("We’ve processed your request to cancel your registration for DevConf.");
+    }
+
+    // Given a registration that holds a confirmed ticket and no waitlist entries
+    // When the attendee cancels it
+    // Then the attendee is sent the existing ticket cancellation email
+    [TestMethod]
+    public async ValueTask CancelRegistration_RegisteredRegistration_SendsExistingCancellationEmail()
+    {
+        var fixture = CancelRegistrationFixture.ActiveRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await CancelAndPrepareEmailAsync(fixture);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.Cancellation);
+        delivery.Subject.ShouldBe("Your DevConf Registration Has Been Cancelled");
+        delivery.TextBody.ShouldContain("We’ve processed your request to cancel your registration for DevConf.");
+    }
+
+    /// <summary>
+    /// Cancels the fixture's registration at the attendee's request, then drives the raised domain
+    /// event through the real integration event publisher, cancellation email adapter, and composer,
+    /// returning the single prepared email delivery.
+    /// </summary>
+    private async ValueTask<PrepareEmailDeliveryCommand> CancelAndPrepareEmailAsync(CancelRegistrationFixture fixture)
+    {
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
+        await sut.HandleAsync(
+            new CancelRegistrationCommand(
+                fixture.RegistrationId.Value,
+                fixture.EventId.Value,
+                fixture.TeamId.Value,
+                CancellationReason.AttendeeRequest),
+            testContext.CancellationToken);
+
+        var registration = await Environment.RegistrationsDatabase.Context.Registrations
+            .FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<RegistrationCancelledDomainEvent>()
+            .ShouldHaveSingleItem();
+
+        var outbox = Substitute.For<IOutbox>();
+        IIntegrationEvent? capturedIntegrationEvent = null;
+        outbox.When(o => o.Enqueue(Arg.Any<IIntegrationEvent>()))
+            .Do(ci => capturedIntegrationEvent = ci.Arg<IIntegrationEvent>());
+        await new RegistrationsIntegrationEventPublisher(outbox)
+            .HandleAsync(domainEvent, testContext.CancellationToken);
+        var integrationEvent = capturedIntegrationEvent.ShouldBeOfType<RegistrationCancelledIntegrationEvent>();
+
+        var composerFixture = TransactionalEmailComposerFixture.CompleteEventContext();
+        await composerFixture.SetupAsync(Environment, fixture.TeamId, fixture.EventId);
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        await new RegistrationCancelledIntegrationEventHandler(composerFixture.BuildComposer(Environment), deliveryHandler)
+            .HandleAsync(integrationEvent, testContext.CancellationToken);
+
+        return deliveryHandler.ReceivedDelivery();
     }
 }

@@ -96,15 +96,14 @@ export function ticketTypeDto(overrides: Partial<TicketTypeDto> = {}): TicketTyp
         id: "cccccccc-0000-0000-0000-000000000001",
         name: "General Admission",
         timeSlots: [],
-        maxCapacity: null,
-        usedCapacity: 0,
+        publicCapacity: null,
+        publicUsedCapacity: 0,
+        adminUsedCount: 0,
         selfServiceEnabled: true,
         waitlistEnabled: false,
         waitlistMode: false,
         claimWindowHours: 0,
         maxReconfirmationEmails: null,
-        reservedCapacity: 0,
-        reservedUsedCapacity: 0,
         ...overrides,
     };
 }
@@ -274,7 +273,10 @@ export function waitlistEntryRow(overrides: Partial<WaitlistEntryRow> = {}): Wai
     return {
         entryId: "11112222-0000-0000-0000-000000000001",
         position: 1,
-        maskedEmail: "ali***@example.com",
+        registrationId: "22223333-0000-0000-0000-000000000001",
+        email: "alice@example.com",
+        firstName: "Alice",
+        lastName: "Doe",
         joinedAt: "2026-08-01T10:00:00Z",
         ...overrides,
     };
@@ -286,7 +288,10 @@ export function pendingNotificationRow(
 ): PendingNotificationRow {
     return {
         couponId: "22223333-0000-0000-0000-000000000001",
-        maskedEmail: "bob***@example.com",
+        registrationId: "44445555-0000-0000-0000-000000000001",
+        email: "bob@example.com",
+        firstName: "Bob",
+        lastName: "Smith",
         expiresAt: "2026-08-01T15:00:00Z",
         ...overrides,
     };
@@ -295,6 +300,7 @@ export function pendingNotificationRow(
 /** The full response of `GET .../ticket-types/{ticketTypeId}/waitlist`. */
 export function waitlistDetailsDto(overrides: Partial<WaitlistDetailsDto> = {}): WaitlistDetailsDto {
     return {
+        waitlistEnabled: true,
         activeEntries: [waitlistEntryRow()],
         pendingNotifications: [pendingNotificationRow()],
         stats: { totalWaiting: 1, totalPending: 1, sentToday: 0 },

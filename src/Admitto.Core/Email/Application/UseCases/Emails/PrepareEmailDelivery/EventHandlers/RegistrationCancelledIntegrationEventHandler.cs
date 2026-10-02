@@ -11,7 +11,8 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDel
 /// reason to a typed cancellation intent and dispatching the composer.
 /// </summary>
 /// <remarks>
-/// Template routing: AttendeeRequest → cancellation; VisaLetterDenied → visa-letter-denied.
+/// Template routing: AttendeeRequest → cancellation, or waitlist-cancellation when the registration
+/// held no confirmed tickets; VisaLetterDenied → visa-letter-denied; ReconfirmAutoCancel → reconfirm-cancelled.
 /// TicketTypesRemoved is a no-op.
 /// Idempotency key: <c>registration-cancelled:{integrationEventId}</c>.
 /// </remarks>
@@ -48,7 +49,9 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
         return integrationEvent.Reason switch
         {
             "AttendeeRequest" => new CancellationEmailDispatch(
-                new AttendeeRequestCancellationIntent(teamId, eventId, integrationEvent.FirstName, registrationId),
+                integrationEvent.WasWaitlisted
+                    ? new WaitlistCancellationIntent(teamId, eventId, integrationEvent.FirstName, registrationId)
+                    : new AttendeeRequestCancellationIntent(teamId, eventId, integrationEvent.FirstName, registrationId),
                 new TransactionalEmailDelivery(
                     integrationEvent.TeamId, integrationEvent.TicketedEventId,
                     integrationEvent.RecipientEmail, recipientName, idempotencyKey, integrationEvent.RegistrationId)),

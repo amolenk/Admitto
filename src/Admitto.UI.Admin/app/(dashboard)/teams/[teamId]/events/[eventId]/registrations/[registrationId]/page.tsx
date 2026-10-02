@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft,
     ArrowRightLeft,
     CheckCircle,
+    Clock,
+    Hourglass,
     LogIn,
     Mail,
     Sparkles,
     Trash2,
     RotateCcw,
+    UserMinus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
@@ -121,7 +124,17 @@ function isSharedScannerSource(metadata?: string | null): boolean {
 
 // ── Timeline item definition ──────────────────────────────────────────────────
 
-type TimelineKind = "registered" | "reconfirmed" | "cancelled" | "ticketschanged" | "checkedin" | "email";
+type TimelineKind =
+    | "registered"
+    | "reconfirmed"
+    | "cancelled"
+    | "ticketschanged"
+    | "checkedin"
+    | "waitlistoffersent"
+    | "waitlistofferexpired"
+    | "waitlistremoved"
+    | "waitlistselectionchanged"
+    | "email";
 
 interface TimelineEntry {
     kind: TimelineKind;
@@ -142,6 +155,14 @@ function buildTimeline(
         if (kind === "registered") {
             title = "Started registration";
             detail = "Attendee registered for the event.";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { waitlisted?: string[] };
+                if (meta.waitlisted && meta.waitlisted.length > 0) {
+                    detail += ` Waitlisted for: ${meta.waitlisted.join(", ")}.`;
+                }
+            } catch {
+                // No metadata to parse; keep the base detail text.
+            }
         } else if (kind === "reconfirmed") {
             title = "Attendance reconfirmed";
             detail = "Registration was reconfirmed.";
@@ -164,6 +185,46 @@ function buildTimeline(
             detail = isSharedScannerSource(a.metadata)
                 ? "Attendee was checked in at the door via the shared scanner."
                 : "Attendee was checked in at the door.";
+        } else if (kind === "waitlistoffersent") {
+            title = "Waitlist offer sent";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { ticketType?: string };
+                detail = meta.ticketType
+                    ? `Offered a ${meta.ticketType} ticket off the waitlist.`
+                    : "Offered a ticket off the waitlist.";
+            } catch {
+                detail = "Offered a ticket off the waitlist.";
+            }
+        } else if (kind === "waitlistofferexpired") {
+            title = "Waitlist offer expired";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { ticketType?: string };
+                detail = meta.ticketType
+                    ? `The ${meta.ticketType} waitlist offer lapsed unclaimed.`
+                    : "The waitlist offer lapsed unclaimed.";
+            } catch {
+                detail = "The waitlist offer lapsed unclaimed.";
+            }
+        } else if (kind === "waitlistremoved") {
+            title = "Removed from waitlist";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { ticketType?: string };
+                detail = meta.ticketType
+                    ? `Removed from the ${meta.ticketType} waitlist.`
+                    : "Attendee left the waitlist.";
+            } catch {
+                detail = "Attendee left the waitlist.";
+            }
+        } else if (kind === "waitlistselectionchanged") {
+            title = "Waitlist selection changed";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { from?: string[]; to?: string[] };
+                const from = (meta.from ?? []).join(", ") || "—";
+                const to = (meta.to ?? []).join(", ") || "—";
+                detail = `${from} → ${to}`;
+            } catch {
+                detail = "Waitlisted ticket selection was updated.";
+            }
         }
         return { kind, ts: a.occurredAt, title, detail };
     });
@@ -189,6 +250,14 @@ export default function AttendeeDetailPage() {
         eventId: string;
         registrationId: string;
     }>();
+    const searchParams = useSearchParams();
+    const cameFromWaitlist = searchParams.get("from") === "waitlist";
+    const waitlistTicketTypeId = searchParams.get("ticketTypeId");
+    const backLink =
+        cameFromWaitlist && waitlistTicketTypeId
+            ? `/teams/${teamId}/events/${eventId}/ticket-types/${waitlistTicketTypeId}/waitlist`
+            : `/teams/${teamId}/events/${eventId}/registrations`;
+    const backLabel = cameFromWaitlist && waitlistTicketTypeId ? "Waitlist" : "Registrations";
     const queryClient = useQueryClient();
     const { selectedTeam } = useTeams();
     const canManageAttendees = selectedTeam?.canManageAttendees === true;
@@ -318,7 +387,7 @@ export default function AttendeeDetailPage() {
             const response = await apiClient.post<CheckInResponse>(`/api/teams/${teamId}/events/${eventId}/registrations/check-in`, { credential: registrationId });
             const result = mapCheckInOutcome(response);
             if (result.kind !== "success") {
-                toast.error(result.kind === "duplicate" ? `Already checked in${response.checkedInAt && eventQuery.data ? ` at ${formatInEventZone(response.checkedInAt, eventQuery.data.timeZone, "HH:mm")}` : ""}` : result.kind === "cancelled" ? "Cancelled — Create Registration is required." : result.kind === "inactive" ? "This event is not active." : "This attendee is not valid for this event.");
+                toast.error(result.kind === "duplicate" ? `Already checked in${response.checkedInAt && eventQuery.data ? ` at ${formatInEventZone(response.checkedInAt, eventQuery.data.timeZone, "HH:mm")}` : ""}` : result.kind === "cancelled" ? "Cancelled — Create Registration is required." : result.kind === "waitlisted" ? "Waitlisted — this attendee has no ticket to check in." : result.kind === "inactive" ? "This event is not active." : "This attendee is not valid for this event.");
                 return;
             }
             await queryClient.invalidateQueries({ queryKey: ["registration-detail", teamId, eventId, registrationId] });
@@ -361,8 +430,8 @@ export default function AttendeeDetailPage() {
             {/* Back link */}
             <div className="flex items-center gap-2 text-[13px]">
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-                    <Link href={`/teams/${teamId}/events/${eventId}/registrations`}>
-                        <ArrowLeft className="size-3.5" /> Registrations
+                    <Link href={backLink}>
+                        <ArrowLeft className="size-3.5" /> {backLabel}
                     </Link>
                 </Button>
                 {name && (
@@ -436,6 +505,10 @@ export default function AttendeeDetailPage() {
                                             <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
                                                 Cancelled
                                             </Badge>
+                                        ) : registration.status === "waitlisted" ? (
+                                            <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10">
+                                                Waitlisted
+                                            </Badge>
                                         ) : registration.checkedInAt ? (
                                             <Badge variant="outline" className="text-success border-success/30 bg-success/10">
                                                 Checked in
@@ -466,9 +539,9 @@ export default function AttendeeDetailPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 flex-none">
-                                {registration.status === "registered" && (
+                                {registration.status !== "cancelled" && (
                                     <>
-                                        {canManageAttendees && <Button
+                                        {registration.status === "registered" && canManageAttendees && <Button
                                             variant="outline"
                                             size="sm"
                                             disabled={isResendingTicketEmail}
@@ -477,8 +550,8 @@ export default function AttendeeDetailPage() {
                                             <RotateCcw className="size-3.5" />
                                             {isResendingTicketEmail ? "Requesting…" : "Resend ticket email"}
                                         </Button>}
-                                        {!registration.checkedInAt && <Button variant="outline" size="sm" onClick={() => setCheckInDialogOpen(true)}><LogIn className="size-3.5" /> Check in</Button>}
-                                        {canManageAttendees && !registration.hasReconfirmed && !registration.checkedInAt && (
+                                        {registration.status === "registered" && !registration.checkedInAt && <Button variant="outline" size="sm" onClick={() => setCheckInDialogOpen(true)}><LogIn className="size-3.5" /> Check in</Button>}
+                                        {registration.status === "registered" && canManageAttendees && !registration.hasReconfirmed && !registration.checkedInAt && (
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -510,59 +583,32 @@ export default function AttendeeDetailPage() {
                     <div className="grid grid-cols-12 gap-5">
                         {/* Left column */}
                         <div className="col-span-12 lg:col-span-5 flex flex-col gap-5">
-                            {/* Attendee details card */}
-                            <Card className="p-5">
-                                <div className="mb-3">
-                                    <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
-                                        Attendee
-                                    </div>
-                                    <h3 className="font-display text-[18px] font-semibold mt-0.5">
-                                        Details
-                                    </h3>
-                                </div>
-                                <dl className="divide-y">
-                                    {[
-                                        ["Full name", name],
-                                        [
-                                            "Email",
-                                            <a
-                                                key="email"
-                                                href={`mailto:${registration.email}`}
-                                                className="text-primary hover:underline truncate inline-block max-w-full"
-                                            >
-                                                {registration.email}
-                                            </a>,
-                                        ],
-                                        [
-                                            "Registration ID",
-                                            <span key="id" className="font-mono text-[12.5px]">
-                                                {registration.id}
-                                            </span>,
-                                        ],
-                                        ["Status", registration.status === "registered" ? "Registered" : "Cancelled"],
-                                        [
-                                            "Reconfirmed",
-                                            registration.hasReconfirmed
-                                                ? formatTs(registration.reconfirmedAt!)
-                                                : "—",
-                                        ],
-                                        ...(Object.keys(registration.additionalDetails ?? {}).length > 0
-                                            ? Object.entries(registration.additionalDetails).map(([k, v]) => [k, v])
-                                            : []),
-                                    ].map(([label, value], i) => (
-                                        <div
-                                            key={i}
-                                            className="grid grid-cols-[130px_1fr] gap-3 py-2.5 text-[13.5px]"
-                                        >
-                                            <dt className="text-muted-foreground">{label}</dt>
-                                            <dd className="min-w-0 truncate">{value}</dd>
+                            {/* Additional fields card — only shown when the event collects custom fields */}
+                            {Object.keys(registration.additionalDetails ?? {}).length > 0 && (
+                                <Card className="p-5">
+                                    <div className="mb-3">
+                                        <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
+                                            Attendee
                                         </div>
-                                    ))}
-                                </dl>
-                                <div className="mt-3 border-t pt-3 text-[13.5px]"><span className="text-muted-foreground">Attendance</span><span className="ml-3">{registration.checkedInAt ? `Checked in · ${eventQuery.data ? formatInEventZone(registration.checkedInAt, eventQuery.data.timeZone, "yyyy-MM-dd HH:mm") : "time unavailable"}` : "Not checked in"}</span></div>
-                            </Card>
+                                        <h3 className="font-display text-[18px] font-semibold mt-0.5">
+                                            Additional fields
+                                        </h3>
+                                    </div>
+                                    <dl className="divide-y">
+                                        {Object.entries(registration.additionalDetails).map(([label, value]) => (
+                                            <div
+                                                key={label}
+                                                className="grid grid-cols-[130px_1fr] gap-3 py-2.5 text-[13.5px]"
+                                            >
+                                                <dt className="text-muted-foreground">{label}</dt>
+                                                <dd className="min-w-0 truncate">{value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </Card>
+                            )}
 
-                            {/* Tickets card */}
+                            {/* Tickets card — one row per ticket type the attendee holds or is waitlisted for */}
                             <Card className="p-5">
                                 <div className="flex items-center justify-between mb-3">
                                     <div>
@@ -577,7 +623,7 @@ export default function AttendeeDetailPage() {
                                         variant="ghost"
                                         size="sm"
                                         className="text-muted-foreground"
-                                        disabled={registration.status !== "registered"}
+                                        disabled={registration.status === "cancelled"}
                                         onClick={() => {
                                             setSelectedTicketTypeIds(registration.tickets.map((t) => t.id));
                                             setChangeTicketsDialogOpen(true);
@@ -587,35 +633,60 @@ export default function AttendeeDetailPage() {
                                     </Button>}
                                 </div>
                                 <div className="flex flex-col gap-3">
-                                    {registration.tickets.length === 0 ? (
+                                    {registration.tickets.length === 0 && registration.waitlistEntries.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">No tickets.</p>
                                     ) : (
-                                        registration.tickets.map((ticket) => {
-                                            const isCancelled = registration.status === "cancelled";
-                                            return (
+                                        <>
+                                            {registration.tickets.map((ticket) => {
+                                                const isCancelled = registration.status === "cancelled";
+                                                return (
+                                                    <Card
+                                                        key={ticket.id}
+                                                        className={`ticket-card overflow-hidden py-3 ${isCancelled ? "opacity-60" : ""}`}
+                                                    >
+                                                        <div className="px-5">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <h4 className="font-display text-lg font-semibold">{ticket.name}</h4>
+                                                                {isCancelled ? (
+                                                                    <Badge variant="secondary">Released</Badge>
+                                                                ) : (
+                                                                    <Badge variant="outline" className="text-success border-success/30 bg-success/10">
+                                                                        Active
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                            <div className="ticket-perf" aria-hidden="true" />
+                                                        </div>
+                                                    </Card>
+                                                );
+                                            })}
+                                            {registration.waitlistEntries.map((entry) => (
                                                 <Card
-                                                    key={ticket.id}
-                                                    className={`ticket-card overflow-hidden py-3 ${isCancelled ? "opacity-60" : ""}`}
+                                                    key={entry.ticketTypeName}
+                                                    className="ticket-card overflow-hidden py-3"
                                                 >
                                                     <div className="px-5">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <h4 className="font-display text-lg font-semibold">{ticket.name}</h4>
-                                                            {isCancelled ? (
-                                                                <Badge variant="secondary">Released</Badge>
-                                                            ) : (
-                                                                <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-                                                                    Active
-                                                                </Badge>
-                                                            )}
+                                                            <h4 className="font-display text-lg font-semibold">{entry.ticketTypeName}</h4>
+                                                            <Badge variant="outline" className="text-amber-600 border-amber-600/30 bg-amber-600/10">
+                                                                <Hourglass className="size-3 mr-1" />
+                                                                Waitlist
+                                                            </Badge>
                                                         </div>
+                                                        <p className="text-[12.5px] text-muted-foreground">
+                                                            {entry.isOffered
+                                                                ? `Coupon offered${entry.offerExpiresAt ? ` · expires ${new Date(entry.offerExpiresAt).toLocaleString()}` : ""}`
+                                                                : `#${entry.position} in line`}
+                                                        </p>
                                                         <div className="ticket-perf" aria-hidden="true" />
                                                     </div>
                                                 </Card>
-                                            );
-                                        })
+                                            ))}
+                                        </>
                                     )}
                                 </div>
                             </Card>
+
                         </div>
 
                         {/* Right column — Activity & emails */}
@@ -847,6 +918,30 @@ const kindMeta: Record<
         borderClass: "border-emerald-200",
         Icon: LogIn,
     },
+    waitlistoffersent: {
+        color: "text-sky-600",
+        bgClass: "bg-sky-50",
+        borderClass: "border-sky-200",
+        Icon: Clock,
+    },
+    waitlistofferexpired: {
+        color: "text-muted-foreground",
+        bgClass: "bg-muted/60",
+        borderClass: "border-border",
+        Icon: Clock,
+    },
+    waitlistremoved: {
+        color: "text-destructive",
+        bgClass: "bg-destructive/6",
+        borderClass: "border-destructive/25",
+        Icon: UserMinus,
+    },
+    waitlistselectionchanged: {
+        color: "text-amber-600",
+        bgClass: "bg-amber-50",
+        borderClass: "border-amber-200",
+        Icon: ArrowRightLeft,
+    },
     email: {
         color: "text-muted-foreground",
         bgClass: "bg-muted/60",
@@ -871,7 +966,19 @@ function TimelineItem({ entry }: { entry: TimelineEntry }) {
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[14px] font-medium">{entry.title}</span>
                         <Badge variant="outline" className="text-[0.65rem] text-muted-foreground capitalize">
-                            {entry.kind === "ticketschanged" ? "tickets changed" : entry.kind === "checkedin" ? "Checked-in" : entry.kind}
+                            {entry.kind === "ticketschanged"
+                                ? "tickets changed"
+                                : entry.kind === "checkedin"
+                                  ? "Checked-in"
+                                  : entry.kind === "waitlistoffersent"
+                                    ? "waitlist offer sent"
+                                    : entry.kind === "waitlistofferexpired"
+                                      ? "waitlist offer expired"
+                                      : entry.kind === "waitlistremoved"
+                                        ? "waitlist removed"
+                                        : entry.kind === "waitlistselectionchanged"
+                                          ? "waitlist changed"
+                                          : entry.kind}
                         </Badge>
                     </div>
                     <div className="text-[12.5px] text-muted-foreground mt-0.5">{entry.detail}</div>

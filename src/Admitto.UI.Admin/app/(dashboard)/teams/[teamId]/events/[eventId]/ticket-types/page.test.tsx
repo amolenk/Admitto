@@ -30,8 +30,8 @@ const workshop = ticketTypeDto({
     id: "33333333-3333-3333-3333-333333333333",
     name: "Workshop Pass",
     timeSlots: ["morning", "afternoon"],
-    maxCapacity: 100,
-    usedCapacity: 25,
+    publicCapacity: 100,
+    publicUsedCapacity: 25,
     selfServiceEnabled: true,
 });
 
@@ -39,8 +39,8 @@ const unlimited = ticketTypeDto({
     id: "44444444-4444-4444-4444-444444444444",
     name: "Staff Pass",
     timeSlots: [],
-    maxCapacity: null,
-    usedCapacity: 7,
+    publicCapacity: null,
+    publicUsedCapacity: 7,
     selfServiceEnabled: false,
 });
 
@@ -88,26 +88,40 @@ describe("TicketTypesPage", () => {
         expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
     });
 
-    // Given a ticket type with a reserved capacity buffer only partly consumed by admin claims
+    // Given a ticket type whose public capacity is full and that has admin tickets on top
     // When the ticket type card renders
-    // Then it shows the actual reserved-used count and does not report public sold-out
-    it("shows the actual reserved-used count and stays available while reserved buffer remains", async () => {
-        const reservedWorkshop = ticketTypeDto({
+    // Then it shows sold out, counts the admin tickets in the total and shows no warning about exceeding a total
+    it("shows the public, admin and total counts for a publicly sold-out ticket type", async () => {
+        const workshopWithAdmins = ticketTypeDto({
             id: "55555555-5555-5555-5555-555555555555",
             name: "AI Workshop",
-            maxCapacity: 20,
-            usedCapacity: 3,
-            reservedCapacity: 18,
-            reservedUsedCapacity: 3,
+            publicCapacity: 20,
+            publicUsedCapacity: 20,
+            adminUsedCount: 3,
         });
-        mockData([reservedWorkshop]);
+        mockData([workshopWithAdmins]);
 
         renderPage();
 
         await screen.findByRole("heading", { name: "AI Workshop" });
         const card = cardFor("AI Workshop");
+        expect(within(card).getByText("Sold out")).toBeInTheDocument();
+        expect(within(card).getByText("23")).toBeInTheDocument();
+        expect(within(card).getByText("23/23")).toBeInTheDocument();
+        expect(within(card).queryByText(/exceed/i)).not.toBeInTheDocument();
+    });
+
+    // Given a ticket type with an unlimited public capacity and admin tickets
+    // When the ticket type card renders
+    // Then the summary shows an unlimited public capacity and stays available
+    it("shows an unlimited public capacity in the summary", async () => {
+        mockData([ticketTypeDto({ name: "Staff Pass", publicCapacity: null, publicUsedCapacity: 7, adminUsedCount: 2 })]);
+
+        renderPage();
+
+        await screen.findByRole("heading", { name: "Staff Pass" });
+        const card = cardFor("Staff Pass");
         expect(within(card).getByText("Available")).toBeInTheDocument();
-        expect(within(card).queryByText("Sold out")).not.toBeInTheDocument();
-        expect(within(card).getByText("3 / 18 used")).toBeInTheDocument();
+        expect(within(card).getByText("9/\u221E")).toBeInTheDocument();
     });
 });

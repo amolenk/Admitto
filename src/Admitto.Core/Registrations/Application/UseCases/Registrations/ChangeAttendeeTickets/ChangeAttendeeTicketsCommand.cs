@@ -8,4 +8,4 @@ internal sealed record ChangeAttendeeTicketsCommand(
     Guid RegistrationId,
     IReadOnlyList<Guid> TicketTypeIds,
     ChangeMode Mode,
-    Guid? WaitlistCouponCode = null) : Command;
+    Guid? CouponCode = null) : Command;

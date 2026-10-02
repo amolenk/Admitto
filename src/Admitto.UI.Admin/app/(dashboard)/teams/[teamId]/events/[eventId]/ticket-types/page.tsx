@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
+import { formatCapacitySummary, ticketCapacity } from "@/lib/ticket-capacity";
 import { PageLayout } from "@/components/page-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,15 +33,10 @@ async function fetchTicketTypes(teamId: string, eventId: string): Promise<Ticket
 function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: string; eventId: string }) {
     const [editOpen, setEditOpen] = useState(false);
 
-    const cap = Number(t.maxCapacity) || 0;
-    const used = Number(t.usedCapacity);
-    const reserved = Number(t.reservedCapacity) || 0;
-    const reservedUsed = Number(t.reservedUsedCapacity) || 0;
-    const heldBack = Math.max(0, reserved - reservedUsed);
-    const publicAvailable = cap > 0 ? Math.max(0, cap - used - heldBack) : 0;
-    const isPubliclySoldOut = cap > 0 && publicAvailable <= 0;
-    const remaining = cap > 0 ? cap - used : 0;
-    const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
+    const capacity = ticketCapacity(t);
+    const cap = capacity.publicCapacity;
+    const used = capacity.publicUsed;
+    const pct = capacity.publicUsedPercent ?? 0;
 
     return (
         <>
@@ -49,13 +45,19 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                     <div className="min-w-0 mb-1">
                         <h3 className="font-display text-lg font-semibold truncate">{t.name}</h3>
                         <div className="flex items-center justify-between gap-2 mt-1">
-                            <div>
-                                {cap > 0 && isPubliclySoldOut ? (
+                            <div className="flex items-center gap-1.5">
+                                {capacity.isPubliclySoldOut ? (
                                     <Badge variant="secondary">Sold out</Badge>
                                 ) : (
                                     <Badge variant="outline" className="text-success border-success/30 bg-success/10">
                                         <span className="pulse-dot mr-1" style={{ width: 6, height: 6 }} />
                                         Available
+                                    </Badge>
+                                )}
+                                {t.waitlistMode && (
+                                    <Badge variant="outline" className="text-amber-600 border-amber-600/30 bg-amber-600/10">
+                                        <Hourglass className="size-3 mr-1" />
+                                        Waitlist active
                                     </Badge>
                                 )}
                             </div>
@@ -79,49 +81,45 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                     <div className="grid grid-cols-3 gap-4 mt-4">
                         <div>
                             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Registered</div>
-                            <div className="font-mono tabular-nums text-[22px] font-semibold mt-0.5">{used}</div>
+                            <div className="font-mono tabular-nums text-[22px] font-semibold mt-0.5">{capacity.total}</div>
                         </div>
                         <div>
                             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Remaining</div>
-                            <div className={`font-mono tabular-nums text-[22px] font-semibold mt-0.5 ${cap > 0 && remaining === 0 ? "text-muted-foreground" : ""}`}>
-                                {cap > 0 ? remaining : "\u221E"}
+                            <div className={`font-mono tabular-nums text-[22px] font-semibold mt-0.5 ${capacity.isPubliclySoldOut ? "text-muted-foreground" : ""}`}>
+                                {capacity.publicRemaining ?? "\u221E"}
                             </div>
                         </div>
                         <div>
-                            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Capacity</div>
+                            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Public capacity</div>
                             <div className="font-mono tabular-nums text-[22px] font-semibold mt-0.5">
-                                {cap > 0 ? cap : "\u221E"}
+                                {cap ?? "\u221E"}
                             </div>
                         </div>
                     </div>
 
                     <div className="mt-4">
                         <div className="capacity-bar">
-                            {cap > 0 && (
+                            {cap != null && (
                                 <span style={{ width: `${pct}%` }} />
                             )}
                         </div>
                         <div className="flex justify-between text-[11px] text-muted-foreground mt-1.5 font-mono tabular-nums">
-                            {cap > 0 ? (
+                            {cap != null ? (
                                 <>
-                                    <span>{pct}% registered</span>
+                                    <span>{pct}% of public sold</span>
                                     <span>cap {cap}</span>
                                 </>
                             ) : (
                                 <>
-                                    <span>{used} registered</span>
+                                    <span>{used} public</span>
                                     <span>unlimited</span>
                                 </>
                             )}
                         </div>
-                    </div>
-
-                    {reserved > 0 && (
-                        <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
-                            <span>Reserved for admin/coupons</span>
-                            <span className="font-mono tabular-nums">{reservedUsed} / {reserved} used</span>
+                        <div className="mt-2 text-[11px] text-muted-foreground font-mono tabular-nums">
+                            {formatCapacitySummary(capacity)}
                         </div>
-                    )}
+                    </div>
 
                     {t.timeSlots && t.timeSlots.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">

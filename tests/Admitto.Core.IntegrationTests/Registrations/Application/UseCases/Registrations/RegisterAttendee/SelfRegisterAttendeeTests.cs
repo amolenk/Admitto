@@ -1,5 +1,10 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -21,7 +26,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_Success_CreatesRegistrationAndUpdatesCapacity()
     {
-        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(max: 100, used: 50);
+        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(publicCapacity: 100, used: 50);
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, "dave@example.com", fixture.TicketTypeId.Value);
@@ -39,7 +44,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(51);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(51);
         });
     }
 
@@ -67,7 +72,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
             var ticketType = (await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken))
                 .TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop"));
-            ticketType.UsedCapacity.ShouldBe(20);
+            ticketType.PublicUsedCapacity.ShouldBe(20);
         });
     }
 
@@ -216,8 +221,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).UsedCapacity.ShouldBe(1);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).PublicUsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).PublicUsedCapacity.ShouldBe(1);
         });
     }
 
@@ -322,7 +327,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         {
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes[0].PublicUsedCapacity.ShouldBe(0);
         });
     }
 
@@ -388,7 +393,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().Single().RegisteredAt.ShouldBe(resetAt);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).PublicUsedCapacity.ShouldBe(1);
         });
     }
 
@@ -419,7 +424,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.CancellationReason.ShouldBe(CancellationReason.AttendeeRequest);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).PublicUsedCapacity.ShouldBe(0);
         });
     }
 
@@ -466,7 +471,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        result.RegistrationId.ShouldNotBeNull();
         result.RegisteredTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-a").Value]);
         result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-b").Value]);
 
@@ -499,14 +503,13 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        result.RegistrationId.ShouldNotBeNull();
         result.RegisteredTicketTypeIds.ShouldBeEmpty();
         result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-b").Value]);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
-            registration.Id.Value.ShouldBe(result.RegistrationId!.Value);
+            registration.Id.Value.ShouldBe(result.RegistrationId);
             registration.Email.Value.ShouldBe("dave@example.com");
             registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
             registration.Tickets.ShouldBeEmpty();
@@ -514,6 +517,79 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
             waitlist.Entries.ShouldHaveSingleItem().Email.Value.ShouldBe("dave@example.com");
         });
+    }
+
+    // Given a ticket type only available via waitlist and an additional-detail schema
+    // When an attendee submits only a waitlist request along with additional details
+    // Then the additional details are persisted on the resulting waitlisted registration
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnly_PersistsAdditionalDetails()
+    {
+        var fixture = RegisterAttendeeFixture
+            .WithAdditionalDetailSchemaAndWaitlistOnlyTicket(("tshirt", "T-shirt size", 5));
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [],
+            [fixture.GetTicketTypeId("workshop").Value],
+            new Dictionary<string, string> { ["tshirt"] = "L" });
+        var sut = NewHandler();
+
+        var result = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop").Value]);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
+            registration.AdditionalDetails["tshirt"].ShouldBe("L");
+        });
+    }
+
+    // Given a ticket type only available via waitlist
+    // When an attendee signs up for only that ticket type's waitlist
+    // Then their confirmation email lists the waitlisted ticket type and has no confirmed-ticket language or QR code
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnly_SendsWaitlistConfirmationEmail()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await RegisterAndPrepareEmailAsync(
+            fixture, [], [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistConfirmation);
+        delivery.Subject.ShouldBe("Admitto: You're on the DevConf waitlist");
+        delivery.TextBody.ShouldContain("You're on the waitlist for:");
+        delivery.TextBody.ShouldContain("- Workshop B");
+        delivery.TextBody.ShouldNotContain("Your registration has been confirmed");
+        delivery.HtmlBody.ShouldNotContain("QR");
+    }
+
+    // Given one ticket type available for registration and another only available via waitlist
+    // When an attendee registers for the first and joins the waitlist for the second
+    // Then one confirmation email lists the confirmed and the waitlisted ticket type in separate sections
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_MixedRegistrationAndWaitlist_SendsConfirmationDescribingBoth()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await RegisterAndPrepareEmailAsync(
+            fixture, [fixture.GetTicketTypeId("workshop-a").Value], [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.Subject.ShouldBe("Admitto: Your DevConf Ticket");
+        var text = delivery.TextBody;
+        var confirmedHeader = text.IndexOf("Your confirmed ticket type(s):", StringComparison.Ordinal);
+        var waitlistHeader = text.IndexOf("You're on the waitlist for:", StringComparison.Ordinal);
+        confirmedHeader.ShouldBeGreaterThanOrEqualTo(0);
+        confirmedHeader.ShouldBeLessThan(text.IndexOf("- Workshop A", StringComparison.Ordinal));
+        text.IndexOf("- Workshop A", StringComparison.Ordinal).ShouldBeLessThan(waitlistHeader);
+        waitlistHeader.ShouldBeLessThan(text.IndexOf("- Workshop B", StringComparison.Ordinal));
+        delivery.HtmlBody.ShouldContain("QR");
     }
 
     // Given a ticket type that was in waitlist mode but has since become directly registerable
@@ -582,9 +658,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
             (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).UsedCapacity.ShouldBe(0);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-b")).UsedCapacity.ShouldBe(1);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-c")).UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).PublicUsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-b")).PublicUsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-c")).PublicUsedCapacity.ShouldBe(0);
         });
     }
 
@@ -641,7 +717,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static RegisterAttendeeSelfServiceCommand NewCommand(
+    private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         params Guid[] ticketTypeIds)
@@ -654,7 +730,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             ticketTypeIds,
             []);
 
-    private static RegisterAttendeeSelfServiceCommand NewCommand(
+    private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         Guid[] registerTicketTypeIds,
@@ -668,7 +744,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registerTicketTypeIds,
             waitlistTicketTypeIds);
 
-    private static RegisterAttendeeSelfServiceCommand NewCommand(
+    private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         Guid[] ticketTypeIds,
@@ -683,6 +759,22 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             [],
             AdditionalDetails: additionalDetails);
 
+    private static RegisterAttendeeCommand NewCommand(
+        RegisterAttendeeFixture fixture,
+        string email,
+        Guid[] registerTicketTypeIds,
+        Guid[] waitlistTicketTypeIds,
+        IReadOnlyDictionary<string, string>? additionalDetails)
+        => new(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            email,
+            "Test",
+            "User",
+            registerTicketTypeIds,
+            waitlistTicketTypeIds,
+            AdditionalDetails: additionalDetails);
+
     private static void AssertAttendeeRegisteredEvent(Registration registration)
     {
         var domainEvent = registration.GetDomainEvents()
@@ -695,6 +787,139 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         domainEvent.Tickets.ShouldBe(registration.Tickets);
     }
 
+    // Given an attendee whose registration was cancelled
+    // When they submit a waitlist-only request
+    // Then the registration is reactivated as Waitlisted and they get the waitlist confirmation email
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnlyFromCancelledRegistration_ReactivatesAsWaitlisted()
+    {
+        var fixture = RegisterAttendeeFixture.WithWaitlistTicketsForExistingAttendee(
+            RegisterAttendeeFixture.ExistingAttendeeState.Cancelled);
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await RegisterAndPrepareEmailAsync(
+            fixture, [], [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistConfirmation);
+        delivery.TextBody.ShouldContain("- Workshop B");
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Id.ShouldBe(fixture.ExistingRegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
+            registration.Tickets.ShouldBeEmpty();
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.HasActiveEntry(RegisterAttendeeFixture.ExistingAttendeeEmail).ShouldBeTrue();
+        });
+    }
+
+    // Given a waitlisted registration whose waitlist entries are all gone (its offer expired)
+    // When the attendee registers for an available ticket type
+    // Then the registration becomes Registered instead of being rejected as a duplicate
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_LapsedWaitlistedRegistration_RegistersAgain()
+    {
+        var fixture = RegisterAttendeeFixture.WithWaitlistTicketsForExistingAttendee(
+            RegisterAttendeeFixture.ExistingAttendeeState.LapsedWaitlisted);
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            NewCommand(fixture, "dave@example.com", [fixture.GetTicketTypeId("workshop-a").Value], []),
+            testContext.CancellationToken);
+
+        result.RegistrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("workshop-a"));
+        });
+    }
+
+    // Given a waitlisted registration whose waitlist entries are all gone (its offer expired)
+    // When the attendee rejoins a waitlist
+    // Then they are back in the queue and get the waitlist confirmation email
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnlyFromLapsedWaitlistedRegistration_RejoinsWaitlist()
+    {
+        var fixture = RegisterAttendeeFixture.WithWaitlistTicketsForExistingAttendee(
+            RegisterAttendeeFixture.ExistingAttendeeState.LapsedWaitlisted);
+        await fixture.SetupAsync(Environment);
+
+        var delivery = await RegisterAndPrepareEmailAsync(
+            fixture, [], [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistConfirmation);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.GetActivePosition(RegisterAttendeeFixture.ExistingAttendeeEmail).ShouldBe(1);
+        });
+    }
+
+    // Given a waitlisted registration that still has active waitlist entries, or an outstanding offer
+    // When the attendee registers for an available ticket type instead of updating
+    // Then it is rejected as an existing registration
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async ValueTask SelfRegisterAttendee_LiveWaitlistedRegistration_ReturnsAlreadyExists(bool holdingOffer)
+    {
+        var fixture = RegisterAttendeeFixture.WithWaitlistTicketsForExistingAttendee(holdingOffer
+            ? RegisterAttendeeFixture.ExistingAttendeeState.HoldingOffer
+            : RegisterAttendeeFixture.ExistingAttendeeState.Waitlisted);
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "dave@example.com", [fixture.GetTicketTypeId("workshop-a").Value], []);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await NewHandler().HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
+    }
+
+    // Given a registration that is live: registered, or waitlisted with active entries
+    // When the attendee submits a waitlist-only request
+    // Then the waitlist entry is added and a ticket-changed event describes the new waitlist selection
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnlyFromLiveRegistration_AddsEntryAndRaisesTicketsChanged(
+        bool registered)
+    {
+        var state = registered
+            ? RegisterAttendeeFixture.ExistingAttendeeState.Registered
+            : RegisterAttendeeFixture.ExistingAttendeeState.Waitlisted;
+        var fixture = RegisterAttendeeFixture.WithWaitlistTicketsForExistingAttendee(state);
+        await fixture.SetupAsync(Environment);
+        var workshopBId = fixture.GetTicketTypeId("workshop-b");
+
+        var result = await NewHandler().HandleAsync(
+            NewCommand(fixture, "dave@example.com", [], [workshopBId.Value]),
+            testContext.CancellationToken);
+
+        result.RegistrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
+        var registration = Environment.RegistrationsDatabase.Context.Registrations.Local
+            .Single(r => r.Id == fixture.ExistingRegistrationId);
+        registration.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().ShouldBeEmpty();
+        var ticketsChanged = registration.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
+        ticketsChanged.NewTickets.Select(t => t.Id).ShouldBe(ticketsChanged.OldTickets.Select(t => t.Id));
+        ticketsChanged.NewWaitlistedTickets.Select(t => t.Id)
+            .ShouldBe(ticketsChanged.OldWaitlistedTickets.Select(t => t.Id).Append(workshopBId), ignoreOrder: true);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var persisted = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            persisted.Status.ShouldBe(state == RegisterAttendeeFixture.ExistingAttendeeState.Registered
+                ? RegistrationStatus.Registered
+                : RegistrationStatus.Waitlisted);
+            var waitlist = await dbContext.Waitlists.SingleAsync(w => w.Id == workshopBId, testContext.CancellationToken);
+            waitlist.HasActiveEntry(RegisterAttendeeFixture.ExistingAttendeeEmail).ShouldBeTrue();
+        });
+    }
+
     private static void AssertTicketStateConflict(
         Error error,
         Guid[]? registerableTicketTypeIds = null,
@@ -703,8 +928,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         Guid[]? unknownTicketTypeIds = null,
         Guid[]? invalidForRequestedActionTicketTypeIds = null)
     {
-        error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
-            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+        error.ShouldMatch(RegistrationTicketClassifier.Errors.TicketStateConflict(
+            new RegistrationTicketClassifier.TicketStateConflict(
                 registerableTicketTypeIds ?? [],
                 waitlistableTicketTypeIds ?? [],
                 unavailableTicketTypeIds ?? [],
@@ -712,6 +937,30 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
                 invalidForRequestedActionTicketTypeIds ?? [])));
     }
 
-    private static RegisterAttendeeSelfServiceHandler NewHandler(TimeProvider? timeProvider = null)
+    /// <summary>
+    /// Self-registers the fixture's attendee, then drives the raised AttendeeRegistered domain event through
+    /// the real publisher, confirmation email adapter, and composer, returning the prepared email delivery.
+    /// </summary>
+    private async ValueTask<PrepareEmailDeliveryCommand> RegisterAndPrepareEmailAsync(
+        RegisterAttendeeFixture fixture,
+        Guid[] registerTicketTypeIds,
+        Guid[] waitlistTicketTypeIds)
+    {
+        var result = await NewHandler().HandleAsync(
+            NewCommand(fixture, "dave@example.com", registerTicketTypeIds, waitlistTicketTypeIds),
+            testContext.CancellationToken);
+
+        // The endpoint owns the commit, so the new registration is still only tracked, not persisted.
+        var registration = Environment.RegistrationsDatabase.Context.Registrations.Local
+            .Single(r => r.Id == RegistrationId.From(result.RegistrationId));
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem();
+
+        return await TicketConfirmationEmailPipeline.PrepareAsync(
+            Environment, fixture.TeamId, fixture.EventId, domainEvent, testContext.CancellationToken);
+    }
+
+    private static RegisterAttendeeHandler NewHandler(TimeProvider? timeProvider = null)
         => new(Environment.RegistrationsDatabase.Context, timeProvider ?? TimeProvider.System);
 }

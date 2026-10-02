@@ -3,7 +3,7 @@
 import { useState } from "react";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     AlertDialog,
@@ -28,26 +28,17 @@ import {
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
+import { PUBLIC_CAPACITY_HELP, requirePublicCapacityWhenLimited } from "@/lib/ticket-capacity";
 
-const editSchema = z
-    .object({
-        name: z.string().min(1, "Name is required"),
-        selfServiceEnabled: z.boolean(),
-        limitCapacity: z.boolean(),
-        maxCapacity: z.number().int().min(1).optional(),
-        reservedCapacity: z.number().int().min(0).optional(),
-        waitlistEnabled: z.boolean(),
-        claimWindowHours: z.number().int().min(1).optional(),
-        maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
-    })
-    .refine(
-        (values) =>
-            !values.limitCapacity ||
-            values.reservedCapacity === undefined ||
-            values.maxCapacity === undefined ||
-            values.reservedCapacity <= values.maxCapacity,
-        { message: "Reserved capacity cannot exceed max capacity", path: ["reservedCapacity"] }
-    );
+const editSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    selfServiceEnabled: z.boolean(),
+    limitCapacity: z.boolean(),
+    publicCapacity: z.number().int().min(0).optional(),
+    waitlistEnabled: z.boolean(),
+    claimWindowHours: z.number().int().min(1).optional(),
+    maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
+}).superRefine(requirePublicCapacityWhenLimited);
 
 type EditValues = z.infer<typeof editSchema>;
 
@@ -65,13 +56,12 @@ export function EditTicketTypeForm({
     onCancel: () => void;
 }) {
     const queryClient = useQueryClient();
-    const hasCapacity = ticketType.maxCapacity != null;
+    const hasCapacity = ticketType.publicCapacity != null;
     const form = useCustomForm<EditValues>(editSchema, {
         name: ticketType.name,
         selfServiceEnabled: ticketType.selfServiceEnabled,
         limitCapacity: hasCapacity,
-        maxCapacity: hasCapacity ? Number(ticketType.maxCapacity) : undefined,
-        reservedCapacity: hasCapacity ? Number(ticketType.reservedCapacity) : undefined,
+        publicCapacity: hasCapacity ? Number(ticketType.publicCapacity) : undefined,
         waitlistEnabled: ticketType.waitlistEnabled,
         claimWindowHours: Number(ticketType.claimWindowHours) || 8,
         maxReconfirmationEmails: ticketType.maxReconfirmationEmails != null
@@ -84,9 +74,13 @@ export function EditTicketTypeForm({
     const [showDisableWaitlistConfirm, setShowDisableWaitlistConfirm] = useState(false);
     const [pendingSubmitValues, setPendingSubmitValues] = useState<EditValues | null>(null);
 
+    // A waitlist only has people waiting while the ticket type is in waitlist mode. Removing the capacity
+    // limit also switches the waitlist off, but then everyone waiting receives an offer instead.
+    const hasPeopleWaiting = ticketType.waitlistEnabled && ticketType.waitlistMode;
+
     async function onSubmit(values: EditValues) {
         const isDisablingActiveWaitlist =
-            ticketType.waitlistMode && !values.waitlistEnabled && ticketType.waitlistEnabled;
+            hasPeopleWaiting && values.limitCapacity && !values.waitlistEnabled;
 
         if (isDisablingActiveWaitlist) {
             setPendingSubmitValues(values);
@@ -103,8 +97,7 @@ export function EditTicketTypeForm({
             {
                 name: values.name,
                 selfServiceEnabled: values.selfServiceEnabled,
-                maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
-                reservedCapacity: values.limitCapacity ? (values.reservedCapacity ?? 0) : 0,
+                publicCapacity: values.limitCapacity ? (values.publicCapacity ?? null) : null,
                 waitlistEnabled: values.limitCapacity ? values.waitlistEnabled : false,
                 claimWindowHours: values.limitCapacity && values.waitlistEnabled ? (values.claimWindowHours ?? 8) : undefined,
                 maxReconfirmationEmails: values.maxReconfirmationEmails ?? null,
@@ -121,9 +114,8 @@ export function EditTicketTypeForm({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Disable waitlist?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This ticket type currently has an active waitlist. Disabling the waitlist will
-                            immediately revoke all pending claim coupons and remove all waiting entries.
-                            This action cannot be undone.
+                            Disabling the waitlist removes everyone who is still waiting. You&apos;ll need to
+                            inform them yourself. Offers already sent stay valid until they expire.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -200,17 +192,27 @@ export function EditTicketTypeForm({
                                     </FormItem>
                                 )}
                             />
+                            {!limitCapacity && hasPeopleWaiting && (
+                                <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertTitle>Everyone waiting will receive an offer</AlertTitle>
+                                    <AlertDescription>
+                                        Without a capacity limit there is room for everyone, so the waitlist is
+                                        switched off and everyone waiting will receive an offer.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             {limitCapacity && (
                                 <FormField
                                     control={form.control}
-                                    name="maxCapacity"
+                                    name="publicCapacity"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Max capacity</FormLabel>
+                                            <FormLabel>Public capacity</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
-                                                    min={1}
+                                                    min={0}
                                                     placeholder="e.g. 100"
                                                     value={field.value ?? ""}
                                                     onChange={(e) =>
@@ -218,31 +220,8 @@ export function EditTicketTypeForm({
                                                     }
                                                 />
                                             </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            )}
-                            {limitCapacity && (
-                                <FormField
-                                    control={form.control}
-                                    name="reservedCapacity"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Reserved capacity (optional)</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    min={0}
-                                                    placeholder="e.g. 20"
-                                                    value={field.value ?? ""}
-                                                    onChange={(e) =>
-                                                        field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                                    }
-                                                />
-                                            </FormControl>
                                             <FormDescription>
-                                                Slots held back from self-service and reserved for admin/coupon registrations.
+                                                {PUBLIC_CAPACITY_HELP}
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>

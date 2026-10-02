@@ -32,40 +32,43 @@ public static class DirectPublicEventLinksHttpEndpoint
     private static ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToEventWebsite(
         string eventSlug,
         IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
-        CancellationToken ct) => RedirectToLink(eventSlug, null, null, handler, ct);
+        CancellationToken ct) => RedirectToLink(eventSlug, null, null, null, handler, ct);
 
     private static ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToRegister(
         string eventSlug,
+        string? coupon,
         IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
-        CancellationToken ct) => RedirectToLink(eventSlug, "register", null, handler, ct);
+        CancellationToken ct) => RedirectToLink(eventSlug, "register", null, coupon, handler, ct);
 
     private static ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToCancel(
         string eventSlug,
         Guid registrationId,
         IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
-        CancellationToken ct) => RedirectToLink(eventSlug, "cancel", registrationId, handler, ct);
+        CancellationToken ct) => RedirectToLink(eventSlug, "cancel", registrationId, null, handler, ct);
 
     private static ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToEdit(
         string eventSlug,
         Guid registrationId,
+        string? coupon,
         IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
-        CancellationToken ct) => RedirectToLink(eventSlug, "edit", registrationId, handler, ct);
+        CancellationToken ct) => RedirectToLink(eventSlug, "edit", registrationId, coupon, handler, ct);
 
     private static ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToReconfirm(
         string eventSlug,
         Guid registrationId,
         IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
-        CancellationToken ct) => RedirectToLink(eventSlug, "reconfirm", registrationId, handler, ct);
+        CancellationToken ct) => RedirectToLink(eventSlug, "reconfirm", registrationId, null, handler, ct);
 
     private static async ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToLink(
         string eventSlug,
         string? actionPath,
         Guid? registrationId,
+        string? couponCode,
         IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
         CancellationToken ct)
     {
         var result = await handler.HandleAsync(
-            new DirectPublicEventLinksQuery(eventSlug, actionPath, registrationId), ct);
+            new DirectPublicEventLinksQuery(eventSlug, actionPath, registrationId, couponCode), ct);
 
         return result is null
             ? TypedResults.NotFound()

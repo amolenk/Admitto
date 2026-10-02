@@ -44,20 +44,24 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
                 .HasJsonPropertyName("name")
                 .IsRequired();
 
-            b.Property(tt => tt.MaxCapacity)
-                .HasJsonPropertyName("max_capacity");
+            b.Property(tt => tt.PublicCapacity)
+                .HasJsonPropertyName("public_capacity");
 
-            b.Property(tt => tt.UsedCapacity)
-                .HasJsonPropertyName("used_capacity")
+            b.Property(tt => tt.PublicUsedCapacity)
+                .HasJsonPropertyName("public_used_capacity")
                 .IsRequired();
 
-            b.Property(tt => tt.ReservedCapacity)
-                .HasJsonPropertyName("reserved_capacity")
+            b.Property(tt => tt.AdminUsedCount)
+                .HasJsonPropertyName("admin_used_count")
                 .IsRequired();
 
-            b.Property(tt => tt.ReservedUsedCapacity)
-                .HasJsonPropertyName("reserved_used_capacity")
-                .IsRequired();
+            // Stored without a key before waitlist offers held capacity; a missing key reads as 0.
+            b.Property(tt => tt.WaitlistHeldCapacity)
+                .HasJsonPropertyName("waitlist_held_capacity");
+
+            // Stored without a key before the catalog counted queued attendees; a missing key reads as 0.
+            b.Property(tt => tt.WaitlistQueuedCount)
+                .HasJsonPropertyName("waitlist_queued_count");
 
             b.Property(tt => tt.SelfServiceEnabled)
                 .HasJsonPropertyName("self_service_enabled")

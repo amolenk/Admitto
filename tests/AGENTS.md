@@ -35,6 +35,11 @@ dotnet test --project tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 ## Environment Notes
 - Aspire-backed integration/end-to-end suites start a distributed app host and require container runtime support.
 - These suites reset databases between tests through shared base classes/fixtures; preserve that behavior when adding tests.
+- `Admitto.Api.Tests` boots the full Aspire distributed app host (API, Postgres, Keycloak, queues, etc.) before any
+  test runs, which routinely takes several minutes on top of the test run itself. Always give it at least a
+  10-minute (600000ms) timeout — a 120000ms default will time out before the suite even finishes starting. Don't
+  run it in the foreground and poll early: launch it in the background (e.g. redirect to a log file) and don't
+  check the log for completion until at least 4–5 minutes have passed, then poll every 1–2 minutes after that.
 
 ### Folder Structure
 Mirror the source structure under the appropriate test project:

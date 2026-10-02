@@ -1,8 +1,9 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -27,7 +28,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
         var registerTicketTypeIds = command.RegisterTicketTypeIds.Select(TicketTypeId.From).ToList();
         var waitlistTicketTypeIds = command.WaitlistTicketTypeIds.Select(TicketTypeId.From).ToList();
 
-        RegisterAttendeeSelfServiceHandler.EnsureNoDuplicateRequestedActions(registerTicketTypeIds, waitlistTicketTypeIds);
+        RegistrationTicketClassifier.EnsureNoDuplicateRequestedActions(registerTicketTypeIds, waitlistTicketTypeIds);
 
         var registration = await writeStore.Registrations.GetAsync(
             r => r.Id == registrationId && r.EventId == eventId && r.TeamId == teamId,
@@ -43,7 +44,6 @@ internal sealed class UpdatePartnerRegistrationHandler(
             throw new BusinessRuleViolationException(TicketedEvent.Errors.EventNotActive);
 
         var now = timeProvider.GetUtcNow();
-        ticketedEvent.EnsureRegistrationOpen(now);
         var additionalDetails = AdditionalDetails.Validate(
             command.AdditionalDetails,
             ticketedEvent.AdditionalDetailSchema);
@@ -59,7 +59,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
 
         var currentConfirmedIds = registration.Tickets.Select(t => t.Id).ToHashSet();
         var currentWaitlistIds = waitlists
-            .Where(w => w.HasActiveEntry(registration.Email))
+            .Where(w => w.HasActiveEntry(registration.Email) || w.HasOfferedEntry(registration.Email))
             .Select(w => w.Id)
             .ToHashSet();
 
@@ -69,39 +69,45 @@ internal sealed class UpdatePartnerRegistrationHandler(
         var toConfirm = registerSet.Except(currentConfirmedIds).ToList();
         var toReleaseConfirmed = currentConfirmedIds.Except(registerSet).ToList();
         var toWaitlistJoin = waitlistSet.Except(currentWaitlistIds).ToList();
-        var toWaitlistLeave = currentWaitlistIds.Except(waitlistSet).ToList();
 
-        RegisterAttendeeSelfServiceHandler.EnsureRequestedTicketStatesMatch(catalog, toConfirm, toWaitlistJoin);
-        RegisterAttendeeSelfServiceHandler.ValidateWaitlistRequests(catalog, toWaitlistJoin);
-
-        Coupon? waitlistCoupon = null;
-        TicketTypeId? couponTicketTypeId = null;
-        if (command.WaitlistCouponCode is { } waitlistCouponCode)
+        // Any coupon, whatever its source, can back the newly confirmed ticket types. The ones it grants bypass
+        // the self-service ticket-state classification and capacity gate, like every coupon claim. Tickets the
+        // registration already holds are not granted by the coupon, so they cannot satisfy its redemption.
+        Coupon? coupon = null;
+        if (command.CouponCode is { } couponCode)
         {
-            waitlistCoupon = await writeStore.Coupons.GetAsync(
-                c => c.EventId == eventId && c.TeamId == teamId && c.Code == CouponCode.From(waitlistCouponCode),
+            coupon = await writeStore.Coupons.GetAsync(
+                c => c.EventId == eventId && c.TeamId == teamId && c.Code == CouponCode.From(couponCode),
                 cancellationToken);
 
-            if (waitlistCoupon.Source != CouponSource.Waitlist)
-                throw new BusinessRuleViolationException(Errors.WaitlistCouponRequired);
-
-            if (waitlistCoupon.AllowedTicketTypeIds.Count != 1)
-                throw new BusinessRuleViolationException(Errors.WaitlistCouponRequired);
-
-            couponTicketTypeId = waitlistCoupon.AllowedTicketTypeIds[0];
-            if (!registerTicketTypeIds.Contains(couponTicketTypeId.Value))
-                throw new BusinessRuleViolationException(Errors.WaitlistCouponTicketMissing(couponTicketTypeId.Value));
-
-            EnsureWaitlistCouponCanBeRedeemed(waitlistCoupon, registration.Email, couponTicketTypeId.Value, now);
         }
 
-        var couponBackedClaim = couponTicketTypeId is { } offeredTicketTypeId
-            && toConfirm.Remove(offeredTicketTypeId);
+        var (couponGrantedIds, toConfirmPublicly) = RegistrationCouponHelpers.SplitCouponGranted(
+            coupon, registration.Email, toConfirm, now);
 
-        var claimedTickets = catalog.Claim(toConfirm, ClaimMode.Public);
-        var couponClaimedTickets = couponBackedClaim
-            ? catalog.Claim([couponTicketTypeId!.Value], ClaimMode.PublicUncapped)
-            : [];
+        // Ticket types the submitted coupon grants are excluded even if they're also dropped from the submitted
+        // waitlist list: moving an offered ticket type into the register list (claimed via the coupon) must not
+        // also run it through the "leave" path, which would withdraw and expire the coupon the redemption below
+        // is about to consume.
+        var toWaitlistLeave = currentWaitlistIds.Except(waitlistSet).Except(couponGrantedIds).ToList();
+
+        // A coupon that bypasses the registration window (e.g. a waitlist offer issued before registration closed)
+        // can still be claimed after close, but only for what it grants: any other ticket or waitlist change in the
+        // same request still needs the window to be open.
+        var hasOtherChanges = toConfirmPublicly.Count > 0
+                              || toReleaseConfirmed.Count > 0
+                              || toWaitlistJoin.Count > 0
+                              || toWaitlistLeave.Count > 0;
+        if (!RegistrationCouponHelpers.WindowBypassApplies(coupon, hasOtherChanges))
+            ticketedEvent.EnsureRegistrationOpen(now);
+
+        RegistrationTicketClassifier.EnsureRequestedTicketStatesMatch(catalog, toConfirmPublicly, toWaitlistJoin);
+        RegistrationTicketClassifier.ValidateWaitlistRequests(catalog, toWaitlistJoin);
+
+        var claimedTickets = catalog.Claim(toConfirmPublicly, ClaimMode.Public);
+        var couponClaimedTickets = coupon is null
+            ? []
+            : catalog.ClaimWithCoupon(couponGrantedIds, coupon);
 
         var releasedSnapshots = registration.Tickets.Where(t => toReleaseConfirmed.Contains(t.Id)).ToList();
         catalog.Release(releasedSnapshots);
@@ -126,14 +132,25 @@ internal sealed class UpdatePartnerRegistrationHandler(
             })
             .ToList();
 
-        registration.ReplaceAttendeeEditableState(firstName, lastName, additionalDetails, newTickets, now);
+        registration.ReplaceAttendeeEditableState(
+            firstName,
+            lastName,
+            additionalDetails,
+            newTickets,
+            catalog.DescribeTicketTypes(currentWaitlistIds),
+            catalog.DescribeTicketTypes(waitlistTicketTypeIds),
+            now);
 
         var waitlistsById = waitlists.ToDictionary(w => w.Id);
 
         foreach (var ticketTypeId in toWaitlistLeave)
         {
-            if (waitlistsById.TryGetValue(ticketTypeId, out var waitlist))
-                waitlist.RemoveEntry(registration.Email);
+            if (!waitlistsById.TryGetValue(ticketTypeId, out var waitlist))
+                continue;
+
+            var withdrawnCouponId = waitlist.RemoveEntry(registration.Email, catalog);
+            await RegistrationCouponHelpers.ExpireWithdrawnCouponAsync(
+                writeStore, withdrawnCouponId, now, cancellationToken);
         }
 
         foreach (var ticketTypeId in toWaitlistJoin)
@@ -145,43 +162,22 @@ internal sealed class UpdatePartnerRegistrationHandler(
                 waitlistsById[ticketTypeId] = waitlist;
             }
 
-            waitlist.AddEntry(registration.Email, now);
+            waitlist.AddEntry(registration.Email, now, catalog, registration.Id);
         }
 
-        if (waitlistCoupon is null || couponTicketTypeId is null)
-            return;
-
-        waitlistCoupon.Redeem(registration.Email, [couponTicketTypeId.Value], now);
-
-        if (!waitlistsById.TryGetValue(couponTicketTypeId.Value, out var redeemedWaitlist))
+        if (coupon is not null)
         {
-            redeemedWaitlist = await writeStore.Waitlists.GetAsync(
-                w => w.EventId == eventId && w.TeamId == teamId && w.Id == couponTicketTypeId.Value,
-                cancellationToken);
+            await RegistrationCouponHelpers.ApplyRedemptionToWaitlistsAsync(
+                writeStore, waitlists, catalog, coupon, registration.Email, couponGrantedIds,
+                now, cancellationToken);
         }
 
-        redeemedWaitlist.RedeemCoupon(waitlistCoupon.Id);
-    }
-
-    private static void EnsureWaitlistCouponCanBeRedeemed(
-        Coupon coupon,
-        EmailAddress email,
-        TicketTypeId ticketTypeId,
-        DateTimeOffset now)
-    {
-        var status = coupon.GetStatus(now);
-        if (status == CouponStatus.Expired)
-            throw new BusinessRuleViolationException(Coupon.Errors.Expired);
-        if (status == CouponStatus.Redeemed)
-            throw new BusinessRuleViolationException(Coupon.Errors.AlreadyRedeemed);
-        if (status == CouponStatus.Revoked)
-            throw new BusinessRuleViolationException(Coupon.Errors.Revoked);
-
-        if (!coupon.AllowedTicketTypeIds.Contains(ticketTypeId))
-            throw new BusinessRuleViolationException(Coupon.Errors.TicketTypeNotAllowlisted([ticketTypeId.Value]));
-
-        if (coupon.Email != email)
-            throw new BusinessRuleViolationException(Coupon.Errors.EmailMismatch);
+        // The attendee may have just given up their last remaining selection (dropped their last active queue
+        // entry, or declined their last outstanding offer) without registering for anything else. Self-service,
+        // so silent: no cancellation email, distinct reason from the organizer-driven TicketTypesRemoved.
+        // Uses waitlistsById's values rather than the original `waitlists` list, since a brand-new waitlist
+        // created by the join loop above (first entry for a ticket type) only exists there.
+        RegistrationCouponHelpers.CancelIfExhausted(registration, waitlistsById.Values, CancellationReason.LeftWaitlist);
     }
 
     internal static class Errors
@@ -190,16 +186,5 @@ internal sealed class UpdatePartnerRegistrationHandler(
             "registration.is_cancelled",
             "Registration is cancelled.",
             Type: ErrorType.Conflict);
-
-        public static readonly Error WaitlistCouponRequired = new(
-            "update_registration.waitlist_coupon_required",
-            "The supplied coupon is not a waitlist coupon.",
-            Type: ErrorType.Validation);
-
-        public static Error WaitlistCouponTicketMissing(TicketTypeId ticketTypeId) => new(
-            "update_registration.waitlist_coupon_ticket_missing",
-            "The final ticket selection must include the waitlist coupon's offered ticket type.",
-            Type: ErrorType.Validation,
-            Details: new Dictionary<string, object?> { ["ticketTypeId"] = ticketTypeId.Value });
     }
 }

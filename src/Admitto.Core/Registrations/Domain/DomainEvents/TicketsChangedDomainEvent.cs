@@ -13,4 +13,6 @@ public record TicketsChangedDomainEvent(
     LastName LastName,
     IReadOnlyList<TicketTypeSnapshot> OldTickets,
     IReadOnlyList<TicketTypeSnapshot> NewTickets,
+    IReadOnlyList<TicketTypeSnapshot> OldWaitlistedTickets,
+    IReadOnlyList<TicketTypeSnapshot> NewWaitlistedTickets,
     DateTimeOffset ChangedAt) : DomainEvent;

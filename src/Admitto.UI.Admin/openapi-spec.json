@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:39917/"
+      "url": "http://localhost:37981/"
     }
   ],
   "paths": {
@@ -3999,103 +3999,6 @@
         ]
       }
     },
-    "/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke": {
-      "post": {
-        "tags": [
-          "Admin - Coupons"
-        ],
-        "operationId": "RevokeCoupon",
-        "parameters": [
-          {
-            "name": "couponId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
     "/admin/teams/{teamId}/events/{eventId}/ticket-types": {
       "post": {
         "tags": [
@@ -4501,6 +4404,119 @@
           },
           "200": {
             "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}/promote": {
+      "post": {
+        "tags": [
+          "Admin - Waitlist"
+        ],
+        "operationId": "PromoteWaitlistEntry",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoteWaitlistEntryHttpResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -5843,7 +5859,7 @@
         "tags": [
           "Partner"
         ],
-        "operationId": "RegisterAttendeeSelfService",
+        "operationId": "RegisterAttendee",
         "parameters": [
           {
             "name": "eventSlug",
@@ -5858,7 +5874,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterAttendeeSelfServiceHttpRequest"
+                "$ref": "#/components/schemas/RegisterAttendeeHttpRequest"
               }
             }
           },
@@ -5890,7 +5906,7 @@
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegisterAttendeeSelfServiceTicketStateConflictProblemDetails"
+                  "$ref": "#/components/schemas/RegisterAttendeeTicketStateConflictProblemDetails"
                 }
               }
             }
@@ -5930,101 +5946,6 @@
           {
             "ApiKey": [ ],
             "EmailVerificationBearer": [ ]
-          }
-        ]
-      }
-    },
-    "/api/events/{eventSlug}/registrations/coupon": {
-      "post": {
-        "tags": [
-          "Partner"
-        ],
-        "operationId": "RegisterAttendeeWithCoupon",
-        "parameters": [
-          {
-            "name": "eventSlug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterAttendeeWithCouponHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKey": [ ]
           }
         ]
       }
@@ -6289,7 +6210,7 @@
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegisterAttendeeSelfServiceTicketStateConflictProblemDetails"
+                  "$ref": "#/components/schemas/RegisterAttendeeTicketStateConflictProblemDetails"
                 }
               }
             }
@@ -6715,214 +6636,6 @@
         ]
       }
     },
-    "/api/events/{eventSlug}/waitlist/{ticketTypeId}": {
-      "post": {
-        "tags": [
-          "Partner"
-        ],
-        "operationId": "JoinWaitlist",
-        "parameters": [
-          {
-            "name": "eventSlug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "ticketTypeId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/JoinWaitlistHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKey": [ ],
-            "EmailVerificationBearer": [ ]
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Partner"
-        ],
-        "operationId": "LeaveWaitlist",
-        "parameters": [
-          {
-            "name": "eventSlug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "ticketTypeId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "email",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "ApiKey": [ ]
-          }
-        ]
-      }
-    },
     "/api/events/{eventSlug}/coupons/{couponCode}": {
       "get": {
         "tags": [
@@ -7084,6 +6797,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "coupon",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7187,6 +6907,13 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "coupon",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -7694,7 +7421,7 @@
               "type": "string"
             }
           },
-          "maxCapacity": {
+          "publicCapacity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -7724,15 +7451,6 @@
               "string"
             ],
             "format": "int32"
-          },
-          "reservedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32",
-            "default": 0
           }
         }
       },
@@ -8026,7 +7744,8 @@
         "enum": [
           "eligible",
           "checkedIn",
-          "cancelled"
+          "cancelled",
+          "waitlisted"
         ]
       },
       "CheckInHttpRequest": {
@@ -8077,6 +7796,7 @@
           "success",
           "alreadyCheckedIn",
           "cancelled",
+          "waitlisted",
           "invalidForEvent",
           "eventNotActive"
         ]
@@ -8288,7 +8008,6 @@
           "expiresAt",
           "bypassRegistrationWindow",
           "redeemedAt",
-          "revokedAt",
           "createdAt"
         ],
         "type": "object",
@@ -8331,13 +8050,6 @@
             ],
             "format": "date-time"
           },
-          "revokedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -8354,7 +8066,6 @@
         "enum": [
           "active",
           "redeemed",
-          "revoked",
           "expired"
         ]
       },
@@ -8658,17 +8369,6 @@
           }
         }
       },
-      "JoinWaitlistHttpRequest": {
-        "required": [
-          "email"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          }
-        }
-      },
       "ListCouponsResult": {
         "required": [
           "coupons"
@@ -8707,6 +8407,23 @@
           }
         }
       },
+      "PartnerOfferedTicketTypeDto": {
+        "required": [
+          "ticketTypeId",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketTypeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PartnerRegistrationDetailDto": {
         "required": [
           "id",
@@ -8717,6 +8434,7 @@
           "ticketTypeIds",
           "tickets",
           "waitlistedTicketTypes",
+          "offeredTicketTypes",
           "additionalDetails"
         ],
         "type": "object",
@@ -8754,6 +8472,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PartnerWaitlistedTicketTypeDto"
+            }
+          },
+          "offeredTicketTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartnerOfferedTicketTypeDto"
             }
           },
           "additionalDetails": {
@@ -8851,7 +8575,10 @@
       "PendingNotificationRow": {
         "required": [
           "couponId",
-          "maskedEmail",
+          "registrationId",
+          "email",
+          "firstName",
+          "lastName",
           "expiresAt"
         ],
         "type": "object",
@@ -8860,7 +8587,17 @@
             "type": "string",
             "format": "uuid"
           },
-          "maskedEmail": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
             "type": "string"
           },
           "expiresAt": {
@@ -8904,6 +8641,18 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "PromoteWaitlistEntryHttpResponse": {
+        "required": [
+          "couponId"
+        ],
+        "type": "object",
+        "properties": {
+          "couponId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -9009,7 +8758,7 @@
           }
         }
       },
-      "RegisterAttendeeSelfServiceHttpRequest": {
+      "RegisterAttendeeHttpRequest": {
         "required": [
           "email",
           "firstName",
@@ -9050,10 +8799,17 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "couponCode": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
-      "RegisterAttendeeSelfServiceTicketStateConflictProblemDetails": {
+      "RegisterAttendeeTicketStateConflictProblemDetails": {
         "type": "object",
         "properties": {
           "type": {
@@ -9129,47 +8885,6 @@
           }
         }
       },
-      "RegisterAttendeeWithCouponHttpRequest": {
-        "required": [
-          "couponCode",
-          "email",
-          "firstName",
-          "lastName",
-          "ticketTypeIds"
-        ],
-        "type": "object",
-        "properties": {
-          "couponCode": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "email": {
-            "type": "string"
-          },
-          "firstName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "ticketTypeIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "additionalDetails": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        }
-      },
       "RegistrationDetailDto": {
         "required": [
           "id",
@@ -9183,6 +8898,7 @@
           "checkedInAt",
           "cancellationReason",
           "tickets",
+          "waitlistEntries",
           "additionalDetails",
           "activities"
         ],
@@ -9235,6 +8951,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TicketDetailDto"
+            }
+          },
+          "waitlistEntries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaitlistEntryDetailDto"
             }
           },
           "additionalDetails": {
@@ -9796,15 +9518,14 @@
           "id",
           "name",
           "timeSlots",
-          "maxCapacity",
-          "usedCapacity",
+          "publicCapacity",
+          "publicUsedCapacity",
+          "adminUsedCount",
           "selfServiceEnabled",
           "waitlistEnabled",
           "waitlistMode",
           "claimWindowHours",
-          "maxReconfirmationEmails",
-          "reservedCapacity",
-          "reservedUsedCapacity"
+          "maxReconfirmationEmails"
         ],
         "type": "object",
         "properties": {
@@ -9821,7 +9542,7 @@
               "type": "string"
             }
           },
-          "maxCapacity": {
+          "publicCapacity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9830,7 +9551,15 @@
             ],
             "format": "int32"
           },
-          "usedCapacity": {
+          "publicUsedCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "adminUsedCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -9859,22 +9588,6 @@
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "reservedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "reservedUsedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
               "integer",
               "string"
             ],
@@ -9977,7 +9690,7 @@
               "type": "string"
             }
           },
-          "waitlistCouponCode": {
+          "couponCode": {
             "type": [
               "null",
               "string"
@@ -10072,7 +9785,7 @@
               "string"
             ]
           },
-          "maxCapacity": {
+          "publicCapacity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -10097,14 +9810,6 @@
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "reservedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
               "integer",
               "string"
             ],
@@ -10138,12 +9843,16 @@
       },
       "WaitlistDetailsDto": {
         "required": [
+          "waitlistEnabled",
           "activeEntries",
           "pendingNotifications",
           "stats"
         ],
         "type": "object",
         "properties": {
+          "waitlistEnabled": {
+            "type": "boolean"
+          },
           "activeEntries": {
             "type": "array",
             "items": {
@@ -10161,11 +9870,47 @@
           }
         }
       },
+      "WaitlistEntryDetailDto": {
+        "required": [
+          "ticketTypeName",
+          "position",
+          "isOffered",
+          "offerExpiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketTypeName": {
+            "type": "string"
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "isOffered": {
+            "type": "boolean"
+          },
+          "offerExpiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "WaitlistEntryRow": {
         "required": [
           "entryId",
           "position",
-          "maskedEmail",
+          "registrationId",
+          "email",
+          "firstName",
+          "lastName",
           "joinedAt"
         ],
         "type": "object",
@@ -10182,7 +9927,17 @@
             ],
             "format": "int32"
           },
-          "maskedEmail": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
             "type": "string"
           },
           "joinedAt": {

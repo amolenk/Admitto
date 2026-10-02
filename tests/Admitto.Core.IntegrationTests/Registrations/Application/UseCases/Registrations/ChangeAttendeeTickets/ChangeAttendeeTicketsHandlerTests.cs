@@ -15,8 +15,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
 
     // Given an attendee registered with an early-bird ticket and available workshop capacity
     // When an admin changes the attendee's tickets to the workshop ticket type
-    // Then the registration holds the workshop ticket and capacity is released and claimed accordingly
-    // Admin changes early-bird → workshop; capacity is updated correctly
+    // Then the registration holds the workshop ticket as an admin ticket and the early-bird public seat is freed
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_HappyPath_TicketsUpdatedAndEventRaised()
     {
@@ -41,22 +40,65 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
             registration.Tickets.Count.ShouldBe(1);
             registration.Tickets[0].Id.ShouldBe(fixture.GetTicketTypeId("workshop"));
 
-            // Capacity: early-bird released (50→49), workshop claimed (10→11)
+            registration.Tickets[0].Mode.ShouldBe(ClaimMode.Admin);
+
+            // Capacity: early-bird public seat released (50→49), workshop added on top as an admin ticket
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.UsedCapacity.ShouldBe(49);
-            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(11);
+            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.PublicUsedCapacity.ShouldBe(49);
+            var workshop = catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!;
+            workshop.PublicUsedCapacity.ShouldBe(10);
+            workshop.AdminUsedCount.ShouldBe(1);
         });
     }
 
-    // Given a registration holding a ticket originally claimed under the admin/reserved pool
-    // When the attendee's tickets are changed to add another ticket while keeping the reserved one
-    // Then the kept ticket's claim mode is preserved, so releasing it later credits the reserved buffer back
+    // Given an attendee registered with a public early-bird ticket
+    // When an admin edit adds a workshop ticket while keeping the early-bird ticket
+    // Then the early-bird ticket stays public and the workshop ticket is an admin ticket on top of public capacity
     [TestMethod]
-    public async ValueTask ChangeAttendeeTickets_KeepsExistingReservedTicket_PreservesClaimModeOnRelease()
+    public async ValueTask ChangeAttendeeTickets_AdminAddsTicketToPublicRegistration_KeepsPublicAndAddsAdminTicket()
     {
-        var fixture = ChangeAttendeeTicketsFixture.WithReservedCapacityTicket();
+        var fixture = ChangeAttendeeTicketsFixture.WithCapacity(earlyBirdMax: 100, earlyBirdUsed: 50,
+            workshopMax: 20, workshopUsed: 10);
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value],
+            ChangeMode.Admin);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .SingleAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("early-bird"))
+                .Mode.ShouldBe(ClaimMode.Public);
+            registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("workshop"))
+                .Mode.ShouldBe(ClaimMode.Admin);
+
+            var catalog = await dbContext.TicketCatalogs
+                .SingleAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            var earlyBird = catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!;
+            earlyBird.PublicUsedCapacity.ShouldBe(50);
+            earlyBird.AdminUsedCount.ShouldBe(0);
+            var workshop = catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!;
+            workshop.PublicUsedCapacity.ShouldBe(10);
+            workshop.AdminUsedCount.ShouldBe(1);
+        });
+    }
+
+    // Given a registration holding an admin ticket
+    // When an admin edit adds another ticket while keeping the admin one
+    // Then both are admin tickets, so releasing them later frees no public seat
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_KeepsExistingAdminTicket_PreservesClaimModeOnRelease()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithAdminTicket();
         await fixture.SetupAsync(Environment);
 
         var command = new ChangeAttendeeTicketsCommand(
@@ -69,7 +111,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         await CreateSut().HandleAsync(command, testContext.CancellationToken);
 
         // Cancel the registration and release its tickets — this is where a dropped ClaimMode
-        // would surface: the kept "vip" ticket must still be recognized as a Reserved claim.
+        // would surface: the kept "vip" ticket must still be recognized as an admin ticket.
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations
@@ -77,9 +119,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
             registration.ShouldNotBeNull();
             registration.Tickets.Count.ShouldBe(2);
             var vipTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("vip"));
-            vipTicket.Mode.ShouldBe(ClaimMode.Reserved);
+            vipTicket.Mode.ShouldBe(ClaimMode.Admin);
             var earlyBirdTicket = registration.Tickets.Single(t => t.Id == fixture.GetTicketTypeId("early-bird"));
-            earlyBirdTicket.Mode.ShouldBe(ClaimMode.Reserved);
+            earlyBirdTicket.Mode.ShouldBe(ClaimMode.Admin);
         });
 
         var releaseHandler = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
@@ -93,15 +135,18 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
             var vip = catalog.GetTicketType(fixture.GetTicketTypeId("vip"))!;
-            vip.UsedCapacity.ShouldBe(0);
-            vip.ReservedUsedCapacity.ShouldBe(0);
+            vip.PublicUsedCapacity.ShouldBe(0);
+            vip.AdminUsedCount.ShouldBe(0);
+            var earlyBird = catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!;
+            earlyBird.PublicUsedCapacity.ShouldBe(0);
+            earlyBird.AdminUsedCount.ShouldBe(0);
         });
     }
 
     // Given a workshop ticket type that is sold out
     // When an admin changes the attendee's tickets to the sold-out workshop
     // Then the change succeeds without enforcing capacity
-    // Sold-out workshop does NOT block admin change (ClaimMode.Reserved)
+    // Sold-out workshop does NOT block admin change (ClaimMode.Admin)
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_SoldOut_AdminBypassesCapacityEnforcement()
     {
@@ -204,16 +249,16 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
             waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.UsedCapacity.ShouldBe(0);
-            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(2);
+            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.PublicUsedCapacity.ShouldBe(0);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.PublicUsedCapacity.ShouldBe(2);
         });
     }
 
     // Given a waitlist coupon offering a workshop ticket
     // When the attendee self-serves a ticket change that omits the offered workshop ticket
-    // Then a WaitlistCouponTicketMissing error is thrown and the coupon remains unredeemed
+    // Then a no-coupon-ticket-type-selected error is thrown and the coupon remains unredeemed
     [TestMethod]
-    public async ValueTask ChangeAttendeeTickets_WaitlistCouponOfferedTicketMissing_ThrowsAndLeavesCouponUnredeemed()
+    public async ValueTask ChangeAttendeeTickets_CouponTicketTypesNotSelected_ThrowsAndLeavesCouponUnredeemed()
     {
         var fixture = ChangeAttendeeTicketsFixture.WithWaitlistCoupon();
         await fixture.SetupAsync(Environment);
@@ -229,7 +274,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(ChangeAttendeeTicketsHandler.Errors.WaitlistCouponTicketMissing(fixture.GetTicketTypeId("workshop")));
+        result.Error.ShouldMatch(Coupon.Errors.NoCouponTicketTypeSelected([fixture.GetTicketTypeId("workshop").Value]));
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -264,6 +309,47 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         {
             var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
             coupon.RedeemedAt.ShouldBeNull();
+        });
+    }
+
+    // Given a single waitlist coupon offering a workshop ticket
+    // When two concurrent requests both redeem it for the same registration
+    // Then only the first to commit succeeds; the second fails with a concurrency conflict and the coupon stays
+    // redeemed exactly once
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_ConcurrentDoubleRedemption_OnlyFirstSucceeds()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("workshop").Value],
+            ChangeMode.SelfService,
+            fixture.WaitlistCouponCode);
+
+        await using var first = DispatchingRegistrationsContext.Create(Environment);
+        await using var second = DispatchingRegistrationsContext.Create(Environment);
+
+        await new ChangeAttendeeTicketsHandler(first.Context, TimeProvider.System).HandleAsync(
+            command, testContext.CancellationToken);
+        await new ChangeAttendeeTicketsHandler(second.Context, TimeProvider.System).HandleAsync(
+            command, testContext.CancellationToken);
+
+        await first.SaveChangesAsync(testContext.CancellationToken);
+
+        await Should.ThrowAsync<DbUpdateConcurrencyException>(
+            async () => await second.SaveChangesAsync(testContext.CancellationToken));
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("workshop"));
         });
     }
 }

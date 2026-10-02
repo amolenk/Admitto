@@ -72,6 +72,7 @@ const registrationDetail = (
     reconfirmedAt: null,
     cancellationReason: null,
     tickets: [{ id: "cccccccc-0000-0000-0000-000000000001", name: "General Admission" }],
+    waitlistEntries: [],
     additionalDetails: {},
     activities: [activityEntry()],
     ...overrides,
@@ -189,8 +190,8 @@ describe("AttendeeDetailPage", () => {
     });
 
     // Given the event's additional-details schema captured extra fields for this attendee
-    // When the details card renders
-    // Then each additional field is shown alongside the fixed attendee fields
+    // When the page renders
+    // Then an Additional fields card shows each extra field
     it("renders additional details when present", async () => {
         mockApi({ detail: registrationDetail({ additionalDetails: { Company: "Acme Inc" } }) });
 
@@ -201,16 +202,70 @@ describe("AttendeeDetailPage", () => {
     });
 
     // Given the attendee has no additional details recorded
-    // When the details card renders
-    // Then only the fixed attendee fields are shown, with no leftover additional-detail rows
+    // When the page renders
+    // Then the Additional fields card is not shown at all
     it("hides the additional-details rows when there are none", async () => {
         mockApi({ detail: registrationDetail({ additionalDetails: {} }) });
 
         renderPage();
 
-        const dl = (await screen.findByText("Full name")).closest("dl");
-        expect(dl).not.toBeNull();
-        expect(dl!.querySelectorAll("dt")).toHaveLength(5);
+        await screen.findByRole("heading", { level: 1 });
+        expect(screen.queryByText("Additional fields")).not.toBeInTheDocument();
+    });
+
+    // Given the attendee holds an active waitlist entry for a ticket type
+    // When the page renders
+    // Then the Tickets card shows the ticket type name, a Waitlist badge, and its queue position
+    it("shows the Waitlist card with ticket type and position when the attendee is on a waitlist", async () => {
+        mockApi({
+            detail: registrationDetail({
+                waitlistEntries: [
+                    { ticketTypeName: "Workshop A", position: 2, isOffered: false, offerExpiresAt: null },
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Workshop A")).toBeInTheDocument();
+        expect(screen.getByText("Waitlist")).toBeInTheDocument();
+        expect(screen.getByText("#2 in line")).toBeInTheDocument();
+    });
+
+    // Given the attendee's waitlist entry has an outstanding, unredeemed coupon offer
+    // When the page renders
+    // Then the Tickets card still shows that ticket type, with the offer instead of a queue position
+    it("keeps showing the Waitlist card when the attendee's entry has an outstanding coupon offer", async () => {
+        mockApi({
+            detail: registrationDetail({
+                waitlistEntries: [
+                    {
+                        ticketTypeName: "Workshop A",
+                        position: null,
+                        isOffered: true,
+                        offerExpiresAt: "2024-01-05T12:00:00Z",
+                    },
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Workshop A")).toBeInTheDocument();
+        expect(screen.getByText(/Coupon offered/)).toBeInTheDocument();
+        expect(screen.queryByText("#2 in line")).not.toBeInTheDocument();
+    });
+
+    // Given the attendee is not on any waitlist
+    // When the page renders
+    // Then no Waitlist badge is shown in the Tickets card
+    it("hides the Waitlist card when the attendee has no waitlist entries", async () => {
+        mockApi({ detail: registrationDetail({ waitlistEntries: [] }) });
+
+        renderPage();
+
+        await screen.findByRole("heading", { level: 1 });
+        expect(screen.queryByText("Waitlist")).not.toBeInTheDocument();
     });
 
     // Given a registered attendee who has not reconfirmed
@@ -249,14 +304,14 @@ describe("AttendeeDetailPage", () => {
 
     // Given a crew member viewing a registered attendee
     // When the attendee detail page loads
-    // Then attendee details and manual check-in are available, but management controls are hidden
+    // Then the attendee's tickets and manual check-in are available, but management controls are hidden
     it("lets crew view details and manually check in without attendee management controls", async () => {
         mockApi({ canManageAttendees: false });
 
         const { user } = renderPage();
 
         expect(await screen.findByRole("heading", { level: 1, name: "Jane Doe" })).toBeInTheDocument();
-        expect(screen.getByText("Details")).toBeInTheDocument();
+        expect(screen.getByText("Selected")).toBeInTheDocument();
         const checkInButton = screen.getByRole("button", { name: "Check in" });
         expect(checkInButton).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
@@ -270,7 +325,7 @@ describe("AttendeeDetailPage", () => {
 
     // Given a registered attendee who has been checked in at the event
     // When the detail page renders
-    // Then the event-local check-in time and Checked in timeline entry are shown, with cancel and reconfirm hidden
+    // Then the Checked in badge and timeline entry are shown, with cancel and reconfirm hidden
     it("shows the event-local check-in time and hides cancel and reconfirm controls", async () => {
         mockApi({
             detail: registrationDetail({
@@ -284,16 +339,43 @@ describe("AttendeeDetailPage", () => {
 
         renderPage();
 
-        expect(await screen.findByText("Checked in · 2026-08-12 11:00")).toBeInTheDocument();
-        const heading = screen.getByRole("heading", { level: 1, name: "Jane Doe" });
+        const heading = await screen.findByRole("heading", { level: 1, name: "Jane Doe" });
         expect(within(heading.parentElement!).getByText("Checked in")).toBeInTheDocument();
         expect(within(heading.parentElement!).queryByText("Registered")).not.toBeInTheDocument();
         expect(within(heading.parentElement!).queryByText("Reconfirmed")).not.toBeInTheDocument();
-        expect(screen.getAllByText("Checked in", { selector: "span" })).toHaveLength(2);
         expect(screen.getByText("Checked-in", { selector: "span" })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Check in" })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
+    });
+
+    // Given a registration that is only on a waitlist
+    // When the detail page renders
+    // Then the hero badge says "Waitlisted"
+    it("shows the Waitlisted badge and status for a waitlisted attendee", async () => {
+        mockApi({ detail: registrationDetail({ status: "waitlisted", tickets: [] }) });
+
+        renderPage();
+
+        const heading = await screen.findByRole("heading", { level: 1 });
+        const badgeRow = heading.parentElement!;
+        expect(within(badgeRow).getByText("Waitlisted")).toBeInTheDocument();
+        expect(within(badgeRow).queryByText("Registered")).not.toBeInTheDocument();
+    });
+
+    // Given a registration that is only on a waitlist
+    // When an organizer views it
+    // Then they can cancel it and change its tickets, but there is no ticket to check in, reconfirm or resend
+    it("offers cancel and change tickets for a waitlisted attendee, but no ticket actions", async () => {
+        mockApi({ detail: registrationDetail({ status: "waitlisted", tickets: [] }) });
+
+        renderPage();
+
+        expect(await screen.findByRole("button", { name: "Cancel registration" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Change" })).toBeEnabled();
+        expect(screen.queryByRole("button", { name: "Check in" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Resend ticket email" })).not.toBeInTheDocument();
     });
 
     // Given a cancelled registration that had previously been reconfirmed
@@ -364,6 +446,100 @@ describe("AttendeeDetailPage", () => {
 
         expect(await screen.findByText("Tickets changed")).toBeInTheDocument();
         expect(screen.getByText("Early Bird → Half-Price")).toBeInTheDocument();
+    });
+
+    // Given a registration whose waitlisted ticket selection changed
+    // When the page renders
+    // Then the timeline shows the old and new waitlisted ticket type names
+    it("shows the ticket type names for a waitlist-selection-changed entry", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({ activityType: "Registered", occurredAt: "2026-08-10T09:00:00Z" }),
+                    activityEntry({
+                        activityType: "WaitlistSelectionChanged",
+                        occurredAt: "2026-08-11T09:00:00Z",
+                        metadata: JSON.stringify({ from: ["Workshop A"], to: ["Workshop B"] }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Waitlist selection changed")).toBeInTheDocument();
+        expect(screen.getByText("Workshop A → Workshop B")).toBeInTheDocument();
+    });
+
+    // Given a registration removed from a ticket type's waitlist
+    // When the page renders
+    // Then the timeline shows which waitlist the attendee was removed from
+    it("shows the ticket type for a removed-from-waitlist entry", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({ activityType: "Registered", occurredAt: "2026-08-10T09:00:00Z" }),
+                    activityEntry({
+                        activityType: "WaitlistRemoved",
+                        occurredAt: "2026-08-11T09:00:00Z",
+                        metadata: JSON.stringify({ ticketType: "Workshop A" }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Removed from waitlist")).toBeInTheDocument();
+        expect(screen.getByText("Removed from the Workshop A waitlist.")).toBeInTheDocument();
+    });
+
+    // Given a registration whose registration entry carries a waitlisted ticket type in its metadata
+    // When the page renders
+    // Then the timeline's registration entry mentions the waitlisted ticket type
+    it("shows the waitlisted ticket type on the registration entry when the attendee joined a waitlist", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({
+                        activityType: "Registered",
+                        occurredAt: "2026-08-10T09:00:00Z",
+                        metadata: JSON.stringify({ waitlisted: ["Workshop A"] }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Started registration")).toBeInTheDocument();
+        expect(
+            screen.getByText("Attendee registered for the event. Waitlisted for: Workshop A."),
+        ).toBeInTheDocument();
+    });
+
+    // Given a registration whose registration entry carries two waitlisted ticket types in its metadata
+    // When the page renders
+    // Then the timeline's registration entry lists both waitlisted ticket type names
+    it("shows multiple waitlisted ticket types on the registration entry, comma-separated", async () => {
+        mockApi({
+            detail: registrationDetail({
+                activities: [
+                    activityEntry({
+                        activityType: "Registered",
+                        occurredAt: "2026-08-10T09:00:00Z",
+                        metadata: JSON.stringify({ waitlisted: ["Workshop A", "Workshop B"] }),
+                    }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Started registration")).toBeInTheDocument();
+        expect(
+            screen.getByText("Attendee registered for the event. Waitlisted for: Workshop A, Workshop B."),
+        ).toBeInTheDocument();
     });
 
     // Given a cancelled registration with a recorded reason
@@ -628,5 +804,24 @@ describe("AttendeeDetailPage", () => {
 
         const link = await screen.findByRole("link", { name: "Registrations" });
         expect(link).toHaveAttribute("href", `/teams/${TEAM_ID}/events/${EVENT_ID}/registrations`);
+    });
+
+    // Given the organizer navigated here from a ticket type's waitlist page
+    // When they look at the back link
+    // Then it points back at that waitlist instead of the registrations list
+    it("has a back link that returns to the waitlist when arriving from it", async () => {
+        mockApi();
+        const ticketTypeId = "99998888-0000-0000-0000-000000000001";
+        setRoute({
+            params: { teamId: TEAM_ID, eventId: EVENT_ID, registrationId: REGISTRATION_ID },
+            searchParams: { from: "waitlist", ticketTypeId },
+        });
+        renderWithProviders(<AttendeeDetailPage />);
+
+        const link = await screen.findByRole("link", { name: "Waitlist" });
+        expect(link).toHaveAttribute(
+            "href",
+            `/teams/${TEAM_ID}/events/${EVENT_ID}/ticket-types/${ticketTypeId}/waitlist`,
+        );
     });
 });

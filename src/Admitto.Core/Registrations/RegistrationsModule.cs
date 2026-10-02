@@ -6,7 +6,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.CreateCoup
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetPublicCouponDetails.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.ListCoupons.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.RevokeCoupon.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CheckIn.AdminApi;
@@ -19,8 +18,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Requ
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ResolvePartnerRegistration.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ExportRegistrationsCsv.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.AdminRegisterAttendee.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon.PartnerApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PartnerApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReconfirmRegistration.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.EmailVerification.RequestOtp.PartnerApi;
@@ -47,8 +45,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetPub
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetTicketTypes.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.GetWaitlistDetails.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.JoinWaitlist.PartnerApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.LeaveWaitlist.PartnerApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.PromoteWaitlistEntry.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.RemoveWaitlistEntry.AdminApi;
 
 namespace Amolenk.Admitto.Core.Registrations;
@@ -100,8 +97,7 @@ public static class RegistrationsModule
             .WithTags("Admin - Coupons")
             .MapCreateCoupon()
             .MapListCoupons()
-            .MapGetCouponDetails()
-            .MapRevokeCoupon();
+            .MapGetCouponDetails();
 
         eventGroup
             .MapGroup("/ticket-types")
@@ -114,6 +110,7 @@ public static class RegistrationsModule
             .MapGroup("/ticket-types/{ticketTypeId:guid}")
             .WithTags("Admin - Waitlist")
             .MapRemoveWaitlistEntry()
+            .MapPromoteWaitlistEntry()
             .MapGetWaitlistDetails();
 
         return group;
@@ -127,8 +124,7 @@ public static class RegistrationsModule
             .MapGetPartnerTicketedEventDetails()
             .MapRequestOtp()
             .MapVerifyOtp()
-            .MapRegisterAttendeeSelfService()
-            .MapRegisterAttendeeWithCoupon()
+            .MapRegisterAttendee()
             .MapResolvePartnerRegistration()
             .MapGetPartnerRegistrationDetails()
             .MapSelfCancelRegistration()
@@ -136,8 +132,6 @@ public static class RegistrationsModule
             .MapUpdatePartnerRegistration()
             .MapPartnerRequestTicketConfirmationResend()
             .MapGetPublicTicketTypes()
-            .MapJoinWaitlist()
-            .MapLeaveWaitlist()
             .MapGetPublicCouponDetails();
 
         return group;

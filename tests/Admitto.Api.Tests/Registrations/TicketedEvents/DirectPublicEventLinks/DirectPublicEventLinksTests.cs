@@ -79,6 +79,27 @@ public sealed class DirectPublicEventLinksTests(TestContext testContext) : EndTo
             .ShouldBe($"https://partner.example.com/tickets/edit/{fixture.RegistrationId}");
     }
 
+    // Given a ticketed event published with a public slug and website URL, and a registration
+    // When the public edit link is requested for that registration with a coupon query parameter
+    // Then the API redirects to the website's edit path for that registration, preserving the coupon parameter
+    [TestMethod]
+    public async Task EditLink_WithCouponQueryParameter_PreservesCouponOnRedirect()
+    {
+        var fixture = DirectPublicEventLinksFixture.HappyFlow();
+        await fixture.SetupAsync(Environment);
+
+        using var client = CreateNoRedirectClient();
+        var response = await client.GetAsync(
+            fixture.EditRoute(fixture.RegistrationId) + "?coupon=14318e75-fbe0-42e1-a6f4-d78c5d080d78",
+            testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Found);
+        response.Headers.Location?.ToString()
+            .ShouldBe(
+                $"https://partner.example.com/tickets/edit/{fixture.RegistrationId}" +
+                "?coupon=14318e75-fbe0-42e1-a6f4-d78c5d080d78");
+    }
+
     // Given no ticketed event exists with the given public slug
     // When a public register link is requested for that unknown slug
     // Then the API returns 404 Not Found without a redirect location

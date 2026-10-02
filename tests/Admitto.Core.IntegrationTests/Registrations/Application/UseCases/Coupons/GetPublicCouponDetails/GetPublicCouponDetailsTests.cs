@@ -100,5 +100,5 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
     }
 
     private static GetPublicCouponDetailsHandler NewHandler() =>
-        new(Environment.RegistrationsDatabase.Context);
+        new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 }

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -18,7 +19,7 @@ internal sealed class RemoveWaitlistEntryHandler(IRegistrationsWriteStore writeS
         TeamId teamId = TeamId.From(command.TeamId);
         WaitlistEntryId entryId = WaitlistEntryId.From(command.EntryId);
 
-        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+        var catalog = await writeStore.TicketCatalogs.GetAsync(
             tc => tc.Id == ticketedEventId && tc.TeamId == teamId,
             cancellationToken);
 
@@ -32,7 +33,27 @@ internal sealed class RemoveWaitlistEntryHandler(IRegistrationsWriteStore writeS
         if (waitlist is null)
             throw new BusinessRuleViolationException(Errors.WaitlistNotFound);
 
-        waitlist.RemoveEntry(entryId);
+        var entry = waitlist.Entries.FirstOrDefault(e => e.Id == entryId);
+        if (entry is null)
+            throw new BusinessRuleViolationException(Errors.WaitlistNotFound);
+
+        var registrationId = entry.RegistrationId;
+
+        var withdrawnCouponId = waitlist.RemoveEntry(entryId, catalog);
+        await RegistrationCouponHelpers.ExpireWithdrawnCouponAsync(
+            writeStore, withdrawnCouponId, DateTimeOffset.UtcNow, cancellationToken);
+
+        var allEventWaitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == ticketedEventId && w.TeamId == teamId)
+            .ToListAsync(cancellationToken);
+
+        var registration = await writeStore.Registrations.FirstOrDefaultAsync(
+            r => r.Id == registrationId, cancellationToken);
+        if (registration is not null)
+        {
+            RegistrationCouponHelpers.CancelIfExhausted(
+                registration, allEventWaitlists, CancellationReason.TicketTypesRemoved);
+        }
     }
 
     internal static class Errors

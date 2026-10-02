@@ -8,10 +8,17 @@ Scan this QR code at the entrance:
 {{ qrcode_link }}
 
 {{ if ticket_types && ticket_types.size > 0 }}
-Your ticket type(s):
+Your confirmed ticket type(s):
 {{ for ticket_type in ticket_types }}
 - {{ ticket_type }}
 {{ end }}
+{{ end }}
+{{ if waitlisted_ticket_types && waitlisted_ticket_types.size > 0 }}
+You're on the waitlist for:
+{{ for ticket_type in waitlisted_ticket_types }}
+- {{ ticket_type }}
+{{ end }}
+Your place on a waitlist is not a confirmed ticket. We'll email you if a spot opens up.
 {{ end }}
 You can present this QR code on your mobile device or bring a printed copy to the event.
 

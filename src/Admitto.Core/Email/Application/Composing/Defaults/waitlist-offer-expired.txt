@@ -1,0 +1,14 @@
+Your waitlist offer for {{ event_name }} has expired
+
+Hi there,
+
+Earlier we let you know that a spot had opened up at {{ event_name }} and sent you a personal coupon to claim it. That offer was not claimed in time and has now expired.
+
+Ticket type: {{ ticket_type_name }}
+
+{{ if registration_closed }}Your coupon can no longer be used. Registration for this event has closed.{{ else }}Your coupon can no longer be used. If you'd still like to attend, you're welcome to register again while spots are available.{{ end }}
+
+For more details about the event, visit: {{ event_website }}
+
+Best regards,
+The {{ event_name }} Team

@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.TicketTypes;
 
@@ -11,6 +12,7 @@ internal sealed class TicketTypeManagementFixture
     public static readonly TicketTypeId ExistingTicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     private bool _seedSoldOutTicketType;
     private bool _seedExistingMaxReconfirmationEmails;
+    private int _waitingCount;
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
@@ -23,6 +25,14 @@ internal sealed class TicketTypeManagementFixture
     public static TicketTypeManagementFixture Active() => new();
     public static TicketTypeManagementFixture WithSoldOutTicketType() => new() { _seedSoldOutTicketType = true };
     public static TicketTypeManagementFixture WithExistingMaxReconfirmationEmails() => new() { _seedExistingMaxReconfirmationEmails = true };
+
+    /// <summary>
+    /// A sold-out, waitlist-enabled ticket type in WaitlistMode with <c>attendee1..N@example.com</c> waiting.
+    /// </summary>
+    public static TicketTypeManagementFixture WithPeopleWaiting(int count) =>
+        new() { _seedSoldOutTicketType = true, _waitingCount = count };
+
+    public static EmailAddress WaitingEmail(int position) => EmailAddress.From($"attendee{position}@example.com");
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -51,7 +61,8 @@ internal sealed class TicketTypeManagementFixture
             _seedSoldOutTicketType ? 1 : 100,
             maxReconfirmationEmails: _seedExistingMaxReconfirmationEmails
                 ? ReconfirmationEmailLimit.From(3)
-                : null);
+                : null,
+            waitlistEnabled: _waitingCount > 0);
 
         if (_seedSoldOutTicketType)
         {
@@ -63,6 +74,14 @@ internal sealed class TicketTypeManagementFixture
         {
             db.TicketedEvents.Add(ticketedEvent);
             db.TicketCatalogs.Add(catalog);
+
+            if (_waitingCount > 0)
+            {
+                var waitlist = Waitlist.Create(eventId, ExistingTicketTypeId, team.Id);
+                for (var i = 1; i <= _waitingCount; i++)
+                    waitlist.AddEntry(WaitingEmail(i), DateTimeOffset.UtcNow.AddMinutes(i), catalog, RegistrationId.New());
+                db.Waitlists.Add(waitlist);
+            }
         });
     }
 }

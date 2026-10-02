@@ -11,12 +11,18 @@ internal abstract record TransactionalEmailIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId);
 
+/// <summary>
+/// Describes a registration's confirmed <see cref="TicketTypes"/> and the ticket types it is only
+/// waitlisted for. A registration holding no confirmed ticket type gets a waitlist confirmation
+/// instead of a ticket.
+/// </summary>
 internal sealed record TicketConfirmationIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     RegistrationId RegistrationId,
     string FirstName,
-    IReadOnlyList<string> TicketTypes)
+    IReadOnlyList<string> TicketTypes,
+    IReadOnlyList<string> WaitlistedTicketTypes)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal sealed record CouponInvitationIntent(
@@ -25,12 +31,28 @@ internal sealed record CouponInvitationIntent(
     string CouponCode)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
+internal enum WaitlistOfferReason
+{
+    AutomaticPromotion,
+    VipPromotion,
+    CapacityOpenedForEveryone,
+}
+
 internal sealed record WaitlistOfferIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     string CouponCode,
     string TicketTypeName,
-    DateTimeOffset ExpiresAt)
+    DateTimeOffset ExpiresAt,
+    WaitlistOfferReason Reason,
+    RegistrationId RegistrationId)
+    : TransactionalEmailIntent(TeamId, TicketedEventId);
+
+internal sealed record WaitlistOfferExpiredIntent(
+    TeamId TeamId,
+    TicketedEventId TicketedEventId,
+    string TicketTypeName,
+    bool RegistrationClosed)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal abstract record RegistrationCancellationIntent(
@@ -41,6 +63,17 @@ internal abstract record RegistrationCancellationIntent(
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal sealed record AttendeeRequestCancellationIntent(
+    TeamId TeamId,
+    TicketedEventId TicketedEventId,
+    string FirstName,
+    RegistrationId RegistrationId)
+    : RegistrationCancellationIntent(TeamId, TicketedEventId, FirstName, RegistrationId);
+
+/// <summary>
+/// Attendee-requested cancellation of a registration that held no confirmed tickets, i.e. the
+/// attendee was only on one or more waitlists.
+/// </summary>
+internal sealed record WaitlistCancellationIntent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     string FirstName,

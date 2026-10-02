@@ -28,7 +28,8 @@ public class Coupon : Aggregate<CouponId>
         IReadOnlyList<TicketTypeId> allowedTicketTypeIds,
         DateTimeOffset expiresAt,
         bool bypassRegistrationWindow,
-        CouponSource source)
+        CouponSource source,
+        WaitlistCouponOrigin? waitlistOrigin)
         : base(id)
     {
         EventId = eventId;
@@ -38,6 +39,7 @@ public class Coupon : Aggregate<CouponId>
         ExpiresAt = expiresAt;
         BypassRegistrationWindow = bypassRegistrationWindow;
         Source = source;
+        WaitlistOrigin = waitlistOrigin;
 
         _allowedTicketTypeIds = allowedTicketTypeIds.ToList();
     }
@@ -50,14 +52,18 @@ public class Coupon : Aggregate<CouponId>
     public DateTimeOffset ExpiresAt { get; private set; }
     public bool BypassRegistrationWindow { get; private set; }
     public CouponSource Source { get; private set; }
+
+    /// <summary>
+    /// How a waitlist coupon was issued (automatic front-of-queue offer or VIP promotion); <c>null</c> for organiser
+    /// coupons. Decides the pool a redemption claims from (<see cref="RedemptionClaimMode"/>).
+    /// </summary>
+    public WaitlistCouponOrigin? WaitlistOrigin { get; private set; }
     public DateTimeOffset? RedeemedAt { get; private set; }
-    public DateTimeOffset? RevokedAt { get; private set; }
 
     public CouponStatus GetStatus(DateTimeOffset now)
     {
         if (RedeemedAt.HasValue) return CouponStatus.Redeemed;
-        if (RevokedAt.HasValue) return CouponStatus.Revoked;
-        if (ExpiresAt < now) return CouponStatus.Expired;
+        if (ExpiresAt <= now) return CouponStatus.Expired;
         return CouponStatus.Active;
     }
 
@@ -70,12 +76,25 @@ public class Coupon : Aggregate<CouponId>
         bool bypassRegistrationWindow,
         IReadOnlyList<TicketTypeInfo> availableTicketTypes,
         DateTimeOffset now,
-        CouponSource source = CouponSource.Organiser)
+        CouponSource source = CouponSource.Organiser,
+        WaitlistCouponOrigin? waitlistOrigin = null)
     {
         // Validate at least one ticket type.
         if (requestedTicketTypeIds.Count == 0)
         {
             throw new BusinessRuleViolationException(Errors.NoTicketTypes);
+        }
+
+        // Validate no ticket type is listed more than once.
+        var duplicateIds = requestedTicketTypeIds
+            .GroupBy(id => id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key.Value)
+            .ToList();
+
+        if (duplicateIds.Count > 0)
+        {
+            throw new BusinessRuleViolationException(Errors.DuplicateTicketTypes(duplicateIds));
         }
 
         // Validate all requested ticket types exist.
@@ -105,7 +124,8 @@ public class Coupon : Aggregate<CouponId>
             requestedTicketTypeIds,
             expiresAt,
             bypassRegistrationWindow,
-            source);
+            source,
+            source == CouponSource.Waitlist ? waitlistOrigin ?? WaitlistCouponOrigin.Automatic : null);
 
         if (source == CouponSource.Organiser)
         {
@@ -120,9 +140,25 @@ public class Coupon : Aggregate<CouponId>
         return coupon;
     }
 
-    public void Redeem(
+    /// <summary>
+    /// The capacity pool a redemption of this coupon claims from. This is capacity bookkeeping only, not a
+    /// redemption rule: an automatic waitlist offer converts the public seat it holds into a public ticket, while
+    /// an organiser coupon or a VIP offer claims admin tickets on top of public capacity (see <see cref="ClaimMode"/>).
+    /// </summary>
+    public ClaimMode RedemptionClaimMode =>
+        Source == CouponSource.Waitlist && WaitlistOrigin == WaitlistCouponOrigin.Automatic
+            ? ClaimMode.Public
+            : ClaimMode.Admin;
+
+    /// <summary>
+    /// Redeems the coupon against the ticket types the attendee is claiming, regardless of the coupon's source.
+    /// Succeeds as long as the selection includes at least one of the coupon's allowed ticket types; allowed
+    /// ticket types missing from the selection are forfeited and the coupon is still fully redeemed
+    /// (single-use). Returns the ticket types actually granted by this redemption.
+    /// </summary>
+    public IReadOnlyList<TicketTypeId> Redeem(
         EmailAddress email,
-        IReadOnlyList<TicketTypeId> ticketTypeIds,
+        IReadOnlyList<TicketTypeId> selectedTicketTypeIds,
         DateTimeOffset now)
     {
         var status = GetStatus(now);
@@ -130,31 +166,44 @@ public class Coupon : Aggregate<CouponId>
             throw new BusinessRuleViolationException(Errors.Expired);
         if (status == CouponStatus.Redeemed)
             throw new BusinessRuleViolationException(Errors.AlreadyRedeemed);
-        if (status == CouponStatus.Revoked)
-            throw new BusinessRuleViolationException(Errors.Revoked);
-
-        var notAllowlisted = ticketTypeIds
-            .Where(id => !_allowedTicketTypeIds.Any(allowed => allowed == id))
-            .Select(id => id.Value)
-            .ToArray();
-        if (notAllowlisted.Length > 0)
-            throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
 
         if (Email != email)
             throw new BusinessRuleViolationException(Errors.EmailMismatch);
 
+        var granted = _allowedTicketTypeIds
+            .Where(selectedTicketTypeIds.Contains)
+            .ToList();
+        if (granted.Count == 0)
+            throw new BusinessRuleViolationException(
+                Errors.NoCouponTicketTypeSelected(_allowedTicketTypeIds.Select(id => id.Value).ToArray()));
+
         RedeemedAt = now;
+        return granted;
     }
 
-    public void Revoke()
+    /// <summary>
+    /// Ends an unredeemed coupon early, e.g. a waitlist offer withdrawn because an admin registered its recipient for
+    /// the ticket type. A redeemed coupon stays redeemed.
+    /// </summary>
+    public void Expire(DateTimeOffset now)
     {
-        if (RedeemedAt.HasValue)
-        {
-            throw new BusinessRuleViolationException(Errors.CouponAlreadyRedeemed);
-        }
+        if (GetStatus(now) == CouponStatus.Active)
+            ExpiresAt = now;
+    }
 
-        // Revoking an already-revoked or expired coupon is idempotent.
-        RevokedAt ??= DateTimeOffset.UtcNow;
+    /// <summary>
+    /// Rejects a selection holding any ticket type outside this coupon's allow-list. Used where the coupon is
+    /// the only claim source for the whole selection (registering with a coupon), so it cannot be used to
+    /// claim uncapped capacity for ticket types it was never issued for.
+    /// </summary>
+    public void EnsureAllowsAll(IReadOnlyList<TicketTypeId> ticketTypeIds)
+    {
+        var notAllowlisted = ticketTypeIds
+            .Where(id => !_allowedTicketTypeIds.Contains(id))
+            .Select(id => id.Value)
+            .ToArray();
+        if (notAllowlisted.Length > 0)
+            throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
     }
 
     internal static class Errors
@@ -168,14 +217,14 @@ public class Coupon : Aggregate<CouponId>
             "One or more ticket types do not exist.",
             new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
 
+        public static Error DuplicateTicketTypes(IReadOnlyList<Guid> ids) => new(
+            "coupon.duplicate_ticket_types",
+            "Ticket types must not be listed more than once.",
+            new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
+
         public static readonly Error ExpiryMustBeInFuture = new(
             "coupon.expiry_must_be_in_future",
             "Expiry must be in the future.");
-
-        public static readonly Error CouponAlreadyRedeemed = new(
-            "coupon.already_redeemed",
-            "Cannot revoke a coupon that has already been redeemed.",
-            Type: ErrorType.Conflict);
 
         public static readonly Error Expired = new(
             "coupon.expired",
@@ -187,15 +236,16 @@ public class Coupon : Aggregate<CouponId>
             "This coupon has already been used.",
             Type: ErrorType.Conflict);
 
-        public static readonly Error Revoked = new(
-            "coupon.revoked",
-            "This coupon has been revoked.",
-            Type: ErrorType.Conflict);
-
         public static Error TicketTypeNotAllowlisted(Guid[] ids) => new(
             "coupon.ticket_type_not_allowed",
             "One or more ticket types are not allowed for this coupon.",
             Details: new Dictionary<string, object?> { ["ids"] = ids });
+
+        public static Error NoCouponTicketTypeSelected(Guid[] allowedIds) => new(
+            "coupon.no_coupon_ticket_type_selected",
+            "The ticket selection must include at least one of this coupon's ticket types.",
+            Type: ErrorType.Validation,
+            Details: new Dictionary<string, object?> { ["allowedTicketTypeIds"] = allowedIds });
 
         public static readonly Error EmailMismatch = new(
             "coupon.email_mismatch",

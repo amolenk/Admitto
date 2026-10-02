@@ -129,15 +129,53 @@ public sealed class WithdrawWaitlistEntriesTests(TestContext testContext) : Aspi
 
             var catalog = TicketCatalog.Create(fixture.EventId, fixture.TeamId);
             catalog.AddTicketType(fixture.TicketTypeIds[0], TicketTypeName.From("General Admission"), [], 1);
-            var ticketType = catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeIds[0]);
 
             var waitlist = await dbContext.Waitlists
                 .FirstOrDefaultAsync(w => w.Id == fixture.TicketTypeIds[0], testContext.CancellationToken);
             waitlist.ShouldNotBeNull();
 
-            var coupon = waitlist.IssueNextCoupon(ticketedEvent, ticketType, DateTimeOffset.UtcNow);
+            var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow);
 
             coupon.ShouldBeNull();
+        });
+    }
+
+    // Given a cancelled attendee holding an outstanding automatic waitlist offer, with another attendee queued behind
+    // When waitlist entries are withdrawn for that email
+    // Then the offer is withdrawn — its coupon expired and its held seat released — without telling its recipient
+    [TestMethod]
+    public async ValueTask WithdrawWaitlistEntries_OutstandingAutomaticOffer_WithdrawsOfferAndReleasesHold()
+    {
+        var fixture = WithdrawWaitlistEntriesFixture.WithOutstandingOffer();
+        await fixture.SetupAsync(Environment);
+
+        var sut = new WithdrawWaitlistEntriesHandler(Environment.RegistrationsDatabase.Context);
+
+        await sut.HandleAsync(
+            new WithdrawWaitlistEntriesCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.CancelledAttendeeEmail.Value),
+            testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var waitlist = await dbContext.Waitlists
+                .SingleAsync(w => w.Id == fixture.TicketTypeIds[0], testContext.CancellationToken);
+
+            waitlist.Entries.Single(e => e.Email == fixture.CancelledAttendeeEmail)
+                .Status.ShouldBe(WaitlistEntryStatus.Removed);
+
+            // The attendee still queued behind them keeps their place; promoting them to the next offer
+            // is the job of the released-capacity domain event handler, not this one.
+            var nextEntry = waitlist.Entries.Single(e => e.Email == fixture.NextQueuedEmail);
+            nextEntry.Status.ShouldBe(WaitlistEntryStatus.Active);
+
+            var catalog = await dbContext.TicketCatalogs
+                .SingleAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.GetTicketType(fixture.TicketTypeIds[0])!.WaitlistHeldCapacity.ShouldBe(0);
+
+            var coupon = await dbContext.Coupons.SingleAsync(
+                c => c.Id == fixture.OfferedCouponId, testContext.CancellationToken);
+            coupon.GetStatus(DateTimeOffset.UtcNow).ShouldBe(CouponStatus.Expired);
         });
     }
 }

@@ -11,27 +11,11 @@ public sealed class UpdateTicketTypeValidator : AbstractValidator<UpdateTicketTy
         RuleFor(x => x.Name)
             .MustBeNullOrParseable(TicketTypeName.TryFrom);
 
-        When(x => x.MaxCapacity is not null, () =>
+        // A public capacity of 0 means sold out to self-service; admin tickets come on top of it.
+        When(x => x.PublicCapacity is not null, () =>
         {
-            RuleFor(x => x.MaxCapacity!.Value)
-                .GreaterThan(0);
-        });
-
-        RuleFor(x => x.ReservedCapacity)
-            .GreaterThanOrEqualTo(0);
-
-        When(x => x.ReservedCapacity > 0, () =>
-        {
-            RuleFor(x => x.MaxCapacity)
-                .NotNull()
-                .WithMessage("ReservedCapacity requires a bounded capacity (MaxCapacity must be set).");
-        });
-
-        When(x => x.MaxCapacity is not null, () =>
-        {
-            RuleFor(x => x.ReservedCapacity)
-                .LessThanOrEqualTo(x => x.MaxCapacity!.Value)
-                .WithMessage("ReservedCapacity cannot exceed MaxCapacity.");
+            RuleFor(x => x.PublicCapacity!.Value)
+                .GreaterThanOrEqualTo(0);
         });
 
         When(x => x.ClaimWindowHours is not null, () =>

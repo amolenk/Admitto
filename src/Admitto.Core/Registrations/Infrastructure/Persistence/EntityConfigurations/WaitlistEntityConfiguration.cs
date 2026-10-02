@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -52,10 +53,19 @@ public class WaitlistEntityConfiguration : IEntityTypeConfiguration<Waitlist>
                 .HasJsonPropertyName("added_at")
                 .IsRequired();
 
+            b.Property(e => e.RegistrationId)
+                .HasJsonPropertyName("registration_id")
+                .HasConversion<RegistrationId.EfCoreValueConverter>()
+                .IsRequired();
+
             b.Property(e => e.Status)
                 .HasJsonPropertyName("status")
                 .HasConversion<string>()
                 .IsRequired();
+
+            b.Property(e => e.CouponId)
+                .HasJsonPropertyName("coupon_id")
+                .HasConversion<CouponId.EfCoreValueConverter>();
         });
 
         builder.OwnsMany(e => e.Coupons, b =>
@@ -73,6 +83,16 @@ public class WaitlistEntityConfiguration : IEntityTypeConfiguration<Waitlist>
 
             b.Property(e => e.IssuedAt)
                 .HasJsonPropertyName("issued_at")
+                .IsRequired();
+
+            b.Property(e => e.ExpiresAt)
+                .HasJsonPropertyName("expires_at")
+                .IsRequired();
+
+            // Rows written before origins were tracked lack this key and read back as Automatic.
+            b.Property(e => e.Origin)
+                .HasJsonPropertyName("origin")
+                .HasConversion<string>()
                 .IsRequired();
         });
     }

@@ -7,11 +7,10 @@ public sealed class UpdateTicketTypeHttpRequest
     private int? _maxReconfirmationEmails;
 
     public string? Name { get; init; }
-    public int? MaxCapacity { get; init; }
+    public int? PublicCapacity { get; init; }
     public bool? SelfServiceEnabled { get; init; }
     public bool? WaitlistEnabled { get; init; }
     public int? ClaimWindowHours { get; init; }
-    public int ReservedCapacity { get; init; }
 
     public int? MaxReconfirmationEmails
     {
@@ -31,11 +30,10 @@ public sealed class UpdateTicketTypeHttpRequest
         teamId,
         ticketTypeId,
         Name,
-        MaxCapacity,
+        PublicCapacity,
         SelfServiceEnabled,
         WaitlistEnabled,
         ClaimWindowHours,
         MaxReconfirmationEmails,
-        MaxReconfirmationEmailsSpecified,
-        ReservedCapacity);
+        MaxReconfirmationEmailsSpecified);
 }

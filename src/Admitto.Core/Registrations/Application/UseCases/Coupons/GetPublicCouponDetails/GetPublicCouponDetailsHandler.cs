@@ -4,14 +4,16 @@ using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetPublicCouponDetails;
 
-internal sealed class GetPublicCouponDetailsHandler(IRegistrationsWriteStore writeStore)
+internal sealed class GetPublicCouponDetailsHandler(
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
     : IQueryHandler<GetPublicCouponDetailsQuery, PublicCouponDetailsDto>
 {
     public async ValueTask<PublicCouponDetailsDto> HandleAsync(
         GetPublicCouponDetailsQuery query,
         CancellationToken cancellationToken)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
 
         var coupon = await writeStore.Coupons.GetUntrackedAsync(
             c => c.Code == query.Code && c.EventId == query.EventId && c.TeamId == query.TeamId,

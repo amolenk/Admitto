@@ -28,6 +28,33 @@ internal sealed class GetRegistrationDetailsHandler(
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        var waitlists = await writeStore.Waitlists
+            .Where(w => w.EventId == query.EventId && w.TeamId == TeamId.From(query.TeamId))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var catalog = await writeStore.TicketCatalogs
+            .Where(c => c.Id == query.EventId && c.TeamId == TeamId.From(query.TeamId))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var waitlistEntries = waitlists
+            .Select(w =>
+            {
+                var ticketType = catalog?.GetTicketType(w.Id);
+                var position = w.GetActivePosition(registration.Email);
+                var offeredEntry = position is null ? w.GetOfferedEntry(registration.Email) : null;
+
+                return (TicketType: ticketType, Position: position, OfferedEntry: offeredEntry);
+            })
+            .Where(x => x.TicketType is not null && (x.Position is not null || x.OfferedEntry is not null))
+            .Select(x => new WaitlistEntryDetailDto(
+                x.TicketType!.Name.Value,
+                x.Position,
+                IsOffered: x.OfferedEntry is not null,
+                OfferExpiresAt: x.OfferedEntry?.ExpiresAt))
+            .ToList();
+
         return new RegistrationDetailDto(
             Id: registration.Id.Value,
             Email: registration.Email.Value,
@@ -42,6 +69,7 @@ internal sealed class GetRegistrationDetailsHandler(
             Tickets: registration.Tickets
                 .Select(t => new TicketDetailDto(t.Id.Value, t.Name.Value))
                 .ToList(),
+            WaitlistEntries: waitlistEntries,
             AdditionalDetails: registration.AdditionalDetails
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             Activities: activities

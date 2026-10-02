@@ -8,6 +8,7 @@ using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
@@ -17,7 +18,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // Given a waitlist with one active entry and one freed slot
+    // Given a waitlist with one active entry and one free seat
     // When waitlist notifications are processed
     // Then a coupon is issued to the top-ranked attendee and their entry is removed
     [TestMethod]
@@ -32,7 +33,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
             testContext.CancellationToken);
 
         // Assert — one coupon created, waitlist entry removed
@@ -53,11 +54,11 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         });
     }
 
-    // Given a waitlist with two active entries and only one freed slot
+    // Given a waitlist with two active entries and only one free seat
     // When waitlist notifications are processed
     // Then only one coupon is issued and the remaining entry is renumbered to the top position
     [TestMethod]
-    public async ValueTask ProcessWaitlistNotifications_WithMultipleEntriesAndOneFreedSlot_IssuesSingleCoupon()
+    public async ValueTask ProcessWaitlistNotifications_WithMultipleEntriesAndOneFreeSeat_IssuesSingleCoupon()
     {
         // Arrange
         var fixture = ProcessWaitlistNotificationsFixture.WithTwoEntriesOneSlot();
@@ -68,7 +69,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
             testContext.CancellationToken);
 
         // Assert — only one coupon, one entry still active (position 2 → renumbered to 1)
@@ -82,16 +83,51 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
                 .FirstOrDefaultAsync(w => w.Id == fixture.TicketTypeId, testContext.CancellationToken);
             waitlist.ShouldNotBeNull();
             waitlist.Entries.Count(e => e.Status == WaitlistEntryStatus.Active).ShouldBe(1);
+
+            var catalog = await dbContext.TicketCatalogs
+                .FirstAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.GetTicketType(fixture.TicketTypeId)!.WaitlistHeldCapacity.ShouldBe(1);
         });
     }
 
-    // Given a waitlist with one active entry but two freed slots
+    // Given a ticket type with one free seat and a VIP offer outstanding that was made while it was sold out
+    // When waitlist notifications are processed
+    // Then the VIP offer takes no public seat, so the free seat goes to the front of the queue
+    [TestMethod]
+    public async ValueTask ProcessWaitlistNotifications_FreeSeatWithVipOfferOutstanding_OffersFrontOfQueue()
+    {
+        // Arrange
+        var fixture = ProcessWaitlistNotificationsFixture.WithTwoEntriesOneSlotAndVipOffer();
+        await fixture.SetupAsync(Environment, activeEntries: 2);
+
+        var sut = new ProcessWaitlistNotificationsHandler(
+            Environment.RegistrationsDatabase.Context, TimeProvider.System);
+
+        // Act
+        await sut.HandleAsync(
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
+            testContext.CancellationToken);
+
+        // Assert — the VIP's coupon and one new offer to the front of the queue
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Coupons.Select(c => c.Email.Value).ToListAsync(testContext.CancellationToken))
+                .ShouldBe(["attendee3@example.com", "attendee1@example.com"], ignoreOrder: true);
+
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.ActiveEntryCount.ShouldBe(1);
+            await dbContext.ShouldHoldOneSeatPerIssuedAutomaticCouponAsync(
+                fixture.EventId, fixture.TicketTypeId, testContext.CancellationToken);
+        });
+    }
+
+    // Given a waitlist with one active entry but two free seats
     // When waitlist notifications are processed
     // Then coupons are issued only for the active entries, capped at one
     [TestMethod]
-    public async ValueTask ProcessWaitlistNotifications_WhenFewerEntriesThanFreedSlots_IssuesCouponsOnlyForActiveEntries()
+    public async ValueTask ProcessWaitlistNotifications_WhenFewerEntriesThanFreeSeats_IssuesCouponsOnlyForActiveEntries()
     {
-        // Arrange — 1 active entry, 2 freed slots
+        // Arrange — 1 active entry, 2 free seats
         var fixture = ProcessWaitlistNotificationsFixture.WithOneEntryTwoSlots();
         await fixture.SetupAsync(Environment, activeEntries: 1);
 
@@ -100,7 +136,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 2),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
             testContext.CancellationToken);
 
         // Assert — only 1 coupon issued (capped by active entry count)
@@ -108,6 +144,36 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         {
             var coupons = await dbContext.Coupons.ToListAsync(testContext.CancellationToken);
             coupons.Count.ShouldBe(1);
+        });
+    }
+
+    // Given a sold-out ticket type with an attendee still waiting and no outstanding coupons
+    // When waitlist notifications are processed without any free seat
+    // Then no coupon is issued and waitlist mode stays on
+    [TestMethod]
+    public async ValueTask ProcessWaitlistNotifications_NoFreeSeatWithActiveEntries_KeepsWaitlistMode()
+    {
+        // Arrange
+        var fixture = ProcessWaitlistNotificationsFixture.WithOneEntryNoSlots();
+        await fixture.SetupAsync(Environment, activeEntries: 1);
+
+        var sut = new ProcessWaitlistNotificationsHandler(
+            Environment.RegistrationsDatabase.Context, TimeProvider.System);
+
+        // Act
+        await sut.HandleAsync(
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Coupons.AnyAsync(testContext.CancellationToken)).ShouldBeFalse();
+
+            var catalog = await dbContext.TicketCatalogs
+                .FirstAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.GetTicketType(fixture.TicketTypeId)!.WaitlistMode.ShouldBeTrue();
         });
     }
 
@@ -129,7 +195,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
             testContext.CancellationToken);
 
         // Assert — expiry must be after quiet hours end (08:00 next day) + 8h = 16:00 next day UTC
@@ -146,7 +212,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         });
     }
 
-    // Given a waitlist with one active entry and one freed slot
+    // Given a waitlist with one active entry and one free seat
     // When waitlist notifications are processed
     // Then the promoted attendee's waitlist offer email is prepared with the correct coupon and expiry
     [TestMethod]
@@ -161,7 +227,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act — run the automatic promotion
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
             testContext.CancellationToken);
 
         // Assert — the promotion raised a WaitlistCouponIssuedDomainEvent with the coupon details
@@ -195,7 +261,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         var composer = Substitute.For<ITransactionalEmailComposer>();
         composer.ReturnRenderedEmail(BuiltInEmailTemplateNames.WaitlistNotification);
         var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
-        var emailHandler = new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler);
+        var emailHandler = new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler, NullLogger<WaitlistCouponIssuedIntegrationEventHandler>.Instance);
 
         await emailHandler.HandleAsync(integrationEvent, testContext.CancellationToken);
 

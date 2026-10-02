@@ -166,6 +166,66 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.Activities[0].OccurredAt.ShouldBeLessThan(result.Activities[1].OccurredAt);
     }
 
+    // Given a registration confirmed for one ticket type and waitlisted (second in queue) for another
+    // When the registration details are queried
+    // Then the confirmed ticket and the waitlisted ticket type with its name and queue position both appear
+    [TestMethod]
+    public async ValueTask ConfirmedAndWaitlistedTickets_ReturnsBoth()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithConfirmedAndWaitlistedTickets();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId.Value);
+        var waitlisted = result.WaitlistEntries.ShouldHaveSingleItem();
+        waitlisted.TicketTypeName.ShouldBe("Workshop");
+        waitlisted.Position.ShouldBe(2);
+        waitlisted.IsOffered.ShouldBeFalse();
+    }
+
+    // Given a registration with no active waitlist entries
+    // When the registration details are queried
+    // Then the waitlist entries list is empty
+    [TestMethod]
+    public async ValueTask NoWaitlistEntries_ReturnsEmptyWaitlistEntries()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithRegisteredAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.WaitlistEntries.ShouldBeEmpty();
+    }
+
+    // Given the attendee's waitlist entry has been offered a coupon that is still outstanding
+    // When the registration details are queried
+    // Then the waitlisted ticket type still appears, flagged as offered with its expiry, and no queue position
+    [TestMethod]
+    public async ValueTask OfferedWaitlistEntry_ReturnsOfferedTicketTypeWithExpiry()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithOfferedTicketType();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        var offered = result.WaitlistEntries.ShouldHaveSingleItem();
+        offered.TicketTypeName.ShouldBe("Conference Pass");
+        offered.Position.ShouldBeNull();
+        offered.IsOffered.ShouldBeTrue();
+        offered.OfferExpiresAt.ShouldNotBeNull();
+        offered.OfferExpiresAt!.Value.ShouldBe(fixture.OfferExpiresAt, TimeSpan.FromSeconds(1));
+    }
+
     private static GetRegistrationDetailsHandler NewHandler() =>
         new(Environment.RegistrationsDatabase.Context, Environment.RegistrationsDatabase.Context);
 }

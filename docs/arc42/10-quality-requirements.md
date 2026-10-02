@@ -56,14 +56,14 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 Fixtures encapsulate test data seeding and mock configuration behind **static factory methods** that read like scenario descriptions:
 
 ```csharp
-internal sealed class RevokeCouponFixture
+internal sealed class ListCouponsFixture
 {
     // Private constructor — only static factories allowed.
-    private RevokeCouponFixture() { }
+    private ListCouponsFixture() { }
 
-    public static RevokeCouponFixture ActiveCoupon() => new() { _seedActiveCoupon = true };
-    public static RevokeCouponFixture RedeemedCoupon() => new() { _seedRedeemedCoupon = true };
-    public static RevokeCouponFixture NoCoupon() => new();
+    public static ListCouponsFixture EmptyList() => new();
+    public static ListCouponsFixture WithCoupons() => new() { _seedCoupons = true };
+    public static ListCouponsFixture WithMixedSources() => new() { _seedMixedSources = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment) { /* seed via SeedAsync */ }
 }
@@ -107,7 +107,7 @@ All tests use: `{Method}_{Condition}_{ExpectedOutcome}`
 
 Domain tests describe aggregate invariants — business rules that hold regardless of which feature exercises them. They must **never** reference feature-specific IDs.
 
-Examples: `Create_UnknownTicketType_ThrowsUnknownTicketTypesError`, `Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError`
+Examples: `Create_UnknownTicketType_ThrowsUnknownTicketTypesError`, `Redeem_DifferentEmail_ThrowsEmailMismatch`
 
 **Integration and API tests** (`Admitto.Core.IntegrationTests`, `Admitto.Api.Tests`) use the same convention, focussing on the use-case entry point and observable outcome:
 

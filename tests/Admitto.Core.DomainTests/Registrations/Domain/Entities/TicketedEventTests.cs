@@ -235,6 +235,83 @@ public sealed class TicketedEventTests
         sut.RegistrationPolicy.ShouldBe(policy);
     }
 
+    // Given an event whose registration window closes at a set time
+    // When the window is moved to close later
+    // Then the event raises that its registration window was extended
+    [TestMethod]
+    public void ConfigureRegistrationPolicy_ClosesAtMovedLater_RaisesRegistrationWindowExtended()
+    {
+        var sut = NewEvent();
+        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultStart.AddDays(-10)));
+        sut.ClearDomainEvents();
+
+        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultStart.AddDays(-5)));
+
+        sut.GetDomainEvents().OfType<TicketedEventRegistrationWindowExtendedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(
+                e => e.TeamId.ShouldBe(DefaultTeamId),
+                e => e.TicketedEventId.ShouldBe(DefaultEventId));
+    }
+
+    // Given an event whose registration window closes at a set time
+    // When the window is moved to close earlier, or only its opening time changes
+    // Then no registration-window-extended event is raised
+    [TestMethod]
+    [DataRow(-12, -30)]
+    [DataRow(-10, -20)]
+    public void ConfigureRegistrationPolicy_ClosesAtNotMovedLater_RaisesNothing(int closesAtDays, int opensAtDays)
+    {
+        var sut = NewEvent();
+        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultStart.AddDays(-10)));
+        sut.ClearDomainEvents();
+
+        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
+            DefaultStart.AddDays(opensAtDays), DefaultStart.AddDays(closesAtDays)));
+
+        sut.GetDomainEvents().OfType<TicketedEventRegistrationWindowExtendedDomainEvent>().ShouldBeEmpty();
+    }
+
+    // Given an event with a registration window
+    // When the registration window is cleared
+    // Then nothing closes the waitlist anymore, so the event raises that its registration window was extended
+    [TestMethod]
+    public void ConfigureRegistrationPolicy_PolicyCleared_RaisesRegistrationWindowExtended()
+    {
+        var sut = NewEvent();
+        sut.ConfigureRegistrationPolicy(NewRegistrationPolicy());
+        sut.ClearDomainEvents();
+
+        sut.ConfigureRegistrationPolicy(null);
+
+        sut.GetDomainEvents().OfType<TicketedEventRegistrationWindowExtendedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    // Given an event whose registration window closes at a set time
+    // When asked whether registration has closed before, at and after that time
+    // Then it has closed from the closing time onwards
+    [TestMethod]
+    [DataRow(-1, false)]
+    [DataRow(0, true)]
+    [DataRow(1, true)]
+    public void HasRegistrationClosed_RelativeToClosesAt_ClosedFromClosesAt(int minutesFromClose, bool expected)
+    {
+        var sut = NewEvent();
+        var closesAt = DefaultStart.AddDays(-10);
+        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), closesAt));
+
+        sut.HasRegistrationClosed(closesAt.AddMinutes(minutesFromClose)).ShouldBe(expected);
+    }
+
+    // Given an event without a registration window
+    // When asked whether registration has closed
+    // Then it has not, since there is no closing time
+    [TestMethod]
+    public void HasRegistrationClosed_NoPolicy_ReturnsFalse()
+    {
+        NewEvent().HasRegistrationClosed(DefaultStart).ShouldBeFalse();
+    }
+
     // Given an archived event
     // When a registration policy is configured
     // Then it throws an event-not-active business rule violation

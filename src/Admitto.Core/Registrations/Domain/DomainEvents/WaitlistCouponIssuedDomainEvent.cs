@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
 
@@ -10,4 +11,6 @@ public record WaitlistCouponIssuedDomainEvent(
     EmailAddress RecipientEmail,
     CouponCode CouponCode,
     string TicketTypeName,
-    DateTimeOffset ExpiresAt) : DomainEvent;
+    DateTimeOffset ExpiresAt,
+    WaitlistOfferReason Reason,
+    RegistrationId RegistrationId) : DomainEvent;

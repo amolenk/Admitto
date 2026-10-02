@@ -4,7 +4,8 @@ public enum CheckInCandidateState
 {
     Eligible,
     CheckedIn,
-    Cancelled
+    Cancelled,
+    Waitlisted
 }
 
 public sealed record CheckInLookupCandidateDto(

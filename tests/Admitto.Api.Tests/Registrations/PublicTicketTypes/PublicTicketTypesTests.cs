@@ -129,8 +129,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         item.GetProperty("status").GetString().ShouldBe("available");
         item.TryGetProperty("soldOut", out _).ShouldBeFalse();
         item.TryGetProperty("requiresWaitlist", out _).ShouldBeFalse();
-        item.TryGetProperty("maxCapacity", out _).ShouldBeFalse();
-        item.TryGetProperty("usedCapacity", out _).ShouldBeFalse();
+        item.TryGetProperty("publicCapacity", out _).ShouldBeFalse();
+        item.TryGetProperty("publicUsedCapacity", out _).ShouldBeFalse();
+        item.TryGetProperty("adminUsedCount", out _).ShouldBeFalse();
         item.TryGetProperty("waitlistEnabled", out _).ShouldBeFalse();
         item.TryGetProperty("waitlistMode", out _).ShouldBeFalse();
     }

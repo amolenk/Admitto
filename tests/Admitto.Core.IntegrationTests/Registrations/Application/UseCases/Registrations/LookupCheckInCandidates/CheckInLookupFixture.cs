@@ -48,6 +48,14 @@ internal sealed class CheckInLookupFixture
 
         registrations.Add(Registration.Create(
             TeamId,
+            EventId,
+            EmailAddress.From("waiting@example.com"),
+            FirstName.From("Waiting"),
+            LastName.From("Match"),
+            []));
+
+        registrations.Add(Registration.Create(
+            TeamId,
             OtherEventId,
             EmailAddress.From("match-other@example.com"),
             FirstName.From("Match"),

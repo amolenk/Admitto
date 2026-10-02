@@ -26,12 +26,23 @@
 
     {{ if ticket_types && ticket_types.size > 0 }}
     <div style="margin-bottom: 20px;">
-        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Your ticket type(s)</h2>
+        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Your confirmed ticket type(s)</h2>
         <ul style="margin: 0; padding-left: 20px;">
             {{ for ticket_type in ticket_types }}
             <li>{{ ticket_type }}</li>
             {{ end }}
         </ul>
+    </div>
+    {{ end }}
+    {{ if waitlisted_ticket_types && waitlisted_ticket_types.size > 0 }}
+    <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">You're on the waitlist for</h2>
+        <ul style="margin: 0; padding-left: 20px;">
+            {{ for ticket_type in waitlisted_ticket_types }}
+            <li>{{ ticket_type }}</li>
+            {{ end }}
+        </ul>
+        <p style="font-size: 14px; color: #666;">Your place on a waitlist is not a confirmed ticket. We'll email you if a spot opens up.</p>
     </div>
     {{ end }}
         <p>You can present this QR code on your mobile device or bring a printed copy to the event.</p>

@@ -159,9 +159,29 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.NoTicketTypes);
     }
 
-    // Given coupons that are active, revoked, or past their expiry date
+    // Given a coupon created with the same ticket type listed twice
+    // When the coupon is created
+    // Then it returns a DuplicateTicketTypes error naming the repeated id
+    [TestMethod]
+    public void Create_DuplicateTicketType_ThrowsDuplicateTicketTypesError()
+    {
+        // Arrange
+        var ticketTypeId = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            new CouponBuilder()
+                .WithRequestedTicketTypeIds(ticketTypeId, ticketTypeId)
+                .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
+                .Build());
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.DuplicateTicketTypes(new List<Guid> { ticketTypeId.Value }));
+    }
+
+    // Given coupons that are active, redeemed, or past their expiry date
     // When their status is queried at the relevant time
-    // Then each returns the matching status (Active, Revoked, or Expired)
+    // Then each returns the matching status (Active, Redeemed, or Expired)
     [TestMethod]
     public void GetStatus_VariousCouponStates_ReturnsCorrectStatus()
     {
@@ -170,16 +190,18 @@ public sealed class CouponTests
 
         var activeCoupon = new CouponBuilder().Build();
 
-        var revokedCoupon = new CouponBuilder().Build();
-        revokedCoupon.Revoke();
+        var redeemedCoupon = new CouponBuilder()
+            .WithExpiresAt(now.AddHours(1))
+            .Build();
+        SetRedeemedAt(redeemedCoupon, now);
 
         var expiredCoupon = new CouponBuilder()
             .WithExpiresAt(now.AddHours(1))
             .Build();
 
-        // Assert
+        // Assert — a redeemed coupon stays Redeemed after its expiry passes
         activeCoupon.GetStatus(now).ShouldBe(CouponStatus.Active);
-        revokedCoupon.GetStatus(now).ShouldBe(CouponStatus.Revoked);
+        redeemedCoupon.GetStatus(now.AddHours(2)).ShouldBe(CouponStatus.Redeemed);
         expiredCoupon.GetStatus(now.AddHours(2)).ShouldBe(CouponStatus.Expired);
     }
 
@@ -216,91 +238,214 @@ public sealed class CouponTests
             () => sut.AllowedTicketTypeIds.ShouldContain(id2),
             () => sut.ExpiresAt.ShouldBe(expiresAt),
             () => sut.BypassRegistrationWindow.ShouldBeTrue(),
-            () => sut.RedeemedAt.ShouldBeNull(),
-            () => sut.RevokedAt.ShouldBeNull());
+            () => sut.RedeemedAt.ShouldBeNull());
     }
 
-    // Given an active coupon
-    // When the coupon is revoked
-    // Then its revoked-at timestamp is set and its status becomes Revoked
+    // Given a coupon allowing two ticket types
+    // When it is redeemed with a selection containing both
+    // Then both ticket types are granted and the coupon is marked redeemed
     [TestMethod]
-    public void Revoke_ActiveCoupon_SetsRevokedAt()
+    public void Redeem_SelectionContainsAllCouponTicketTypes_GrantsAllAndMarksRedeemed()
     {
         // Arrange
-        var sut = new CouponBuilder().Build();
+        var sut = MultiTicketTypeCoupon();
 
         // Act
-        sut.Revoke();
+        var granted = sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopA, WorkshopB], CouponBuilder.DefaultNow);
 
         // Assert
-        sut.RevokedAt.ShouldNotBeNull();
-        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Revoked);
+        granted.ShouldBe([WorkshopA, WorkshopB], ignoreOrder: true);
+        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Redeemed);
     }
 
-    // Given a coupon that has already expired
-    // When the coupon is revoked
-    // Then its revoked-at timestamp is set and its status becomes Revoked instead of Expired
+    // Given a coupon allowing two ticket types
+    // When it is redeemed with a selection containing only one of them
+    // Then only that ticket type is granted, the other is forfeited, and the coupon is fully redeemed
     [TestMethod]
-    public void Revoke_ExpiredCoupon_SetsRevokedAt()
+    public void Redeem_SelectionContainsSomeCouponTicketTypes_GrantsOverlapAndForfeitsRest()
     {
         // Arrange
-        var now = CouponBuilder.DefaultNow;
-
-        var sut = new CouponBuilder()
-            .WithExpiresAt(now.AddHours(1))
-            .Build();
-
-        var afterExpiry = now.AddHours(2);
-        sut.GetStatus(afterExpiry).ShouldBe(CouponStatus.Expired);
+        var sut = MultiTicketTypeCoupon();
 
         // Act
-        sut.Revoke();
+        var granted = sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopB], CouponBuilder.DefaultNow);
 
         // Assert
-        sut.RevokedAt.ShouldNotBeNull();
-        sut.GetStatus(afterExpiry).ShouldBe(CouponStatus.Revoked);
-    }
-
-    // Given a coupon that has already been redeemed
-    // When revocation is attempted
-    // Then it returns a CouponAlreadyRedeemed error
-    [TestMethod]
-    public void Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError()
-    {
-        // Arrange — we need a redeemed coupon. Since Redeem isn't implemented yet,
-        // we simulate by setting RedeemedAt via reflection (this is a domain-level test concern).
-        var sut = new CouponBuilder().Build();
-        SetRedeemedAt(sut, DateTimeOffset.UtcNow);
+        granted.ShouldBe([WorkshopB]);
         sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Redeemed);
 
-        // Act
-        var result = ErrorResult.Capture(() => sut.Revoke());
-
-        // Assert
-        result.Error.ShouldMatch(Coupon.Errors.CouponAlreadyRedeemed);
+        var second = ErrorResult.Capture(
+            () => sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopA], CouponBuilder.DefaultNow));
+        second.Error.ShouldMatch(Coupon.Errors.AlreadyRedeemed);
     }
 
-    // Given a coupon that has already been revoked
-    // When the coupon is revoked again
-    // Then the original revoked-at timestamp is kept
+    // Given a coupon allowing one ticket type
+    // When it is redeemed with a selection that also holds a ticket type the coupon does not cover
+    // Then only the coupon's own ticket type is granted
     [TestMethod]
-    public void Revoke_AlreadyRevokedCoupon_IsIdempotent()
+    public void Redeem_SelectionContainsOtherTicketTypes_GrantsOnlyCouponTicketTypes()
     {
         // Arrange
         var sut = new CouponBuilder().Build();
-        sut.Revoke();
-        var firstRevokedAt = sut.RevokedAt;
+        var otherTicketTypeId = TicketTypeId.New();
 
         // Act
-        sut.Revoke();
+        var granted = sut.Redeem(
+            CouponBuilder.DefaultEmail,
+            [otherTicketTypeId, CouponBuilder.DefaultTicketTypeId],
+            CouponBuilder.DefaultNow);
 
         // Assert
-        sut.RevokedAt.ShouldBe(firstRevokedAt);
+        granted.ShouldBe([CouponBuilder.DefaultTicketTypeId]);
     }
+
+    // Given a coupon of either source allowing two ticket types
+    // When it is redeemed with a selection that includes none of them
+    // Then it fails with a no-coupon-ticket-type-selected error and the coupon stays active
+    [TestMethod]
+    [DataRow(CouponSource.Organiser)]
+    [DataRow(CouponSource.Waitlist)]
+    public void Redeem_SelectionContainsNoCouponTicketType_ThrowsNoCouponTicketTypeSelected(CouponSource source)
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon(source);
+
+        // Act
+        var result = ErrorResult.Capture(
+            () => sut.Redeem(CouponBuilder.DefaultEmail, [TicketTypeId.New()], CouponBuilder.DefaultNow));
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.NoCouponTicketTypeSelected([WorkshopA.Value, WorkshopB.Value]));
+        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Active);
+    }
+
+    // Given a waitlist-sourced coupon allowing two ticket types
+    // When it is redeemed with a selection containing one of them
+    // Then it follows the same partial-tolerant rule as an organiser coupon
+    [TestMethod]
+    public void Redeem_WaitlistSourcedMultiTicketTypeCoupon_GrantsOverlap()
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon(CouponSource.Waitlist);
+
+        // Act
+        var granted = sut.Redeem(CouponBuilder.DefaultEmail, [WorkshopA], CouponBuilder.DefaultNow);
+
+        // Assert
+        granted.ShouldBe([WorkshopA]);
+        sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Redeemed);
+    }
+
+    // Given a coupon issued to one email address
+    // When it is redeemed by a different email address
+    // Then it fails with an email-mismatch error
+    [TestMethod]
+    public void Redeem_DifferentEmail_ThrowsEmailMismatch()
+    {
+        // Arrange
+        var sut = new CouponBuilder().Build();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Redeem(
+            EmailAddress.From("someone-else@example.com"),
+            [CouponBuilder.DefaultTicketTypeId],
+            CouponBuilder.DefaultNow));
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.EmailMismatch);
+    }
+
+    // Given a coupon allowing two ticket types
+    // When it is checked against a selection holding a ticket type outside its allow-list
+    // Then it fails with a ticket-type-not-allowed error naming that ticket type
+    [TestMethod]
+    public void EnsureAllowsAll_SelectionOutsideAllowList_ThrowsTicketTypeNotAllowlisted()
+    {
+        // Arrange
+        var sut = MultiTicketTypeCoupon();
+        var otherTicketTypeId = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.EnsureAllowsAll([WorkshopA, otherTicketTypeId]));
+
+        // Assert
+        result.Error.ShouldMatch(Coupon.Errors.TicketTypeNotAllowlisted([otherTicketTypeId.Value]));
+    }
+
+    // Given an organiser coupon
+    // When its redemption claim mode is read
+    // Then it claims admin tickets on top of public capacity
+    [TestMethod]
+    public void RedemptionClaimMode_OrganiserCoupon_ReturnsAdmin()
+    {
+        // Arrange
+        var sut = new CouponBuilder().WithSource(CouponSource.Organiser).Build();
+
+        // Act & Assert
+        sut.RedemptionClaimMode.ShouldBe(ClaimMode.Admin);
+        sut.WaitlistOrigin.ShouldBeNull();
+    }
+
+    // Given a waitlist coupon of a given origin
+    // When its redemption claim mode is read
+    // Then an automatic offer converts its public hold and a VIP offer claims an admin ticket
+    [TestMethod]
+    [DataRow(WaitlistCouponOrigin.Automatic, ClaimMode.Public)]
+    [DataRow(WaitlistCouponOrigin.Manual, ClaimMode.Admin)]
+    public void RedemptionClaimMode_WaitlistCoupon_ReturnsPoolByOrigin(WaitlistCouponOrigin origin, ClaimMode expected)
+    {
+        // Arrange
+        var sut = new CouponBuilder().WithWaitlistOrigin(origin).Build();
+
+        // Act & Assert
+        sut.RedemptionClaimMode.ShouldBe(expected);
+    }
+
+    private static readonly TicketTypeId WorkshopA = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    private static readonly TicketTypeId WorkshopB = TicketTypeId.From(new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+
+    private static Coupon MultiTicketTypeCoupon(CouponSource source = CouponSource.Organiser) =>
+        new CouponBuilder()
+            .WithRequestedTicketTypeIds(WorkshopA, WorkshopB)
+            .WithAvailableTicketTypes(new TicketTypeInfo(WorkshopA), new TicketTypeInfo(WorkshopB))
+            .WithSource(source)
+            .Build();
 
     private static void SetRedeemedAt(Coupon coupon, DateTimeOffset redeemedAt)
     {
         var property = typeof(Coupon).GetProperty(nameof(Coupon.RedeemedAt))!;
         property.SetValue(coupon, redeemedAt);
     }
+
+    // Given an active coupon
+    // When it is expired early
+    // Then it is Expired from then on and can no longer be redeemed
+    [TestMethod]
+    public void Expire_ActiveCoupon_CannotBeRedeemed()
+    {
+        var sut = new CouponBuilder().Build();
+        var now = CouponBuilder.DefaultNow.AddDays(1);
+
+        sut.Expire(now);
+
+        sut.GetStatus(now).ShouldBe(CouponStatus.Expired);
+        var result = ErrorResult.Capture(() =>
+            sut.Redeem(CouponBuilder.DefaultEmail, [CouponBuilder.DefaultTicketTypeId], now));
+        result.Error.ShouldMatch(Coupon.Errors.Expired);
+    }
+
+    // Given a coupon that has already been redeemed
+    // When it is expired
+    // Then it stays redeemed
+    [TestMethod]
+    public void Expire_RedeemedCoupon_StaysRedeemed()
+    {
+        var sut = new CouponBuilder().Build();
+        sut.Redeem(CouponBuilder.DefaultEmail, [CouponBuilder.DefaultTicketTypeId], CouponBuilder.DefaultNow);
+
+        sut.Expire(CouponBuilder.DefaultNow.AddDays(1));
+
+        sut.GetStatus(CouponBuilder.DefaultNow.AddDays(1)).ShouldBe(CouponStatus.Redeemed);
+    }
+
 }

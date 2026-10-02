@@ -2,17 +2,20 @@ Your spot at {{ event_name }} is ready — use your coupon
 
 Hi there,
 
-Great news! A spot has opened up at {{ event_name }} and you've reached the top of the waitlist.
+{{ intro_text }}
 
-Your personal coupon code: {{ coupon_code }}
-Ticket type: {{ ticket_type_name }}
+{{ if ticket_types && ticket_types.size > 0 }}
+Your offered ticket type(s):
+{{ for ticket_type in ticket_types }}
+- {{ ticket_type }}
+{{ end }}
+{{ end }}
+Claim your ticket using the link below.
 
-Use this code when registering to claim your ticket.
+This offer expires on {{ expires_at }}. {{ expiry_note }}
 
-This offer expires on {{ expires_at }}. After that, the spot may be offered to the next person on the waitlist.
-
-Register now:
-{{ register_link }}
+{{ cta_label }}:
+{{ cta_link }}
 
 Best regards,
 The {{ event_name }} Team

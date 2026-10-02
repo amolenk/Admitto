@@ -24,6 +24,24 @@ public sealed class RegistrationEmailLinksTests
         links.ReconfirmLink.ShouldBe("https://tickets.example.com/e/devconf/reconfirm/11111111-1111-1111-1111-111111111111");
     }
 
+    // Given a public event link and a coupon code
+    // When registration email links are composed
+    // Then the register and edit-registration links carry the coupon code as a query parameter
+    [TestMethod]
+    public void From_WithCouponCode_AppendsCouponQueryParameter()
+    {
+        var registrationId = RegistrationId.From(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+
+        var links = RegistrationEmailLinks.From(
+            "https://tickets.example.com/e/devconf", registrationId, "WAIT-456");
+
+        links.RegisterLink.ShouldBe("https://tickets.example.com/e/devconf/register?coupon=WAIT-456");
+        links.EditRegistrationLink.ShouldBe(
+            "https://tickets.example.com/e/devconf/edit/11111111-1111-1111-1111-111111111111?coupon=WAIT-456");
+        links.QRCodeLink.ShouldBe("https://tickets.example.com/e/devconf/qr-code/11111111-1111-1111-1111-111111111111");
+        links.CancelLink.ShouldBe("https://tickets.example.com/e/devconf/cancel/11111111-1111-1111-1111-111111111111");
+    }
+
     // Given only a public event link
     // When registration email links are composed without a registration
     // Then registration-specific routes fall back to the public event link

@@ -5,59 +5,37 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
 import { AlertCircle, Globe, Lock, Plus, Pencil, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
+import {
+    formatCapacitySummary,
+    PUBLIC_CAPACITY_HELP,
+    requirePublicCapacityWhenLimited,
+    ticketCapacity,
+} from "@/lib/ticket-capacity";
 
-
-const addSchema = z
-    .object({
-        name: z.string().min(1, "Name is required"),
-        selfServiceEnabled: z.boolean(),
-        limitCapacity: z.boolean(),
-        maxCapacity: z.number().int().min(1).optional(),
-        reservedCapacity: z.number().int().min(0).optional(),
-    })
-    .refine(
-        (values) =>
-            !values.limitCapacity ||
-            values.reservedCapacity === undefined ||
-            values.maxCapacity === undefined ||
-            values.reservedCapacity <= values.maxCapacity,
-        { message: "Reserved capacity cannot exceed max capacity", path: ["reservedCapacity"] }
-    );
+const addSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    selfServiceEnabled: z.boolean(),
+    limitCapacity: z.boolean(),
+    publicCapacity: z.number().int().min(0).optional(),
+}).superRefine(requirePublicCapacityWhenLimited);
 
 type AddValues = z.infer<typeof addSchema>;
 
-const editSchema = z
-    .object({
-        name: z.string().min(1, "Name is required"),
-        selfServiceEnabled: z.boolean(),
-        limitCapacity: z.boolean(),
-        maxCapacity: z.number().int().min(1).optional(),
-        reservedCapacity: z.number().int().min(0).optional(),
-    })
-    .refine(
-        (values) =>
-            !values.limitCapacity ||
-            values.reservedCapacity === undefined ||
-            values.maxCapacity === undefined ||
-            values.reservedCapacity <= values.maxCapacity,
-        { message: "Reserved capacity cannot exceed max capacity", path: ["reservedCapacity"] }
-    );
+const editSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    selfServiceEnabled: z.boolean(),
+    limitCapacity: z.boolean(),
+    publicCapacity: z.number().int().min(0).optional(),
+}).superRefine(requirePublicCapacityWhenLimited);
 
 type EditValues = z.infer<typeof editSchema>;
-
-/** Live "X / Y used" figure for a ticket type's reserved capacity. */
-function reservedUsedOf(tt: TicketTypeDto): string {
-    const reserved = Number(tt.reservedCapacity) || 0;
-    const reservedUsed = Number(tt.reservedUsedCapacity) || 0;
-    return `${reservedUsed}/${reserved} used`;
-}
 
 export function TicketTypesSection({
     teamId,
@@ -114,11 +92,7 @@ export function TicketTypesSection({
                                     )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    capacity {tt.maxCapacity == null ? "unlimited" : String(tt.maxCapacity)} ·
-                                    used {String(tt.usedCapacity)}
-                                    {Number(tt.reservedCapacity) > 0 && (
-                                        <> · reserved {reservedUsedOf(tt)}</>
-                                    )}
+                                    {formatCapacitySummary(ticketCapacity(tt))}
                                 </p>
                             </div>
                             <Button
@@ -168,8 +142,7 @@ function AddTicketTypeForm({
         name: "",
         selfServiceEnabled: true,
         limitCapacity: false,
-        maxCapacity: undefined,
-        reservedCapacity: undefined,
+        publicCapacity: undefined,
     });
 
     const limitCapacity = form.watch("limitCapacity");
@@ -178,8 +151,7 @@ function AddTicketTypeForm({
         await apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types`, {
             name: values.name,
             selfServiceEnabled: values.selfServiceEnabled,
-            maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
-            reservedCapacity: values.limitCapacity ? (values.reservedCapacity ?? 0) : 0,
+            publicCapacity: values.limitCapacity ? (values.publicCapacity ?? null) : null,
             timeSlots: null,
         });
         onAdded();
@@ -242,32 +214,10 @@ function AddTicketTypeForm({
                 {limitCapacity && (
                     <FormField
                         control={form.control}
-                        name="maxCapacity"
+                        name="publicCapacity"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Max capacity</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        value={field.value ?? ""}
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                        }
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-                {limitCapacity && (
-                    <FormField
-                        control={form.control}
-                        name="reservedCapacity"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Reserved capacity</FormLabel>
+                                <FormLabel>Public capacity</FormLabel>
                                 <FormControl>
                                     <Input
                                         type="number"
@@ -278,6 +228,7 @@ function AddTicketTypeForm({
                                         }
                                     />
                                 </FormControl>
+                                <FormDescription>{PUBLIC_CAPACITY_HELP}</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -308,13 +259,12 @@ function EditTicketTypeForm({
     onSaved: () => void;
     onCancel: () => void;
 }) {
-    const hasCapacity = ticketType.maxCapacity != null;
+    const hasCapacity = ticketType.publicCapacity != null;
     const form = useCustomForm<EditValues>(editSchema, {
         name: ticketType.name,
         selfServiceEnabled: ticketType.selfServiceEnabled,
         limitCapacity: hasCapacity,
-        maxCapacity: hasCapacity ? Number(ticketType.maxCapacity) : undefined,
-        reservedCapacity: hasCapacity ? Number(ticketType.reservedCapacity) : undefined,
+        publicCapacity: hasCapacity ? Number(ticketType.publicCapacity) : undefined,
     });
 
     const limitCapacity = form.watch("limitCapacity");
@@ -325,8 +275,7 @@ function EditTicketTypeForm({
             {
                 name: values.name,
                 selfServiceEnabled: values.selfServiceEnabled,
-                maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
-                reservedCapacity: values.limitCapacity ? (values.reservedCapacity ?? 0) : 0,
+                publicCapacity: values.limitCapacity ? (values.publicCapacity ?? null) : null,
             }
         );
         onSaved();
@@ -384,32 +333,10 @@ function EditTicketTypeForm({
                 {limitCapacity && (
                     <FormField
                         control={form.control}
-                        name="maxCapacity"
+                        name="publicCapacity"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Max capacity</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        value={field.value ?? ""}
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                        }
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-                {limitCapacity && (
-                    <FormField
-                        control={form.control}
-                        name="reservedCapacity"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Reserved capacity</FormLabel>
+                                <FormLabel>Public capacity</FormLabel>
                                 <FormControl>
                                     <Input
                                         type="number"
@@ -420,6 +347,7 @@ function EditTicketTypeForm({
                                         }
                                     />
                                 </FormControl>
+                                <FormDescription>{PUBLIC_CAPACITY_HELP}</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}

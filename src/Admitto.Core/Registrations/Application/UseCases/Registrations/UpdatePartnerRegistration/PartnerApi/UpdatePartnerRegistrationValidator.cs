@@ -24,8 +24,8 @@ public sealed class UpdatePartnerRegistrationValidator : AbstractValidator<Updat
             .Must(x => (x.RegisterTicketTypeIds?.Length ?? 0) > 0 || (x.WaitlistTicketTypeIds?.Length ?? 0) > 0)
             .WithMessage("At least one registration or waitlist ticket type must be specified.");
 
-        RuleFor(x => x.WaitlistCouponCode!.Value)
-            .MustBeParseable(CouponCode.TryFrom)
-            .When(x => x.WaitlistCouponCode.HasValue);
+        RuleFor(x => x.CouponCode!.Value)
+            .MustBeParseable(Domain.ValueObjects.CouponCode.TryFrom)
+            .When(x => x.CouponCode.HasValue);
     }
 }

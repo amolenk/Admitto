@@ -27,15 +27,18 @@ internal sealed class GetRegistrationDetailFixture
     private readonly bool _withAdditionalDetails;
     private readonly bool _seedOtherTeamApiKey;
     private readonly bool _bobIsCrewMember;
+    private readonly bool _aliceIsWaitlisted;
 
     private GetRegistrationDetailFixture(
         bool withAdditionalDetails = false,
         bool seedOtherTeamApiKey = false,
-        bool bobIsCrewMember = false)
+        bool bobIsCrewMember = false,
+        bool aliceIsWaitlisted = false)
     {
         _withAdditionalDetails = withAdditionalDetails;
         _seedOtherTeamApiKey = seedOtherTeamApiKey;
         _bobIsCrewMember = bobIsCrewMember;
+        _aliceIsWaitlisted = aliceIsWaitlisted;
     }
 
     public static GetRegistrationDetailFixture WithActiveRegistration() => new();
@@ -45,6 +48,12 @@ internal sealed class GetRegistrationDetailFixture
 
     public static GetRegistrationDetailFixture WithPartnerRegistration() =>
         new(withAdditionalDetails: true);
+
+    /// <summary>
+    /// Alice's registration holds no confirmed tickets: she only joined a waitlist.
+    /// </summary>
+    public static GetRegistrationDetailFixture WithWaitlistedPartnerRegistration() =>
+        new(withAdditionalDetails: true, aliceIsWaitlisted: true);
 
     public static GetRegistrationDetailFixture WithPartnerRegistrationAndOtherTeamApiKey() =>
         new(withAdditionalDetails: true, seedOtherTeamApiKey: true);
@@ -107,7 +116,7 @@ internal sealed class GetRegistrationDetailFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Doe"),
-            [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), [])],
+            _aliceIsWaitlisted ? [] : [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), [])],
             additionalDetails);
         RegistrationId = registration.Id;
 

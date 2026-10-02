@@ -18,6 +18,6 @@ internal sealed record TransactionalEmailContext(
     int? ReconfirmMinEmailIntervalHours,
     bool IsArchived)
 {
-    public RegistrationEmailLinks GetLinks(RegistrationId? registrationId) =>
-        RegistrationEmailLinks.From(PublicEventLink, registrationId);
+    public RegistrationEmailLinks GetLinks(RegistrationId? registrationId, string? couponCode = null) =>
+        RegistrationEmailLinks.From(PublicEventLink, registrationId, couponCode);
 }

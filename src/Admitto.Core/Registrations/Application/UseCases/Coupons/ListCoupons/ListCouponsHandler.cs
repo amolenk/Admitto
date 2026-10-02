@@ -3,14 +3,16 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.ListCoupons;
 
-internal sealed class ListCouponsHandler(IRegistrationsWriteStore writeStore)
+internal sealed class ListCouponsHandler(
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
     : IQueryHandler<ListCouponsQuery, ListCouponsResult>
 {
     public async ValueTask<ListCouponsResult> HandleAsync(
         ListCouponsQuery query,
         CancellationToken cancellationToken)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
 
         var coupons = await writeStore.Coupons
             .Where(c => c.EventId == query.EventId && c.TeamId == query.TeamId)

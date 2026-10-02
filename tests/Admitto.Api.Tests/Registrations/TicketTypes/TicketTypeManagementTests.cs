@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
@@ -25,7 +26,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             {
                 Name = "Session",
                 TimeSlots = Array.Empty<string>(),
-                MaxCapacity = 50,
+                PublicCapacity = 50,
                 MaxReconfirmationEmails = 3
             },
             cancellationToken: testContext.CancellationToken);
@@ -58,7 +59,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             {
                 Name = "Session",
                 TimeSlots = Array.Empty<string>(),
-                MaxCapacity = 50,
+                PublicCapacity = 50,
                 MaxReconfirmationEmails = 0
             },
             cancellationToken: testContext.CancellationToken);
@@ -83,7 +84,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             {
                 Name = "Session",
                 TimeSlots = Array.Empty<string>(),
-                MaxCapacity = 50
+                PublicCapacity = 50
             },
             cancellationToken: testContext.CancellationToken);
 
@@ -196,7 +197,7 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
             fixture.ExistingTicketTypeRoute,
             new
             {
-                MaxCapacity = 1,
+                PublicCapacity = 1,
                 WaitlistEnabled = true
             },
             cancellationToken: testContext.CancellationToken);
@@ -215,6 +216,41 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
                 .SingleAsync(w => w.Id == TicketTypeManagementFixture.ExistingTicketTypeId,
                     testContext.CancellationToken);
             waitlist.EventId.ShouldBe(TicketedEventId.From(fixture.EventId));
+        });
+    }
+
+    // Given a sold-out ticket type with two people waiting
+    // When its capacity is raised by one through the API
+    // Then the person at the front of the queue receives a waitlist coupon in the same request
+    [TestMethod]
+    public async Task UpdateTicketType_CapacityRaisedWhileWaitlisted_IssuesCouponToFrontOfQueue()
+    {
+        var fixture = TicketTypeManagementFixture.WithPeopleWaiting(2);
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.ApiClient.PutAsJsonAsync(
+            fixture.ExistingTicketTypeRoute,
+            new
+            {
+                PublicCapacity = 2,
+                WaitlistEnabled = true
+            },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        await Environment.RegistrationsDatabase.WithContextAsync(async db =>
+        {
+            var coupon = await db.Coupons.AsNoTracking()
+                .SingleAsync(c => c.EventId == TicketedEventId.From(fixture.EventId), testContext.CancellationToken);
+            coupon.Email.ShouldBe(TicketTypeManagementFixture.WaitingEmail(1));
+            coupon.Source.ShouldBe(CouponSource.Waitlist);
+
+            var waitlist = await db.Waitlists.AsNoTracking()
+                .SingleAsync(w => w.Id == TicketTypeManagementFixture.ExistingTicketTypeId,
+                    testContext.CancellationToken);
+            waitlist.GetActivePosition(TicketTypeManagementFixture.WaitingEmail(2)).ShouldBe(1);
+            waitlist.Coupons.Count(c => c.Status == WaitlistCouponStatus.Issued).ShouldBe(1);
         });
     }
 

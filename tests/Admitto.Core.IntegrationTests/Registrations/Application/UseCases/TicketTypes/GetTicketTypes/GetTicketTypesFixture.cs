@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class GetTicketTypesFixture
 {
     private bool _seedCatalog;
-    private (int maxCapacity, int reservedCapacity, int reservedUsed)? _reservedCapacityScenario;
+    private (int publicCapacity, int publicUsed, int adminUsed)? _publicAndAdminScenario;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
@@ -24,17 +24,17 @@ internal sealed class GetTicketTypesFixture
         _seedCatalog = true
     };
 
-    public static GetTicketTypesFixture WithReservedCapacityPartlyUsed(
-        int maxCapacity, int reservedCapacity, int reservedUsed) => new()
+    public static GetTicketTypesFixture WithPublicAndAdminTickets(
+        int publicCapacity, int publicUsed, int adminUsed) => new()
     {
-        _reservedCapacityScenario = (maxCapacity, reservedCapacity, reservedUsed)
+        _publicAndAdminScenario = (publicCapacity, publicUsed, adminUsed)
     };
 
     public static GetTicketTypesFixture NoCatalog() => new();
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (_reservedCapacityScenario is { } scenario)
+        if (_publicAndAdminScenario is { } scenario)
         {
             await environment.RegistrationsDatabase.SeedAsync(dbContext =>
             {
@@ -43,11 +43,12 @@ internal sealed class GetTicketTypesFixture
                     WorkshopId,
                     TicketTypeName.From("Workshop"),
                     [],
-                    scenario.maxCapacity,
-                    reservedCapacity: scenario.reservedCapacity);
+                    scenario.publicCapacity);
 
-                for (var i = 0; i < scenario.reservedUsed; i++)
-                    catalog.Claim([WorkshopId], ClaimMode.Reserved);
+                for (var i = 0; i < scenario.publicUsed; i++)
+                    catalog.Claim([WorkshopId], ClaimMode.Public);
+                for (var i = 0; i < scenario.adminUsed; i++)
+                    catalog.Claim([WorkshopId], ClaimMode.Admin);
 
                 dbContext.TicketCatalogs.Add(catalog);
             });

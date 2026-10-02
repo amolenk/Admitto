@@ -200,6 +200,32 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
         body.GetProperty("registrationId").GetGuid().ShouldBe(fixture.RegistrationId.Value);
     }
 
+    // Given a partner registration that is only on a waitlist, and a verification token for its email
+    // When the registration is resolved by that email
+    // Then the API returns the waitlisted registration, so the attendee can update or cancel it
+    [TestMethod]
+    public async Task PartnerRegistrationResolve_WaitlistedRegistration_ReturnsRegistrationId()
+    {
+        var fixture = GetRegistrationDetailFixture.WithWaitlistedPartnerRegistration();
+        await fixture.SetupAsync(Environment);
+        await fixture.SeedValidCodeAsync(Environment);
+
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
+        var token = await VerifyOtpAsync(client, fixture, "alice@example.com");
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            fixture.ResolvePartnerRegistrationRoute("alice@example.com"));
+        request.Headers.Authorization = new("Bearer", token);
+
+        var response = await client.SendAsync(request, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(
+            cancellationToken: testContext.CancellationToken);
+        body.GetProperty("registrationId").GetGuid().ShouldBe(fixture.RegistrationId.Value);
+    }
+
     // Given a partner registration
     // When the registration is resolved by email without a bearer verification token
     // Then the API returns 401 Unauthorized

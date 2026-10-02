@@ -10,11 +10,11 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
 [TestClass]
 public sealed class TicketTypeTests
 {
-    private static TicketType CreateTicketType(int? maxCapacity = 10, int usedCapacity = 0, int reservedCapacity = 0)
+    private static TicketType CreateTicketType(int? publicCapacity = 10, int usedCapacity = 0)
     {
         var id = TicketTypeId.New();
         var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity, reservedCapacity: reservedCapacity);
+        catalog.AddTicketType(id, TicketTypeName.From("General"), [], publicCapacity);
         var tt = catalog.GetTicketType(id)!;
         for (var i = 0; i < usedCapacity; i++)
             tt.Claim(ClaimMode.Public);
@@ -27,11 +27,11 @@ public sealed class TicketTypeTests
     [TestMethod]
     public void ReleaseCapacity_WhenUsedIsPositive_Decrements()
     {
-        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 5);
+        var sut = CreateTicketType(publicCapacity: 10, usedCapacity: 5);
 
         sut.ReleaseCapacity();
 
-        sut.UsedCapacity.ShouldBe(4);
+        sut.PublicUsedCapacity.ShouldBe(4);
     }
 
     // Given a ticket type with exactly one used slot
@@ -40,11 +40,11 @@ public sealed class TicketTypeTests
     [TestMethod]
     public void ReleaseCapacity_WhenUsedIsOne_DecrementsToZero()
     {
-        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 1);
+        var sut = CreateTicketType(publicCapacity: 10, usedCapacity: 1);
 
         sut.ReleaseCapacity();
 
-        sut.UsedCapacity.ShouldBe(0);
+        sut.PublicUsedCapacity.ShouldBe(0);
     }
 
     // Given a ticket type with no used slots
@@ -53,11 +53,11 @@ public sealed class TicketTypeTests
     [TestMethod]
     public void ReleaseCapacity_WhenUsedIsZero_ClampsAtZero()
     {
-        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 0);
+        var sut = CreateTicketType(publicCapacity: 10, usedCapacity: 0);
 
         sut.ReleaseCapacity();
 
-        sut.UsedCapacity.ShouldBe(0);
+        sut.PublicUsedCapacity.ShouldBe(0);
     }
 
     // Given a waitlist-enabled ticket type that is already fully claimed and in waitlist mode
@@ -68,7 +68,7 @@ public sealed class TicketTypeTests
     {
         var id = TicketTypeId.New();
         var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 1, waitlistEnabled: true);
+        catalog.AddTicketType(id, TicketTypeName.From("General"), [], publicCapacity: 1, waitlistEnabled: true);
         catalog.Claim([id], ClaimMode.Public);
         var sut = catalog.GetTicketType(id)!;
 
@@ -82,7 +82,7 @@ public sealed class TicketTypeTests
     [TestMethod]
     public void IsSoldOut_WhenBoundedAndAtCapacity_ReturnsTrue()
     {
-        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 10);
+        var sut = CreateTicketType(publicCapacity: 10, usedCapacity: 10);
 
         sut.IsSoldOut.ShouldBeTrue();
     }
@@ -93,7 +93,7 @@ public sealed class TicketTypeTests
     [TestMethod]
     public void IsSoldOut_WhenBoundedAndUnderCapacity_ReturnsFalse()
     {
-        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 9);
+        var sut = CreateTicketType(publicCapacity: 10, usedCapacity: 9);
 
         sut.IsSoldOut.ShouldBeFalse();
     }
@@ -104,142 +104,76 @@ public sealed class TicketTypeTests
     [TestMethod]
     public void IsSoldOut_WhenCapacityIsNull_ReturnsFalse()
     {
-        var sut = CreateTicketType(maxCapacity: null, usedCapacity: 10);
+        var sut = CreateTicketType(publicCapacity: null, usedCapacity: 10);
 
         sut.IsSoldOut.ShouldBeFalse();
     }
 
-    // Given a ticket type with reserved capacity and used capacity at the public threshold
-    // When checking whether it is sold out
-    // Then it returns true even though total capacity has not been reached
+    // Given a ticket type whose public seats are all used
+    // When an admin claims a ticket
+    // Then the admin count increments and the public counters are untouched
     [TestMethod]
-    public void IsSoldOut_WhenUsedCapacityReachesPublicThreshold_ReturnsTrue()
+    public void Claim_AdminOnSoldOut_IncrementsAdminCountOnly()
     {
-        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 8, reservedCapacity: 2);
+        var sut = CreateTicketType(publicCapacity: 2, usedCapacity: 2);
 
-        sut.IsSoldOut.ShouldBeTrue();
+        sut.Claim(ClaimMode.Admin);
+
+        sut.AdminUsedCount.ShouldBe(1);
+        sut.PublicUsedCapacity.ShouldBe(2);
+        sut.AvailableCapacity.ShouldBe(0);
     }
 
-    // Given a ticket type with reserved capacity and used capacity below the public threshold
-    // When checking whether it is sold out
-    // Then it returns false
+    // Given admin tickets claimed before any public claims
+    // When public claims fill the public capacity
+    // Then it becomes sold out at exactly the public capacity, not before
     [TestMethod]
-    public void IsSoldOut_WhenUsedCapacityBelowPublicThreshold_ReturnsFalse()
+    public void IsSoldOut_AdminClaimedEarlyThenPublicFillsCapacity_SoldOutAtPublicCapacity()
     {
-        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 7, reservedCapacity: 2);
-
-        sut.IsSoldOut.ShouldBeFalse();
-    }
-
-    // Given a ticket type with reserved capacity and an early reserved claim
-    // When the reserved claim is made before any public claims
-    // Then the reserved buffer is held back and full public capacity remains available
-    [TestMethod]
-    public void Claim_ReservedBeforeAnyPublicClaims_HoldsBackBufferFromPublicPool()
-    {
-        var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 200, reservedCapacity: 20);
-        var sut = catalog.GetTicketType(id)!;
+        var sut = CreateTicketType(publicCapacity: 200);
 
         for (var i = 0; i < 10; i++)
-            sut.Claim(ClaimMode.Reserved);
+            sut.Claim(ClaimMode.Admin); // early admin claims
 
-        sut.PublicAvailableCapacity(sut.MaxCapacity, sut.ReservedCapacity).ShouldBe(180);
-    }
-
-    // Given a ticket type with reserved capacity partly consumed by an early reserved claim
-    // When public claims fill the remaining public pool
-    // Then it becomes sold out at exactly the public threshold, not before
-    [TestMethod]
-    public void IsSoldOut_ReservedClaimedEarlyThenPublicFillsRemainder_SoldOutAtPublicThreshold()
-    {
-        var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 200, reservedCapacity: 20);
-        var sut = catalog.GetTicketType(id)!;
-
-        for (var i = 0; i < 10; i++)
-            sut.Claim(ClaimMode.Reserved); // early admin claims
-
-        for (var i = 0; i < 179; i++)
+        for (var i = 0; i < 199; i++)
             sut.Claim(ClaimMode.Public);
         sut.IsSoldOut.ShouldBeFalse();
 
-        sut.Claim(ClaimMode.Public); // 180th public claim exhausts the public pool
+        sut.Claim(ClaimMode.Public); // 200th public claim exhausts the public capacity
 
         sut.IsSoldOut.ShouldBeTrue();
     }
 
-    // Given reserved capacity of zero
-    // When an admin claims a ticket
-    // Then it simply consumes a public seat, matching pre-reserved-capacity behavior
+    // Given a public ticket and an admin ticket
+    // When the admin ticket is released
+    // Then only the admin count decrements and no public seat is freed
     [TestMethod]
-    public void Claim_ReservedWithZeroReservedCapacity_ConsumesPublicSeat()
+    public void ReleaseCapacity_AdminMode_DecrementsAdminCountOnly()
     {
-        var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 100);
-        var sut = catalog.GetTicketType(id)!;
+        var sut = CreateTicketType(publicCapacity: 1, usedCapacity: 1);
+        sut.Claim(ClaimMode.Admin);
 
-        sut.Claim(ClaimMode.Reserved);
+        sut.ReleaseCapacity(ClaimMode.Admin);
 
-        sut.PublicAvailableCapacity(sut.MaxCapacity, sut.ReservedCapacity).ShouldBe(99);
+        sut.AdminUsedCount.ShouldBe(0);
+        sut.PublicUsedCapacity.ShouldBe(1);
+        sut.PublicAvailableCapacity.ShouldBe(0);
     }
 
-    // Given reserved capacity fully consumed by reserved claims
-    // When another reserved claim is made beyond the buffer
-    // Then it spills into the public pool and IsSoldOut reflects the reduced availability
-    [TestMethod]
-    public void Claim_ReservedBeyondReservedCapacity_SpillsIntoPublicPool()
-    {
-        var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, reservedCapacity: 2);
-        var sut = catalog.GetTicketType(id)!;
-
-        sut.Claim(ClaimMode.Reserved);
-        sut.Claim(ClaimMode.Reserved);
-        sut.Claim(ClaimMode.Reserved); // 3rd reserved claim exceeds the buffer of 2
-
-        sut.PublicAvailableCapacity(sut.MaxCapacity, sut.ReservedCapacity).ShouldBe(7);
-    }
-
-    // Given a reserved claim that has been released
-    // When the reserved buffer is checked
-    // Then the reserved slot is credited back and held from the public pool again
-    [TestMethod]
-    public void ReleaseCapacity_ReservedMode_CreditsReservedBufferBack()
-    {
-        var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, reservedCapacity: 2);
-        var sut = catalog.GetTicketType(id)!;
-        sut.Claim(ClaimMode.Reserved);
-
-        sut.ReleaseCapacity(ClaimMode.Reserved);
-
-        sut.ReservedUsedCapacity.ShouldBe(0);
-        sut.PublicAvailableCapacity(sut.MaxCapacity, sut.ReservedCapacity).ShouldBe(8);
-    }
-
-    // Given a public claim that has been released
+    // Given a public ticket and an admin ticket
     // When capacity is released with the default (public) mode
-    // Then the reserved buffer is left untouched
+    // Then the admin count is left untouched
     [TestMethod]
-    public void ReleaseCapacity_DefaultMode_DoesNotAffectReservedUsedCapacity()
+    public void ReleaseCapacity_DefaultMode_DoesNotAffectAdminUsedCount()
     {
-        var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
-        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 10, reservedCapacity: 2);
-        var sut = catalog.GetTicketType(id)!;
-        sut.Claim(ClaimMode.Reserved);
+        var sut = CreateTicketType(publicCapacity: 10);
+        sut.Claim(ClaimMode.Admin);
         sut.Claim(ClaimMode.Public);
 
         sut.ReleaseCapacity();
 
-        sut.ReservedUsedCapacity.ShouldBe(1);
-        sut.UsedCapacity.ShouldBe(1);
+        sut.AdminUsedCount.ShouldBe(1);
+        sut.PublicUsedCapacity.ShouldBe(0);
     }
 
     // Given a newly created ticket type

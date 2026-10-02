@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PartnerApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -12,7 +12,7 @@ public static class UpdatePartnerRegistrationHttpEndpoint
     {
         group.MapPut("/registrations/{registrationId:guid}", UpdatePartnerRegistration)
             .WithName(nameof(UpdatePartnerRegistration))
-            .Produces<RegisterAttendeeSelfServiceTicketStateConflictProblemDetails>(
+            .Produces<RegisterAttendeeTicketStateConflictProblemDetails>(
                 StatusCodes.Status409Conflict,
                 "application/problem+json");
 
@@ -41,7 +41,7 @@ public static class UpdatePartnerRegistrationHttpEndpoint
             request.RegisterTicketTypeIds ?? [],
             request.WaitlistTicketTypeIds ?? [],
             request.AdditionalDetails,
-            request.WaitlistCouponCode);
+            request.CouponCode);
 
         await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

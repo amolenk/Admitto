@@ -35,6 +35,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var registrationId = RegistrationId.New();
 
         var earlyBirdId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
         var domainEvent = new AttendeeRegisteredDomainEvent(
             teamId,
             eventId,
@@ -43,6 +44,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             FirstName.From("Bob"),
             LastName.From("Smith"),
             [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])],
+            [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [])],
             DateTimeOffset.UtcNow);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
@@ -55,6 +57,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.FirstName.ShouldBe("Bob");
         evt.LastName.ShouldBe("Smith");
         evt.Tickets.ShouldHaveSingleItem().Id.ShouldBe(earlyBirdId.Value);
+        evt.WaitlistedTickets.ShouldHaveSingleItem().ShouldBe(new TicketTypeItem(workshopId.Value, "Workshop"));
     }
 
     // Given an OtpCodeRequested domain event
@@ -104,7 +107,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             EmailAddress.From("carol@example.com"),
             FirstName.From("Carol"),
             LastName.From("Clark"),
-            CancellationReason.AttendeeRequest);
+            CancellationReason.AttendeeRequest,
+            WasWaitlisted: true);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -115,6 +119,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.RegistrationId.ShouldBe(registrationId.Value);
         evt.RecipientEmail.ShouldBe("carol@example.com");
         evt.Reason.ShouldBe(nameof(CancellationReason.AttendeeRequest));
+        evt.WasWaitlisted.ShouldBeTrue();
     }
 
     // Given a RegistrationReconfirmed domain event
@@ -291,6 +296,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var changedAt = DateTimeOffset.UtcNow;
 
         var vipId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
         var domainEvent = new TicketsChangedDomainEvent(
             teamId,
             eventId,
@@ -300,6 +306,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             LastName.From("Adams"),
             [],
             [new TicketTypeSnapshot(vipId, TicketTypeName.From("VIP"), [])],
+            [],
+            [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [])],
             changedAt);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
@@ -313,6 +321,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.FirstName.ShouldBe("Eve");
         evt.LastName.ShouldBe("Adams");
         evt.NewTickets.ShouldHaveSingleItem().Id.ShouldBe(vipId.Value);
+        evt.NewWaitlistedTickets.ShouldHaveSingleItem().ShouldBe(new TicketTypeItem(workshopId.Value, "Workshop"));
         evt.ChangedAt.ShouldBe(changedAt);
     }
 
@@ -327,6 +336,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var ticketTypeId = TicketTypeId.New();
         var couponCode = CouponCode.New();
         var expiresAt = DateTimeOffset.UtcNow.AddHours(8);
+        var registrationId = RegistrationId.New();
 
         var domainEvent = new WaitlistCouponIssuedDomainEvent(
             teamId,
@@ -335,7 +345,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             EmailAddress.From("alice@example.com"),
             couponCode,
             "Conference Pass",
-            expiresAt);
+            expiresAt,
+            WaitlistOfferReason.AutomaticPromotion,
+            registrationId);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -347,5 +359,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.CouponCode.ShouldBe(couponCode.Value.ToString());
         evt.TicketTypeName.ShouldBe("Conference Pass");
         evt.ExpiresAt.ShouldBe(expiresAt);
+        evt.Reason.ShouldBe(nameof(WaitlistOfferReason.AutomaticPromotion));
+        evt.RegistrationId.ShouldBe(registrationId.Value);
     }
 }

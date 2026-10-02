@@ -1,33 +1,39 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Jobs;
 
 /// <summary>
-/// Polls for expired waitlist coupons (past the grace period) and processes each one:
-/// revokes the coupon on the <see cref="Waitlist"/> aggregate, then fires
-/// <see cref="ProcessWaitlistNotificationsCommand"/> to cascade the freed slot to the next
-/// person in queue. If the waitlist is empty after revocation, the domain raises
-/// <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode.
+/// Polls for waitlists holding issued coupons whose offer lapsed (past the grace period) and expires
+/// each one on the <see cref="Waitlist"/> aggregate, which raises
+/// <see cref="Domain.DomainEvents.WaitlistCouponExpiredDomainEvent"/> so the recipient is told
+/// their offer lapsed, and gives back the public seat an automatic offer held on the <see cref="TicketCatalog"/>
+/// (a VIP offer held none). The job counts no freed slots: the catalog decides from real capacity whether that
+/// seat goes to the next person in queue (<see cref="Domain.DomainEvents.WaitlistCapacityAvailableDomainEvent"/>)
+/// or makes up a shortfall left by lowering <c>PublicCapacity</c>. If the waitlist is empty after expiry, the domain
+/// raises <see cref="Domain.DomainEvents.WaitlistExhaustedDomainEvent"/> which lifts WaitlistMode. After registration
+/// has closed the freed seat goes to nobody, and the expired-offer email doesn't invite the attendee to register again.
 /// </summary>
 /// <remarks>
 /// The 2-minute grace period (<see cref="GracePeriod"/>) prevents the job from racing with
-/// a last-second redemption by the attendee. As a second line of defence, the
-/// <see cref="Waitlist"/> aggregate carries a PostgreSQL <c>xmin</c> row-version concurrency
-/// token; if both transactions attempt to commit simultaneously the loser receives a
-/// <see cref="Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException"/> which surfaces as
-/// a <see cref="Shared.Kernel.ErrorHandling.ConcurrencyConflictError"/> at the API layer.
+/// a last-second redemption by the attendee. As a second line of defence, each event's waitlists and ticket
+/// catalog carry a PostgreSQL <c>xmin</c> row-version concurrency token; if a redemption, registration or
+/// cancellation on the same catalog commits first, that event's save fails with a
+/// <see cref="DbUpdateConcurrencyException"/>, which is logged and left for the next run to retry. Each event is
+/// processed and saved in its own unit of work (its own DI scope and <see cref="IRegistrationsWriteStore"/>), so a
+/// conflict on one event's catalog doesn't roll back or block any other event's work in the same run.
 /// </remarks>
 [DisallowConcurrentExecution]
 internal sealed class ProcessExpiredWaitlistCouponsJob(
     IRegistrationsWriteStore writeStore,
-    ICommandHandler<ProcessWaitlistNotificationsCommand> notifyHandler,
-    [FromKeyedServices(RegistrationsModule.Key)] IUnitOfWork unitOfWork,
+    IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     ILogger<ProcessExpiredWaitlistCouponsJob> logger)
     : IJob
@@ -47,69 +53,120 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
             var now = timeProvider.GetUtcNow();
             var cutoff = now - GracePeriod;
 
-            var expiredCoupons = await writeStore.Coupons
-                .Where(c =>
-                    c.Source == CouponSource.Waitlist &&
-                    c.RedeemedAt == null &&
-                    c.RevokedAt == null &&
-                    c.ExpiresAt <= cutoff)
+            // Only active events have a waitlist worth expiring coupons for; events that archived in the
+            // meantime are excluded here instead of being fetched and skipped on every run.
+            var activeEventIds = writeStore.TicketCatalogs
+                .Where(c => c.EventStatus == EventLifecycleStatus.Active)
+                .Select(c => c.Id);
+
+            // Same lapsed-coupon rule as Waitlist.GetLapsedCouponIds, expressed so it runs in the database.
+            var eventKeys = await writeStore.Waitlists
+                .Where(w => activeEventIds.Contains(w.EventId)
+                    && w.Coupons.Any(c => c.Status == WaitlistCouponStatus.Issued && c.ExpiresAt <= cutoff))
+                .Select(w => new { w.EventId, w.TeamId })
+                .Distinct()
                 .ToListAsync(context.CancellationToken);
 
-            if (expiredCoupons.Count == 0)
-                return;
-
-            // Waitlist coupons always target exactly one ticket type — group to batch per type.
-            var groups = expiredCoupons
-                .GroupBy(c => (c.TeamId, EventId: c.EventId, TicketTypeId: c.AllowedTicketTypeIds[0]));
-
-            foreach (var group in groups)
+            foreach (var key in eventKeys)
             {
-                var (teamId, eventId, ticketTypeId) = group.Key;
-                var couponsToRevoke = group.ToList();
-
-                var catalog = await writeStore.TicketCatalogs
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == eventId && c.TeamId == teamId, context.CancellationToken);
-
-                if (catalog is null || catalog.EventStatus != EventLifecycleStatus.Active)
-                    continue;
-
-                logger.LogInformation(
-                    "Revoking {Count} expired waitlist coupon(s) for ticket type {TicketTypeId}",
-                    couponsToRevoke.Count, ticketTypeId.Value);
-
-                var waitlist = await writeStore.Waitlists
-                    .Include(w => w.Entries)
-                    .Include(w => w.Coupons)
-                    .FirstOrDefaultAsync(
-                        w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
-                        context.CancellationToken);
-
-                if (waitlist is null)
-                {
-                    logger.LogWarning(
-                        "Waitlist not found for ticket type {TicketTypeId} — skipping revocation",
-                        ticketTypeId.Value);
-                    continue;
-                }
-
-                foreach (var coupon in couponsToRevoke)
-                {
-                    waitlist.RevokeCoupon(coupon.Id);
-                    coupon.Revoke();
-                }
-
-                await notifyHandler.HandleAsync(
-                    new ProcessWaitlistNotificationsCommand(
-                        eventId.Value, teamId.Value, ticketTypeId.Value, couponsToRevoke.Count),
-                    context.CancellationToken);
+                await ProcessEventAsync(key.EventId, key.TeamId, now, cutoff, context.CancellationToken);
             }
-
-            await unitOfWork.SaveChangesAsync(context.CancellationToken);
         }
         catch (Exception e)
         {
             throw new JobExecutionException(e);
+        }
+    }
+
+    /// <summary>
+    /// Expires every lapsed coupon for one event's waitlists and saves the result in its own unit of work. A
+    /// concurrency conflict here is logged and left for the next run; it never reaches <see cref="Execute"/>, so
+    /// it can't roll back or interrupt any other event's work in the same run.
+    /// </summary>
+    private async Task ProcessEventAsync(
+        TicketedEventId eventId,
+        TeamId teamId,
+        DateTimeOffset now,
+        DateTimeOffset cutoff,
+        CancellationToken cancellationToken)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var eventWriteStore = scope.ServiceProvider.GetRequiredService<IRegistrationsWriteStore>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(RegistrationsModule.Key);
+
+        try
+        {
+            var catalog = await eventWriteStore.TicketCatalogs
+                .FirstOrDefaultAsync(c => c.Id == eventId && c.TeamId == teamId, cancellationToken);
+
+            if (catalog is null || catalog.EventStatus != EventLifecycleStatus.Active)
+                return;
+
+            var waitlists = await eventWriteStore.Waitlists
+                .Where(w => w.EventId == eventId && w.TeamId == teamId
+                    && w.Coupons.Any(c => c.Status == WaitlistCouponStatus.Issued && c.ExpiresAt <= cutoff))
+                .ToListAsync(cancellationToken);
+
+            if (waitlists.Count == 0)
+                return;
+
+            var ticketedEvent = await eventWriteStore.TicketedEvents
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == eventId && e.TeamId == teamId, cancellationToken);
+            var registrationClosed = ticketedEvent?.HasRegistrationClosed(now) ?? false;
+
+            var affectedRegistrationIds = new HashSet<RegistrationId>();
+            foreach (var waitlist in waitlists)
+            {
+                var lapsedCouponIds = waitlist.GetLapsedCouponIds(cutoff);
+
+                logger.LogInformation(
+                    "Expiring {Count} lapsed waitlist coupon(s) for ticket type {TicketTypeId}",
+                    lapsedCouponIds.Count, waitlist.Id.Value);
+
+                // The coupons are only needed for the recipient and code in the expired-offer email.
+                var lapsedCoupons = await eventWriteStore.Coupons
+                    .AsNoTracking()
+                    .Where(c => lapsedCouponIds.Contains(c.Id))
+                    .ToDictionaryAsync(c => c.Id, cancellationToken);
+
+                // Without a coupon or ticket type there is nothing to put in the expired-offer email; the
+                // aggregate still expires the waitlist coupon and gives back its hold.
+                foreach (var couponId in lapsedCouponIds)
+                {
+                    var removedEntry = waitlist.ExpireCoupon(
+                        couponId, lapsedCoupons.GetValueOrDefault(couponId), catalog, registrationClosed);
+                    if (removedEntry is not null)
+                        affectedRegistrationIds.Add(removedEntry.RegistrationId);
+                }
+            }
+
+            if (affectedRegistrationIds.Count > 0)
+            {
+                // Checked against every waitlist for the event, not just the ones with a lapsed coupon: an
+                // attendee may still hold a queue position or another outstanding offer elsewhere.
+                var allEventWaitlists = await eventWriteStore.Waitlists
+                    .Where(w => w.EventId == eventId && w.TeamId == teamId)
+                    .ToListAsync(cancellationToken);
+
+                var affectedRegistrations = await eventWriteStore.Registrations
+                    .Where(r => affectedRegistrationIds.Contains(r.Id))
+                    .ToListAsync(cancellationToken);
+                foreach (var registration in affectedRegistrations)
+                {
+                    RegistrationCouponHelpers.CancelIfExhausted(
+                        registration, allEventWaitlists, CancellationReason.WaitlistOfferExpired);
+                }
+            }
+
+            await unitOfWork.SaveChangesAsync(cancellationToken, retryConcurrencyConflicts: true);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Concurrency conflict expiring waitlist coupons for event {EventId}; the next run will retry it.",
+                eventId.Value);
         }
     }
 }

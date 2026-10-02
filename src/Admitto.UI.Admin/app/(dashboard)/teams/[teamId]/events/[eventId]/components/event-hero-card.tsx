@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Globe } from "lucide-react";
+import { formatCapacitySummary, totalTicketCapacity } from "@/lib/ticket-capacity";
 import { formatInEventZone, formatZoneCaption } from "@/lib/time-zones";
 
 function formatDate(iso: string, zone: string): string {
@@ -90,17 +91,8 @@ export function EventHeroCard({ event, openStatus, ticketTypes, registrations }:
     const isOpen = openStatus?.isOpen ?? false;
     const isClosingSoon = isOpen && !isPast && days <= 7;
 
-    const totalCapacity = ticketTypes
-        ?.reduce((sum, t) => sum + (Number(t.maxCapacity) || 0), 0) ?? 0;
-    const totalUsed = ticketTypes
-        ?.reduce((sum, t) => sum + Number(t.usedCapacity), 0) ?? 0;
-    const totalReserved = ticketTypes
-        ?.reduce((sum, t) => sum + (Number(t.reservedCapacity) || 0), 0) ?? 0;
-    const totalReservedUsed = ticketTypes
-        ?.reduce((sum, t) => sum + (Number(t.reservedUsedCapacity) || 0), 0) ?? 0;
-    const hasUnlimited = ticketTypes?.some(t => !Number(t.maxCapacity)) ?? false;
-    const hasCapacity = totalCapacity > 0;
-    const capacityPct = hasCapacity ? Math.round((totalUsed / totalCapacity) * 100) : 0;
+    const capacity = totalTicketCapacity(ticketTypes ?? []);
+    const capacityPct = ticketTypes?.length ? (capacity.publicUsedPercent ?? undefined) : undefined;
     const reconfirmedCount = (registrations ?? []).filter(
         (registration) => registration.status === "registered" && registration.hasReconfirmed,
     ).length;
@@ -185,9 +177,9 @@ export function EventHeroCard({ event, openStatus, ticketTypes, registrations }:
                 />
                 <HeroStat
                     label="Registered"
-                    value={totalUsed}
-                    sub={hasCapacity ? `of ${totalCapacity}${hasUnlimited ? "+" : ""}${totalReserved > 0 ? ` (${totalReservedUsed}/${totalReserved} reserved used)` : ""}` : "total"}
-                    pct={hasCapacity ? capacityPct : undefined}
+                    value={capacity.total}
+                    sub={ticketTypes?.length ? formatCapacitySummary(capacity) : "total"}
+                    pct={capacityPct}
                 />
                 {reconfirmedCount >= 1 && (
                     <HeroStat label="Reconfirmed" value={reconfirmedCount} sub="attendees" />

@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Messaging;
@@ -17,7 +18,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
       IDomainEventHandler<TicketedEventStatusChangedDomainEvent>,
       IDomainEventHandler<TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent>,
       IDomainEventHandler<TicketsChangedDomainEvent>,
-      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>
+      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>,
+      IDomainEventHandler<WaitlistCouponExpiredDomainEvent>
 {
     public ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
@@ -28,7 +30,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.Tickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList(),
+            ToTicketTypeItems(domainEvent.Tickets),
+            ToTicketTypeItems(domainEvent.WaitlistedTickets),
             domainEvent.RegisteredAt));
 
         return ValueTask.CompletedTask;
@@ -67,7 +70,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.Email.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.Reason.ToString()));
+            domainEvent.Reason.ToString(),
+            domainEvent.WasWaitlisted));
 
         return ValueTask.CompletedTask;
     }
@@ -168,7 +172,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.NewTickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList(),
+            ToTicketTypeItems(domainEvent.NewTickets),
+            ToTicketTypeItems(domainEvent.NewWaitlistedTickets),
             domainEvent.ChangedAt));
 
         return ValueTask.CompletedTask;
@@ -182,8 +187,26 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.CouponCode.Value.ToString(),
             domainEvent.TicketTypeName,
-            domainEvent.ExpiresAt));
+            domainEvent.ExpiresAt,
+            domainEvent.Reason.ToString(),
+            domainEvent.RegistrationId.Value));
 
         return ValueTask.CompletedTask;
     }
+
+    public ValueTask HandleAsync(WaitlistCouponExpiredDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new WaitlistCouponExpiredIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value,
+            domainEvent.RecipientEmail.Value,
+            domainEvent.CouponCode.Value.ToString(),
+            domainEvent.TicketTypeName,
+            domainEvent.RegistrationClosed));
+
+        return ValueTask.CompletedTask;
+    }
+
+    private static List<TicketTypeItem> ToTicketTypeItems(IEnumerable<TicketTypeSnapshot> tickets) =>
+        tickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList();
 }

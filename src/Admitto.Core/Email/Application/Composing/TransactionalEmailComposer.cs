@@ -1,3 +1,4 @@
+using System.Globalization;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -38,7 +39,9 @@ internal sealed class TransactionalEmailComposer(
         var (emailType, parameters) = intent switch
         {
             TicketConfirmationIntent value => (
-                BuiltInEmailTemplateNames.TicketConfirmation,
+                value.TicketTypes.Count > 0
+                    ? BuiltInEmailTemplateNames.TicketConfirmation
+                    : BuiltInEmailTemplateNames.WaitlistConfirmation,
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["first_name"] = value.FirstName,
@@ -47,7 +50,8 @@ internal sealed class TransactionalEmailComposer(
                     ["public_event_link"] = context.GetLinks(value.RegistrationId).PublicEventLink,
                     ["qrcode_link"] = context.GetLinks(value.RegistrationId).QRCodeLink,
                     ["edit_registration_link"] = context.GetLinks(value.RegistrationId).EditRegistrationLink,
-                    ["ticket_types"] = value.TicketTypes
+                    ["ticket_types"] = value.TicketTypes,
+                    ["waitlisted_ticket_types"] = value.WaitlistedTicketTypes
                 }),
             CouponInvitationIntent value => (
                 BuiltInEmailTemplateNames.CouponInvitation,
@@ -56,8 +60,7 @@ internal sealed class TransactionalEmailComposer(
                     ["team_name"] = context.TeamName,
                     ["event_name"] = context.EventName,
                     ["event_website"] = context.WebsiteUrl,
-                    ["coupon_code"] = value.CouponCode,
-                    ["register_link"] = context.GetLinks(null).RegisterLink
+                    ["register_link"] = context.GetLinks(null, value.CouponCode).RegisterLink
                 }),
             WaitlistOfferIntent value => (
                 BuiltInEmailTemplateNames.WaitlistNotification,
@@ -65,13 +68,27 @@ internal sealed class TransactionalEmailComposer(
                 {
                     ["event_name"] = context.EventName,
                     ["event_website"] = context.WebsiteUrl,
-                    ["coupon_code"] = value.CouponCode,
+                    ["ticket_types"] = new[] { value.TicketTypeName },
+                    ["expires_at"] = FormatWithTimeZone(value.ExpiresAt, context.TimeZone),
+                    ["intro_text"] = WaitlistOfferIntroText(value.Reason, context.EventName),
+                    ["expiry_note"] = WaitlistOfferExpiryNote(value.Reason),
+                    ["cta_link"] = context.GetLinks(value.RegistrationId, value.CouponCode).EditRegistrationLink,
+                    ["cta_label"] = "Claim Your Spot"
+                }),
+            WaitlistOfferExpiredIntent value => (
+                BuiltInEmailTemplateNames.WaitlistOfferExpired,
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["event_name"] = context.EventName,
+                    ["event_website"] = context.WebsiteUrl,
                     ["ticket_type_name"] = value.TicketTypeName,
-                    ["expires_at"] = value.ExpiresAt.ToString("f"),
-                    ["register_link"] = context.GetLinks(null).RegisterLink
+                    ["registration_closed"] = value.RegistrationClosed
                 }),
             AttendeeRequestCancellationIntent value => (
                 BuiltInEmailTemplateNames.Cancellation,
+                CancellationParameters(value.FirstName, context, value.RegistrationId)),
+            WaitlistCancellationIntent value => (
+                BuiltInEmailTemplateNames.WaitlistCancellation,
                 CancellationParameters(value.FirstName, context, value.RegistrationId)),
             ReconfirmAutoCancellationIntent value => (
                 BuiltInEmailTemplateNames.ReconfirmCancelled,
@@ -142,6 +159,53 @@ internal sealed class TransactionalEmailComposer(
             projection.ReconfirmMinEmailIntervalHours,
             projection.IsArchived);
     }
+
+    /// <summary>
+    /// Formats an instant in the event's time zone, culture-independently, with the IANA zone id as a label
+    /// (e.g. <c>"5 September 2026, 16:30 (Europe/Amsterdam)"</c>). Falls back to UTC for a missing or unrecognized
+    /// zone.
+    /// </summary>
+    private static string FormatWithTimeZone(DateTimeOffset instant, string timeZoneId)
+    {
+        TimeZoneInfo timeZone;
+        try
+        {
+            timeZone = TimeZoneInfo.FindSystemTimeZoneById(
+                string.IsNullOrWhiteSpace(timeZoneId) ? "UTC" : timeZoneId);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            timeZone = TimeZoneInfo.Utc;
+        }
+
+        var local = TimeZoneInfo.ConvertTime(instant, timeZone);
+        return $"{local.ToString("d MMMM yyyy, HH:mm", CultureInfo.InvariantCulture)} ({timeZone.Id})";
+    }
+
+    /// <summary>
+    /// "You've reached the top of the waitlist" only holds for an automatic, front-of-queue offer; a VIP
+    /// promotion skips the queue, and a capacity-opened release offers everyone at once.
+    /// </summary>
+    private static string WaitlistOfferIntroText(WaitlistOfferReason reason, string eventName) => reason switch
+    {
+        WaitlistOfferReason.VipPromotion =>
+            $"Great news! You've been given a ticket offer for {eventName}.",
+        WaitlistOfferReason.CapacityOpenedForEveryone =>
+            $"Great news! {eventName} has opened up space for everyone on the waitlist, including you.",
+        _ => $"Great news! A spot has opened up at {eventName} and you've reached the top of the waitlist."
+    };
+
+    /// <summary>
+    /// What happens if the offer lapses unclaimed — only an automatic, front-of-queue offer hands the spot to a
+    /// "next person"; a VIP offer skipped the queue, and a capacity-opened release already offered everyone else
+    /// their own spot, so there's nobody further in line for either.
+    /// </summary>
+    private static string WaitlistOfferExpiryNote(WaitlistOfferReason reason) => reason switch
+    {
+        WaitlistOfferReason.VipPromotion => "After that, the spot may no longer be available.",
+        WaitlistOfferReason.CapacityOpenedForEveryone => "After that, the spot may no longer be available.",
+        _ => "After that, the spot may be offered to the next person on the waitlist."
+    };
 
     private static Dictionary<string, object?> CancellationParameters(
         string firstName,

@@ -17,7 +17,7 @@ internal sealed class ResolvePartnerRegistrationHandler(IRegistrationsWriteStore
         var registration = await writeStore.Registrations
             .AsNoTracking()
             .Where(r => r.TeamId == teamId && r.EventId == query.EventId && r.Email == email &&
-                        r.Status == RegistrationStatus.Registered)
+                        r.Status != RegistrationStatus.Cancelled)
             .Select(r => new { r.Id })
             .FirstOrDefaultAsync(cancellationToken);
 

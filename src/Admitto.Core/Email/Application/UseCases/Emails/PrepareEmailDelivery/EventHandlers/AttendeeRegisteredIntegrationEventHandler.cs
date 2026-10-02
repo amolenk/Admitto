@@ -7,7 +7,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 /// <summary>
-/// Sends a TicketConfirmation email when an attendee has registered.
+/// Sends a TicketConfirmation email (or, without confirmed tickets, a waitlist confirmation) when an attendee has registered.
 /// </summary>
 internal sealed class AttendeeRegisteredIntegrationEventHandler(
     ITransactionalEmailComposer composer,
@@ -26,7 +26,9 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
             TicketedEventId.From(integrationEvent.TicketedEventId),
             RegistrationId.From(integrationEvent.RegistrationId),
             integrationEvent.FirstName,
-            integrationEvent.Tickets.Select(t => t.Name).ToArray());
+            integrationEvent.Tickets.Select(t => t.Name).ToArray(),
+            // Events enqueued before waitlisted ticket types were published deserialize without them.
+            (integrationEvent.WaitlistedTickets ?? []).Select(t => t.Name).ToArray());
         var rendered = await composer.ComposeAsync(intent, cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,

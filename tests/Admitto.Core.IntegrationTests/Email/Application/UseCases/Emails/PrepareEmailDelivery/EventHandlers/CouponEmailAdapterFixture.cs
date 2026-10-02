@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -80,7 +81,9 @@ internal sealed class CouponEmailAdapterFixture
             "bob@example.com",
             "WAIT-456",
             "Conference Pass",
-            expiresAt);
+            expiresAt,
+            nameof(Amolenk.Admitto.Core.Registrations.Domain.ValueObjects.WaitlistOfferReason.AutomaticPromotion),
+            RegistrationId: Guid.Parse("55555555-5555-5555-5555-555555555555"));
 
         return new CouponEmailAdapterFixture(
             teamId,
@@ -88,6 +91,6 @@ internal sealed class CouponEmailAdapterFixture
             composer,
             deliveryHandler,
             waitlistCouponIssuedEvent: integrationEvent,
-            waitlistCouponIssuedHandler: new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler));
+            waitlistCouponIssuedHandler: new WaitlistCouponIssuedIntegrationEventHandler(composer, deliveryHandler, NullLogger<WaitlistCouponIssuedIntegrationEventHandler>.Instance));
     }
 }

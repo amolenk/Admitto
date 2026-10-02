@@ -27,21 +27,21 @@ public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegra
         var active = result.Single(tt => tt.Id == fixture.GeneralAdmissionId.Value);
         active.Name.ShouldBe("General Admission");
         active.TimeSlots.ShouldContain("morning");
-        active.MaxCapacity.ShouldBe(100);
+        active.PublicCapacity.ShouldBe(100);
 
         var vipPass = result.Single(tt => tt.Id == fixture.VipPassId.Value);
         vipPass.Name.ShouldBe("VIP Pass");
     }
 
-    // Given a ticket type with a reserved capacity buffer and some admin/coupon claims against it
+    // Given a ticket type with public tickets and admin tickets on top
     // When the ticket types are queried
-    // Then the reserved-used count is included alongside the reserved capacity
+    // Then the public used capacity and the admin count are returned separately
     [TestMethod]
-    public async ValueTask GetTicketTypes_ReservedCapacityPartlyUsed_ReturnsReservedUsedCapacity()
+    public async ValueTask GetTicketTypes_PublicAndAdminTickets_ReturnsBothCounts()
     {
         // Arrange
-        var fixture = GetTicketTypesFixture.WithReservedCapacityPartlyUsed(
-            maxCapacity: 20, reservedCapacity: 18, reservedUsed: 3);
+        var fixture = GetTicketTypesFixture.WithPublicAndAdminTickets(
+            publicCapacity: 20, publicUsed: 2, adminUsed: 3);
         await fixture.SetupAsync(Environment);
 
         var query = new GetTicketTypesQuery(fixture.EventId, fixture.TeamId);
@@ -52,9 +52,9 @@ public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegra
 
         // Assert
         var workshop = result.ShouldHaveSingleItem();
-        workshop.ReservedCapacity.ShouldBe(18);
-        workshop.ReservedUsedCapacity.ShouldBe(3);
-        workshop.UsedCapacity.ShouldBe(3);
+        workshop.PublicCapacity.ShouldBe(20);
+        workshop.PublicUsedCapacity.ShouldBe(2);
+        workshop.AdminUsedCount.ShouldBe(3);
     }
 
     // Given an event with no ticket catalog

@@ -94,6 +94,27 @@ public sealed class CheckInTests(TestContext testContext) : EndToEndTestBase
         body.GetProperty("registrationId").GetGuid().ShouldBe(fixture.CancelledRegistrationId.Value);
     }
 
+    // Given a registration that is only on a waitlist and holds no ticket
+    // When its credential is submitted for check-in
+    // Then the API returns Waitlisted and the attendee is not checked in
+    [TestMethod]
+    public async Task CheckIn_WaitlistedRegistration_ReturnsWaitlisted()
+    {
+        var fixture = CheckInFixture.Active();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.ApiClient.PostAsJsonAsync(
+            fixture.CheckInRoute,
+            new { credential = fixture.WaitlistedRegistrationId.Value.ToString() },
+            testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(testContext.CancellationToken);
+        body.GetProperty("outcome").GetString().ShouldBe("waitlisted");
+        body.GetProperty("registrationId").GetGuid().ShouldBe(fixture.WaitlistedRegistrationId.Value);
+        body.GetProperty("checkedInAt").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
     // Given an archived event
     // When a credential is submitted for check-in
     // Then the API returns EventNotActive without attendee data
