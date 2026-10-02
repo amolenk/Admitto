@@ -519,6 +519,35 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a ticket type only available via waitlist and an additional-detail schema
+    // When an attendee submits only a waitlist request along with additional details
+    // Then the additional details are persisted on the resulting waitlisted registration
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnly_PersistsAdditionalDetails()
+    {
+        var fixture = RegisterAttendeeFixture
+            .WithAdditionalDetailSchemaAndWaitlistOnlyTicket(("tshirt", "T-shirt size", 5));
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [],
+            [fixture.GetTicketTypeId("workshop").Value],
+            new Dictionary<string, string> { ["tshirt"] = "L" });
+        var sut = NewHandler();
+
+        var result = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop").Value]);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Waitlisted);
+            registration.AdditionalDetails["tshirt"].ShouldBe("L");
+        });
+    }
+
     // Given a ticket type only available via waitlist
     // When an attendee signs up for only that ticket type's waitlist
     // Then their confirmation email lists the waitlisted ticket type and has no confirmed-ticket language or QR code
@@ -728,6 +757,22 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             "User",
             ticketTypeIds,
             [],
+            AdditionalDetails: additionalDetails);
+
+    private static RegisterAttendeeCommand NewCommand(
+        RegisterAttendeeFixture fixture,
+        string email,
+        Guid[] registerTicketTypeIds,
+        Guid[] waitlistTicketTypeIds,
+        IReadOnlyDictionary<string, string>? additionalDetails)
+        => new(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            email,
+            "Test",
+            "User",
+            registerTicketTypeIds,
+            waitlistTicketTypeIds,
             AdditionalDetails: additionalDetails);
 
     private static void AssertAttendeeRegisteredEvent(Registration registration)

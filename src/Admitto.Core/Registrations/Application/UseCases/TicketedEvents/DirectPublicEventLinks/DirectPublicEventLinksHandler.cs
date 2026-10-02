@@ -36,10 +36,13 @@ internal sealed class DirectPublicEventLinksHandler(IRegistrationsWriteStore wri
             ? [query.ActionPath]
             : new[] { query.ActionPath, query.RegistrationId.Value.ToString() };
 
-        return new DirectPublicEventLinkDto(BuildRelativeUrl(urls.BaseUrl, segments));
+        return new DirectPublicEventLinkDto(BuildRelativeUrl(urls.BaseUrl, segments, query.CouponCode));
     }
 
-    private string BuildRelativeUrl(string baseUrl, IReadOnlyCollection<string> pathSegments)
+    private string BuildRelativeUrl(
+        string baseUrl,
+        IReadOnlyCollection<string> pathSegments,
+        string? couponCode)
     {
         var builder = new UriBuilder(baseUrl);
         var basePath = builder.Path.TrimEnd('/');
@@ -48,6 +51,11 @@ internal sealed class DirectPublicEventLinksHandler(IRegistrationsWriteStore wri
         builder.Path = string.IsNullOrEmpty(basePath)
             ? $"/{suffix}"
             : $"{basePath}/{suffix}";
+
+        if (!string.IsNullOrWhiteSpace(couponCode))
+        {
+            builder.Query = $"coupon={Uri.EscapeDataString(couponCode)}";
+        }
 
         return builder.Uri.ToString();
     }

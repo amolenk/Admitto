@@ -41,7 +41,7 @@ internal sealed class RegisterAttendeeHandler(
 
         var now = timeProvider.GetUtcNow();
         AdditionalDetails additionalDetails = AdditionalDetails.Empty;
-        if (registerTicketTypeIds.Count > 0)
+        if (registerTicketTypeIds.Count > 0 || waitlistTicketTypeIds.Count > 0)
         {
             additionalDetails = AdditionalDetails.Validate(
                 command.AdditionalDetails,

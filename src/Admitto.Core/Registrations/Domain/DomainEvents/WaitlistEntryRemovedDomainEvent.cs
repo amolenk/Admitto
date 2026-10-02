@@ -7,5 +7,6 @@ public record WaitlistEntryRemovedDomainEvent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     TicketTypeId TicketTypeId,
+    string TicketTypeName,
     WaitlistEntryId EntryId,
     EmailAddress Email) : DomainEvent;

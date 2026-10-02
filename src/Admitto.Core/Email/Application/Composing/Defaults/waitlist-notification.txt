@@ -4,10 +4,13 @@ Hi there,
 
 {{ intro_text }}
 
-Your personal coupon code: {{ coupon_code }}
-Ticket type: {{ ticket_type_name }}
-
-Enter this code to claim your ticket.
+{{ if ticket_types && ticket_types.size > 0 }}
+Your offered ticket type(s):
+{{ for ticket_type in ticket_types }}
+- {{ ticket_type }}
+{{ end }}
+{{ end }}
+Claim your ticket using the link below.
 
 This offer expires on {{ expires_at }}. {{ expiry_note }}
 

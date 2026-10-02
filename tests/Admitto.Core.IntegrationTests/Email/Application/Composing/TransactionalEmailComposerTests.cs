@@ -98,7 +98,8 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
 
     // Given an event is ready to accept registrations
     // When a coupon invitation email is created
-    // Then the invitation includes its code and registration link
+    // Then the invitation includes a registration link with the coupon code as a query parameter
+    // and does not render the coupon code as readable text
     [TestMethod]
     public async ValueTask ComposeAsync_CouponInvitation_RendersInvitation()
     {
@@ -113,21 +114,22 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
 
         rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.CouponInvitation);
         rendered.Subject.ShouldBe("You're invited to DevConf");
-        rendered.TextBody.ShouldContain("Your coupon code: INVITE-123");
-        rendered.TextBody.ShouldContain("https://public.example/e/devconf/register");
+        rendered.TextBody.ShouldContain("https://public.example/e/devconf/register?coupon=INVITE-123");
+        rendered.TextBody.ShouldNotContain("coupon code: INVITE-123");
         rendered.HtmlBody.ShouldContain("You're invited to DevConf");
-        rendered.HtmlBody.ShouldContain("INVITE-123");
-        rendered.HtmlBody.ShouldContain("href=\"https://public.example/e/devconf/register\"");
+        rendered.HtmlBody.ShouldContain("href=\"https://public.example/e/devconf/register?coupon=INVITE-123\"");
     }
 
     // Given a place has opened for an attendee on the waitlist
     // When a waitlist offer email is created
-    // Then the offer includes its coupon, ticket type, and expiry
+    // Then the offer includes a claim link with the coupon code as a query parameter, the ticket type, and expiry
+    // and does not render the coupon code as readable text
     [TestMethod]
     public async ValueTask ComposeAsync_WaitlistOffer_RendersOfferFacts()
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
+        var registrationId = RegistrationId.New();
         var fixture = TransactionalEmailComposerFixture.CompleteEventContext();
         await fixture.SetupAsync(Environment, teamId, eventId);
         var expiresAt = new DateTimeOffset(2026, 9, 5, 14, 30, 0, TimeSpan.Zero);
@@ -135,16 +137,17 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
         var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
             new WaitlistOfferIntent(
                 teamId, eventId, "WAIT-456", "Conference Pass", expiresAt,
-                WaitlistOfferReason.AutomaticPromotion, RegistrationId: RegistrationId.New()),
+                WaitlistOfferReason.AutomaticPromotion, RegistrationId: registrationId),
             testContext.CancellationToken);
 
         rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistNotification);
         rendered.Subject.ShouldBe("Your spot at DevConf is ready — use your coupon");
-        rendered.TextBody.ShouldContain("Your personal coupon code: WAIT-456");
-        rendered.TextBody.ShouldContain("Ticket type: Conference Pass");
+        rendered.TextBody.ShouldContain($"https://public.example/e/devconf/edit/{registrationId.Value}?coupon=WAIT-456");
+        rendered.TextBody.ShouldNotContain("coupon code: WAIT-456");
+        rendered.TextBody.ShouldContain("- Conference Pass");
         rendered.TextBody.ShouldContain("5 September 2026, 14:30 (UTC)");
         rendered.HtmlBody.ShouldContain("Your spot at DevConf is ready!");
-        rendered.HtmlBody.ShouldContain("WAIT-456");
+        rendered.HtmlBody.ShouldContain($"href=\"https://public.example/e/devconf/edit/{registrationId.Value}?coupon=WAIT-456\"");
         rendered.HtmlBody.ShouldContain("Conference Pass");
         rendered.HtmlBody.ShouldContain("5 September 2026, 14:30 (UTC)");
     }
@@ -369,7 +372,7 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
             new CouponInvitationIntent(teamId, eventId, "LOCAL-123"),
             testContext.CancellationToken);
 
-        rendered.TextBody.ShouldContain("http://localhost/devconf/register");
+        rendered.TextBody.ShouldContain("http://localhost/devconf/register?coupon=LOCAL-123");
     }
 
     // Given an event projection is missing required details

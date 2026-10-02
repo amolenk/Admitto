@@ -19,13 +19,18 @@
         <p>{{ intro_text }}</p>
     </div>
 
-    <div style="background-color: #f0f4ff; border-radius: 6px; padding: 20px; margin: 20px 0; text-align: center;">
-        <p style="margin: 0 0 8px 0; font-size: 14px; color: #555;">Your personal coupon code</p>
-        <p style="font-size: 28px; font-weight: bold; color: {{ accent_color }}; letter-spacing: 4px; margin: 0;">{{ coupon_code }}</p>
-        <p style="margin: 8px 0 0 0; font-size: 13px; color: #555;">Ticket type: <strong>{{ ticket_type_name }}</strong></p>
+    {{ if ticket_types && ticket_types.size > 0 }}
+    <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Your offered ticket type(s)</h2>
+        <ul style="margin: 0; padding-left: 20px;">
+            {{ for ticket_type in ticket_types }}
+            <li>{{ ticket_type }}</li>
+            {{ end }}
+        </ul>
     </div>
+    {{ end }}
 
-    <p>Enter this code to claim your ticket.</p>
+    <p>Claim your ticket using the button below.</p>
 
     <p style="color: #c0392b;"><strong>This offer expires on {{ expires_at }}.</strong> {{ expiry_note }}</p>
 
@@ -35,6 +40,11 @@
             {{ cta_label }}
         </a>
     </div>
+
+    <p style="font-size: 14px; color: #666;">
+        Or use this link: <br>
+        <a href="{{ cta_link }}" style="color: {{ accent_color }};">{{ cta_link }}</a>
+    </p>
 
     <div style="border-top: 1px solid #ddd; margin-top: 20px; padding-top: 16px; font-size: 13px; color: #666;">
         <p style="margin: 0;">Best regards,<br>The {{ event_name }} Team</p>

@@ -45,13 +45,19 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                     <div className="min-w-0 mb-1">
                         <h3 className="font-display text-lg font-semibold truncate">{t.name}</h3>
                         <div className="flex items-center justify-between gap-2 mt-1">
-                            <div>
+                            <div className="flex items-center gap-1.5">
                                 {capacity.isPubliclySoldOut ? (
                                     <Badge variant="secondary">Sold out</Badge>
                                 ) : (
                                     <Badge variant="outline" className="text-success border-success/30 bg-success/10">
                                         <span className="pulse-dot mr-1" style={{ width: 6, height: 6 }} />
                                         Available
+                                    </Badge>
+                                )}
+                                {t.waitlistMode && (
+                                    <Badge variant="outline" className="text-amber-600 border-amber-600/30 bg-amber-600/10">
+                                        <Hourglass className="size-3 mr-1" />
+                                        Waitlist active
                                     </Badge>
                                 )}
                             </div>

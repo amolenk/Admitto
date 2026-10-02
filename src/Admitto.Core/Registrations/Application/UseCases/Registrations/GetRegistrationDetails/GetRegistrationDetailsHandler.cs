@@ -39,9 +39,20 @@ internal sealed class GetRegistrationDetailsHandler(
             .FirstOrDefaultAsync(cancellationToken);
 
         var waitlistEntries = waitlists
-            .Select(w => (TicketType: catalog?.GetTicketType(w.Id), Position: w.GetActivePosition(registration.Email)))
-            .Where(x => x.Position is not null && x.TicketType is not null)
-            .Select(x => new WaitlistEntryDetailDto(x.TicketType!.Name.Value, x.Position!.Value))
+            .Select(w =>
+            {
+                var ticketType = catalog?.GetTicketType(w.Id);
+                var position = w.GetActivePosition(registration.Email);
+                var offeredEntry = position is null ? w.GetOfferedEntry(registration.Email) : null;
+
+                return (TicketType: ticketType, Position: position, OfferedEntry: offeredEntry);
+            })
+            .Where(x => x.TicketType is not null && (x.Position is not null || x.OfferedEntry is not null))
+            .Select(x => new WaitlistEntryDetailDto(
+                x.TicketType!.Name.Value,
+                x.Position,
+                IsOffered: x.OfferedEntry is not null,
+                OfferExpiresAt: x.OfferedEntry?.ExpiresAt))
             .ToList();
 
         return new RegistrationDetailDto(

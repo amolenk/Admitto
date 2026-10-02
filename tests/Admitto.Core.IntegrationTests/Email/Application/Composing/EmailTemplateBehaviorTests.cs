@@ -82,6 +82,6 @@ public sealed class EmailTemplateBehaviorTests
         ["intro_text"] = "Great news! A spot has opened up at DevConf and you've reached the top of the waitlist.",
         ["expiry_note"] = "After that, the spot may be offered to the next person on the waitlist.",
         ["cta_link"] = "https://example.com/edit",
-        ["cta_label"] = "View Your Registration"
+        ["cta_label"] = "Claim Your Spot"
     };
 }

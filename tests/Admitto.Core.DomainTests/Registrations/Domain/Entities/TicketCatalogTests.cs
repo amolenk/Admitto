@@ -1042,15 +1042,35 @@ public sealed class TicketCatalogTests
 
     // Given a sold-out ticket type in waitlist mode with nobody queued and no outstanding offers
     // When waitlist mode is lifted because the waitlist is exhausted
-    // Then waitlist mode is cleared even though it is sold out
+    // Then waitlist mode remains active, so the next person to look can still join the queue
     [TestMethod]
-    public void LiftWaitlistModeWhenExhausted_NobodyQueuedWhileSoldOut_ClearsWaitlistMode()
+    public void LiftWaitlistModeWhenExhausted_NobodyQueuedWhileSoldOut_KeepsWaitlistMode()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
         sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+
+        // Act
+        sut.LiftWaitlistModeWhenExhausted(id);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
+    // Given a ticket type in waitlist mode with nobody queued, no outstanding offers, and a seat freed up
+    // When waitlist mode is lifted because the waitlist is exhausted
+    // Then waitlist mode is cleared
+    [TestMethod]
+    public void LiftWaitlistModeWhenExhausted_NobodyQueuedAndSeatAvailable_ClearsWaitlistMode()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        var claimed = sut.Claim([id], ClaimMode.Public); // WaitlistMode on
+        sut.Release(claimed); // Frees the one seat back up
 
         // Act
         sut.LiftWaitlistModeWhenExhausted(id);

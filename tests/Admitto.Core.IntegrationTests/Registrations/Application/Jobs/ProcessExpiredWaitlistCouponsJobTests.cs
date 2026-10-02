@@ -346,11 +346,12 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         });
     }
 
-    // Given an expired VIP coupon with nobody left waiting and no other outstanding coupons
+    // Given an expired VIP coupon with nobody left waiting and no other outstanding coupons, on a ticket type
+    // that is still sold out on its public capacity
     // When the process-expired-waitlist-coupons job runs
-    // Then the coupon is expired and the ticket type's waitlist mode is cleared
+    // Then the coupon is expired and the ticket type's waitlist mode stays active so the next visitor can still join
     [TestMethod]
-    public async ValueTask Execute_WhenVipCouponExpiresAndWaitlistIsEmpty_LiftsWaitlistMode()
+    public async ValueTask Execute_WhenVipCouponExpiresAndWaitlistIsEmpty_KeepsWaitlistModeWhileSoldOut()
     {
         // Arrange — the only entry was promoted as VIP; nobody else is waiting
         var fixture = ProcessExpiredWaitlistCouponsJobFixture.WithOnePendingVipCoupon();
@@ -368,8 +369,9 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
 
             var catalog = await ctx.TicketCatalogs
                 .FirstAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
-            catalog.GetTicketType(fixture.TicketTypeId)!.WaitlistMode.ShouldBeFalse(
-                "WaitlistMode should be cleared when the VIP coupon expires and no entries or coupons remain");
+            catalog.GetTicketType(fixture.TicketTypeId)!.WaitlistMode.ShouldBeTrue(
+                "WaitlistMode should stay active while the ticket type is still sold out, " +
+                "so a new visitor can still join the waitlist");
         });
     }
 

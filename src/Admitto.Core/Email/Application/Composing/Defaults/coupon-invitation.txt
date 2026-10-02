@@ -4,7 +4,7 @@ Hi there,
 
 The {{ team_name }} team invited you to register for {{ event_name }}.
 
-Your coupon code: {{ coupon_code }}
+Your coupon is ready.
 
 Register now:
 {{ register_link }}

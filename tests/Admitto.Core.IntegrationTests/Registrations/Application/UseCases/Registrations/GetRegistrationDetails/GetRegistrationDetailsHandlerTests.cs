@@ -184,6 +184,7 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         var waitlisted = result.WaitlistEntries.ShouldHaveSingleItem();
         waitlisted.TicketTypeName.ShouldBe("Workshop");
         waitlisted.Position.ShouldBe(2);
+        waitlisted.IsOffered.ShouldBeFalse();
     }
 
     // Given a registration with no active waitlist entries
@@ -201,6 +202,28 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
 
         result.ShouldNotBeNull();
         result.WaitlistEntries.ShouldBeEmpty();
+    }
+
+    // Given the attendee's waitlist entry has been offered a coupon that is still outstanding
+    // When the registration details are queried
+    // Then the waitlisted ticket type still appears, flagged as offered with its expiry, and no queue position
+    [TestMethod]
+    public async ValueTask OfferedWaitlistEntry_ReturnsOfferedTicketTypeWithExpiry()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithOfferedTicketType();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        var offered = result.WaitlistEntries.ShouldHaveSingleItem();
+        offered.TicketTypeName.ShouldBe("Conference Pass");
+        offered.Position.ShouldBeNull();
+        offered.IsOffered.ShouldBeTrue();
+        offered.OfferExpiresAt.ShouldNotBeNull();
+        offered.OfferExpiresAt!.Value.ShouldBe(fixture.OfferExpiresAt, TimeSpan.FromSeconds(1));
     }
 
     private static GetRegistrationDetailsHandler NewHandler() =>

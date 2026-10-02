@@ -180,6 +180,26 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
+    public static RegisterAttendeeFixture WithAdditionalDetailSchemaAndWaitlistOnlyTicket(
+        params (string key, string name, int maxLength)[] fields)
+    {
+        var f = new RegisterAttendeeFixture();
+        var ev = f.MakeActiveEventWithOpenWindow();
+        ev.UpdateAdditionalDetailSchema(
+            fields.Select(x => AdditionalDetailField.Create(x.key, x.name, x.maxLength)).ToArray());
+        f._ticketedEvent = ev;
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var workshopId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["workshop"] = workshopId;
+        catalog.AddTicketType(workshopId, TicketTypeName.From("Workshop"), [], 1, waitlistEnabled: true);
+        catalog.Claim([workshopId], ClaimMode.Public);
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+
+        return f;
+    }
+
     public static RegisterAttendeeFixture ConcurrentArchiveDetectedAtClaim()
     {
         var f = new RegisterAttendeeFixture();

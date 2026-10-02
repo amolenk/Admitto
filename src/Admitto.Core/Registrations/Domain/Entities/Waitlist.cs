@@ -156,7 +156,8 @@ public class Waitlist : Aggregate<TicketTypeId>
         }
 
         entry.Remove();
-        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
+        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(
+            TeamId, EventId, Id, catalog.FindTicketType(Id).Name.Value, entry.Id, entry.Email));
         return withdrawnCouponId;
     }
 
@@ -180,7 +181,8 @@ public class Waitlist : Aggregate<TicketTypeId>
         foreach (var entry in remainingEntries)
         {
             LeaveQueue(entry, catalog);
-            AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
+            AddDomainEvent(new WaitlistEntryRemovedDomainEvent(
+                TeamId, EventId, Id, catalog.FindTicketType(Id).Name.Value, entry.Id, entry.Email));
         }
 
         if (remainingEntries.Count > 0)
@@ -334,7 +336,8 @@ public class Waitlist : Aggregate<TicketTypeId>
                 entry.Remove();
             }
 
-            AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, email));
+            AddDomainEvent(new WaitlistEntryRemovedDomainEvent(
+                TeamId, EventId, Id, catalog.FindTicketType(Id).Name.Value, entry.Id, email));
         }
 
         var issuedCoupon = _coupons.FirstOrDefault(c => c.Id == couponId);
@@ -371,7 +374,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         var waitlistCoupon = FindCoupon(couponId);
         ExpireAndReleaseHold(waitlistCoupon, catalog);
 
-        var entry = RemoveEntryForCoupon(couponId);
+        var entry = RemoveEntryForCoupon(couponId, catalog);
 
         var ticketType = catalog.GetTicketType(Id);
         if (coupon is not null && ticketType is not null)
@@ -397,7 +400,7 @@ public class Waitlist : Aggregate<TicketTypeId>
             return false;
 
         ExpireAndReleaseHold(waitlistCoupon, catalog);
-        RemoveEntryForCoupon(couponId);
+        RemoveEntryForCoupon(couponId, catalog);
         CheckExhausted();
         return true;
     }
@@ -407,7 +410,7 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// <see cref="WaitlistEntryRemovedDomainEvent"/>. No queue count is touched: an offered entry already left
     /// the queue when the offer was issued.
     /// </summary>
-    private WaitlistEntry? RemoveEntryForCoupon(CouponId couponId)
+    private WaitlistEntry? RemoveEntryForCoupon(CouponId couponId, TicketCatalog catalog)
     {
         var entry = _entries.FirstOrDefault(
             e => e.CouponId == couponId && e.Status == WaitlistEntryStatus.Offered);
@@ -415,7 +418,9 @@ public class Waitlist : Aggregate<TicketTypeId>
             return null;
 
         entry.Remove();
-        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
+        var ticketTypeName = catalog.GetTicketType(Id)?.Name.Value ?? string.Empty;
+        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(
+            TeamId, EventId, Id, ticketTypeName, entry.Id, entry.Email));
         return entry;
     }
 

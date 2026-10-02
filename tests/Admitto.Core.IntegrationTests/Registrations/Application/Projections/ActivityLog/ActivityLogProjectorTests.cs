@@ -536,7 +536,7 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
 
     // Given a WaitlistEntryRemoved domain event for an email with a matching registration
     // When the projector handles the event
-    // Then a WaitlistRemoved activity log entry is created with no metadata
+    // Then a WaitlistRemoved activity log entry is created with the ticket type in its metadata
     [TestMethod]
     public async ValueTask HandleAsync_WaitlistEntryRemoved_CreatesWaitlistRemovedEntry()
     {
@@ -551,6 +551,7 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             teamId,
             eventId,
             TicketTypeId.New(),
+            "Workshop",
             WaitlistEntryId.New(),
             email);
 
@@ -563,7 +564,9 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
                 a => a.RegistrationId == registration.Id.Value,
                 testContext.CancellationToken);
             entry.ActivityType.ShouldBe(ActivityType.WaitlistRemoved);
-            entry.Metadata.ShouldBeNull();
+
+            using var doc = JsonDocument.Parse(entry.Metadata!);
+            doc.RootElement.GetProperty("ticketType").GetString().ShouldBe("Workshop");
         });
     }
 
@@ -588,6 +591,7 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             teamId,
             eventId,
             TicketTypeId.New(),
+            "Workshop",
             WaitlistEntryId.New(),
             email);
 
@@ -613,6 +617,7 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             TeamId.New(),
             TicketedEventId.New(),
             TicketTypeId.New(),
+            "Workshop",
             WaitlistEntryId.New(),
             EmailAddress.From("nobody@example.com"));
 

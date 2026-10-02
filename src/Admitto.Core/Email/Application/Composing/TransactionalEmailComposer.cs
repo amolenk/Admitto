@@ -60,8 +60,7 @@ internal sealed class TransactionalEmailComposer(
                     ["team_name"] = context.TeamName,
                     ["event_name"] = context.EventName,
                     ["event_website"] = context.WebsiteUrl,
-                    ["coupon_code"] = value.CouponCode,
-                    ["register_link"] = context.GetLinks(null).RegisterLink
+                    ["register_link"] = context.GetLinks(null, value.CouponCode).RegisterLink
                 }),
             WaitlistOfferIntent value => (
                 BuiltInEmailTemplateNames.WaitlistNotification,
@@ -69,13 +68,12 @@ internal sealed class TransactionalEmailComposer(
                 {
                     ["event_name"] = context.EventName,
                     ["event_website"] = context.WebsiteUrl,
-                    ["coupon_code"] = value.CouponCode,
-                    ["ticket_type_name"] = value.TicketTypeName,
+                    ["ticket_types"] = new[] { value.TicketTypeName },
                     ["expires_at"] = FormatWithTimeZone(value.ExpiresAt, context.TimeZone),
                     ["intro_text"] = WaitlistOfferIntroText(value.Reason, context.EventName),
                     ["expiry_note"] = WaitlistOfferExpiryNote(value.Reason),
-                    ["cta_link"] = context.GetLinks(value.RegistrationId).EditRegistrationLink,
-                    ["cta_label"] = "View Your Registration"
+                    ["cta_link"] = context.GetLinks(value.RegistrationId, value.CouponCode).EditRegistrationLink,
+                    ["cta_label"] = "Claim Your Spot"
                 }),
             WaitlistOfferExpiredIntent value => (
                 BuiltInEmailTemplateNames.WaitlistOfferExpired,

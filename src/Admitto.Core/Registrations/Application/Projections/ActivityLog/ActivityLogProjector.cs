@@ -185,12 +185,15 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore, IR
         if (registrationId is null)
             return;
 
+        var metadata = JsonSerializer.Serialize(new { ticketType = domainEvent.TicketTypeName });
+
         AddEntry(
             domainEvent.TeamId,
             domainEvent.TicketedEventId,
             registrationId.Value,
             ActivityType.WaitlistRemoved,
-            domainEvent.OccurredOn);
+            domainEvent.OccurredOn,
+            metadata);
     }
 
     private async ValueTask<RegistrationId?> ResolveRegistrationIdAsync(
