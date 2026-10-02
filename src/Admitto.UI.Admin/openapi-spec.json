@@ -6797,6 +6797,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "coupon",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6900,6 +6907,13 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "coupon",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -8393,6 +8407,23 @@
           }
         }
       },
+      "PartnerOfferedTicketTypeDto": {
+        "required": [
+          "ticketTypeId",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketTypeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PartnerRegistrationDetailDto": {
         "required": [
           "id",
@@ -8403,6 +8434,7 @@
           "ticketTypeIds",
           "tickets",
           "waitlistedTicketTypes",
+          "offeredTicketTypes",
           "additionalDetails"
         ],
         "type": "object",
@@ -8440,6 +8472,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PartnerWaitlistedTicketTypeDto"
+            }
+          },
+          "offeredTicketTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartnerOfferedTicketTypeDto"
             }
           },
           "additionalDetails": {
@@ -8537,7 +8575,10 @@
       "PendingNotificationRow": {
         "required": [
           "couponId",
-          "maskedEmail",
+          "registrationId",
+          "email",
+          "firstName",
+          "lastName",
           "expiresAt"
         ],
         "type": "object",
@@ -8546,7 +8587,17 @@
             "type": "string",
             "format": "uuid"
           },
-          "maskedEmail": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
             "type": "string"
           },
           "expiresAt": {
@@ -9792,12 +9843,16 @@
       },
       "WaitlistDetailsDto": {
         "required": [
+          "waitlistEnabled",
           "activeEntries",
           "pendingNotifications",
           "stats"
         ],
         "type": "object",
         "properties": {
+          "waitlistEnabled": {
+            "type": "boolean"
+          },
           "activeEntries": {
             "type": "array",
             "items": {
@@ -9818,7 +9873,9 @@
       "WaitlistEntryDetailDto": {
         "required": [
           "ticketTypeName",
-          "position"
+          "position",
+          "isOffered",
+          "offerExpiresAt"
         ],
         "type": "object",
         "properties": {
@@ -9828,10 +9885,21 @@
           "position": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
+              "null",
               "integer",
               "string"
             ],
             "format": "int32"
+          },
+          "isOffered": {
+            "type": "boolean"
+          },
+          "offerExpiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },

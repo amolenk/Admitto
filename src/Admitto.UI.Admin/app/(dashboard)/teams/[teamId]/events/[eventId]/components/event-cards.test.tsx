@@ -94,7 +94,7 @@ describe("event dashboard cards", () => {
         renderWithProviders(<EventHeroCard event={event} openStatus={{ isOpen: true }} ticketTypes={soldOut} />);
 
         expect(screen.getByText("16")).toBeInTheDocument();
-        expect(screen.getByText("public 12/15 \u00B7 admin 4 \u00B7 total 16")).toBeInTheDocument();
+        expect(screen.getByText("16/19")).toBeInTheDocument();
         expect(screen.queryByText(/exceed/i)).not.toBeInTheDocument();
     });
 
@@ -114,8 +114,8 @@ describe("event dashboard cards", () => {
             />,
         );
 
-        expect(screen.getByText("public 10/10 \u00B7 admin 3 \u00B7 total 13")).toBeInTheDocument();
-        expect(screen.getByText("public 0/\u221E \u00B7 admin 4 \u00B7 total 4")).toBeInTheDocument();
+        expect(screen.getByText("13/13")).toBeInTheDocument();
+        expect(screen.getByText("4/\u221E")).toBeInTheDocument();
         expect(screen.getAllByText("Sold out")).toHaveLength(1);
         expect(screen.queryByText(/exceed/i)).not.toBeInTheDocument();
     });

@@ -32,6 +32,11 @@ export interface TicketCapacity {
     adminUsed: number;
     /** Public plus admin tickets. Not a limit: there is no total to exceed. */
     total: number;
+    /**
+     * `publicCapacity` with admin tickets added on top, since admin issuance isn't capped by it
+     * (ADR-019). `null` when the public capacity itself is unlimited.
+     */
+    effectiveCapacity: number | null;
     /** Public seats left for self-service; `null` when unlimited. */
     publicRemaining: number | null;
     /** No public seats left. Admins can still add tickets on top. */
@@ -51,6 +56,7 @@ function capacityOf(publicCapacity: number | null, publicUsed: number, adminUsed
         publicUsed,
         adminUsed,
         total: publicUsed + adminUsed,
+        effectiveCapacity: publicCapacity == null ? null : publicCapacity + adminUsed,
         publicRemaining,
         isPubliclySoldOut: publicRemaining === 0,
         publicUsedPercent,
@@ -79,8 +85,9 @@ export function totalTicketCapacity(ticketTypes: TicketTypeDto[]): TicketCapacit
     );
 }
 
-/** `public X/Y · admin Z · total N`, with `∞` for an unlimited public capacity. */
+/** `X/Y`, where X is public plus admin tickets issued and Y is the public capacity plus admin tickets issued
+ *  (admin issuance isn't capped, so it raises both sides together). `∞` when the public capacity is unlimited. */
 export function formatCapacitySummary(c: TicketCapacity): string {
-    const publicCapacity = c.publicCapacity == null ? "∞" : String(c.publicCapacity);
-    return `public ${c.publicUsed}/${publicCapacity} · admin ${c.adminUsed} · total ${c.total}`;
+    const effectiveCapacity = c.effectiveCapacity == null ? "∞" : String(c.effectiveCapacity);
+    return `${c.total}/${effectiveCapacity}`;
 }

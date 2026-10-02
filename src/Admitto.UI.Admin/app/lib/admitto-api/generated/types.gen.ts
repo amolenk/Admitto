@@ -280,6 +280,11 @@ export type PartnerAdditionalDetailFieldDto = {
     maxLength: number | string;
 };
 
+export type PartnerOfferedTicketTypeDto = {
+    ticketTypeId: string;
+    expiresAt: string;
+};
+
 export type PartnerRegistrationDetailDto = {
     id: string;
     email: string;
@@ -289,6 +294,7 @@ export type PartnerRegistrationDetailDto = {
     ticketTypeIds: Array<string>;
     tickets: Array<PartnerTicketDetailDto>;
     waitlistedTicketTypes: Array<PartnerWaitlistedTicketTypeDto>;
+    offeredTicketTypes: Array<PartnerOfferedTicketTypeDto>;
     additionalDetails: {
         [key: string]: string;
     };
@@ -317,7 +323,10 @@ export type PartnerWaitlistedTicketTypeDto = {
 
 export type PendingNotificationRow = {
     couponId: string;
-    maskedEmail: string;
+    registrationId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
     expiresAt: string;
 };
 
@@ -599,6 +608,7 @@ export type VerifyOtpHttpRequest = {
 };
 
 export type WaitlistDetailsDto = {
+    waitlistEnabled: boolean;
     activeEntries: Array<WaitlistEntryRow>;
     pendingNotifications: Array<PendingNotificationRow>;
     stats: WaitlistStats;
@@ -606,7 +616,9 @@ export type WaitlistDetailsDto = {
 
 export type WaitlistEntryDetailDto = {
     ticketTypeName: string;
-    position: number | string;
+    position: null | number | string;
+    isOffered: boolean;
+    offerExpiresAt: null | string;
 };
 
 export type WaitlistEntryRow = {
@@ -3685,7 +3697,9 @@ export type RedirectToRegisterData = {
     path: {
         eventSlug: string;
     };
-    query?: never;
+    query?: {
+        coupon?: string;
+    };
     url: '/e/{eventSlug}/register';
 };
 
@@ -3739,7 +3753,9 @@ export type RedirectToEditData = {
         eventSlug: string;
         registrationId: string;
     };
-    query?: never;
+    query?: {
+        coupon?: string;
+    };
     url: '/e/{eventSlug}/edit/{registrationId}';
 };
 

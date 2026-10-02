@@ -288,7 +288,10 @@ export function pendingNotificationRow(
 ): PendingNotificationRow {
     return {
         couponId: "22223333-0000-0000-0000-000000000001",
-        maskedEmail: "bob***@example.com",
+        registrationId: "44445555-0000-0000-0000-000000000001",
+        email: "bob@example.com",
+        firstName: "Bob",
+        lastName: "Smith",
         expiresAt: "2026-08-01T15:00:00Z",
         ...overrides,
     };
@@ -297,6 +300,7 @@ export function pendingNotificationRow(
 /** The full response of `GET .../ticket-types/{ticketTypeId}/waitlist`. */
 export function waitlistDetailsDto(overrides: Partial<WaitlistDetailsDto> = {}): WaitlistDetailsDto {
     return {
+        waitlistEnabled: true,
         activeEntries: [waitlistEntryRow()],
         pendingNotifications: [pendingNotificationRow()],
         stats: { totalWaiting: 1, totalPending: 1, sentToday: 0 },

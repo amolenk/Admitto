@@ -16,6 +16,7 @@ describe("ticketCapacity", () => {
             publicUsed: 10,
             adminUsed: 4,
             total: 14,
+            effectiveCapacity: 14,
             publicRemaining: 0,
             isPubliclySoldOut: true,
             publicUsedPercent: 100,
@@ -63,23 +64,23 @@ describe("totalTicketCapacity", () => {
 });
 
 describe("formatCapacitySummary", () => {
-    // Given public, admin and total counts
+    // Given public and admin counts with a bounded public capacity
     // When they are formatted
-    // Then the summary lists public used out of capacity, the admin count and the total
-    it("formats public, admin and total", () => {
+    // Then the summary shows total issued over effective capacity (public capacity plus admin issued)
+    it("formats total issued over effective capacity", () => {
         const summary = formatCapacitySummary(
             ticketCapacity(ticketTypeDto({ publicCapacity: 100, publicUsedCapacity: 25, adminUsedCount: 3 })));
 
-        expect(summary).toBe("public 25/100 · admin 3 · total 28");
+        expect(summary).toBe("28/103");
     });
 
     // Given an unlimited public capacity
     // When it is formatted
-    // Then the capacity shows as infinity
-    it("shows an unlimited public capacity as infinity", () => {
+    // Then the effective capacity shows as infinity
+    it("shows an unlimited effective capacity as infinity", () => {
         const summary = formatCapacitySummary(
             ticketCapacity(ticketTypeDto({ publicCapacity: null, publicUsedCapacity: 7 })));
 
-        expect(summary).toBe("public 7/∞ · admin 0 · total 7");
+        expect(summary).toBe("7/∞");
     });
 });

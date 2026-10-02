@@ -15,6 +15,24 @@ internal sealed class GetWaitlistDetailsHandler(IRegistrationsWriteStore writeSt
         var ticketedEventId = TicketedEventId.From(query.EventId);
         var teamId = TeamId.From(query.TeamId);
 
+        var catalog = await writeStore.TicketCatalogs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(tc => tc.Id == ticketedEventId && tc.TeamId == teamId, cancellationToken);
+
+        var ticketType = catalog?.TicketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
+
+        if (ticketType is null)
+            return null;
+
+        if (!ticketType.WaitlistEnabled)
+        {
+            return new WaitlistDetailsDto(
+                WaitlistEnabled: false,
+                ActiveEntries: [],
+                PendingNotifications: [],
+                Stats: new WaitlistStats(TotalWaiting: 0, TotalPending: 0, SentToday: 0));
+        }
+
         var waitlist = await writeStore.Waitlists
             .AsNoTracking()
             .Include(w => w.Entries)
@@ -22,7 +40,13 @@ internal sealed class GetWaitlistDetailsHandler(IRegistrationsWriteStore writeSt
             .FirstOrDefaultAsync(w => w.Id == ticketTypeId && w.EventId == ticketedEventId && w.TeamId == teamId, cancellationToken);
 
         if (waitlist is null)
-            return null;
+        {
+            return new WaitlistDetailsDto(
+                WaitlistEnabled: true,
+                ActiveEntries: [],
+                PendingNotifications: [],
+                Stats: new WaitlistStats(TotalWaiting: 0, TotalPending: 0, SentToday: 0));
+        }
 
         var activeEntries = waitlist.Entries
             .Where(e => e.Status == WaitlistEntryStatus.Active)
@@ -43,12 +67,19 @@ internal sealed class GetWaitlistDetailsHandler(IRegistrationsWriteStore writeSt
         var couponById = coupons.ToDictionary(c => c.Id);
 
         var registrationIds = activeEntries.Select(e => e.RegistrationId).ToHashSet();
+        var couponEmails = coupons.Select(c => c.Email).ToHashSet();
 
         var registrationsById = await writeStore.Registrations
             .AsNoTracking()
             .Where(r => registrationIds.Contains(r.Id))
             .Select(r => new { r.Id, r.Email, r.FirstName, r.LastName })
             .ToDictionaryAsync(r => r.Id, cancellationToken);
+
+        var registrationsByEmail = await writeStore.Registrations
+            .AsNoTracking()
+            .Where(r => r.EventId == ticketedEventId && r.TeamId == teamId && couponEmails.Contains(r.Email))
+            .Select(r => new { r.Id, r.Email, r.FirstName, r.LastName })
+            .ToDictionaryAsync(r => r.Email, cancellationToken);
 
         var today = DateTimeOffset.UtcNow.Date;
 
@@ -69,10 +100,18 @@ internal sealed class GetWaitlistDetailsHandler(IRegistrationsWriteStore writeSt
 
         var pendingRows = issuedCoupons
             .Where(wc => couponById.ContainsKey(wc.Id))
-            .Select(wc => new PendingNotificationRow(
-                wc.Id.Value,
-                MaskEmail(couponById[wc.Id].Email.Value),
-                couponById[wc.Id].ExpiresAt))
+            .Select(wc =>
+            {
+                var coupon = couponById[wc.Id];
+                registrationsByEmail.TryGetValue(coupon.Email, out var registration);
+                return new PendingNotificationRow(
+                    wc.Id.Value,
+                    registration?.Id.Value ?? Guid.Empty,
+                    coupon.Email.Value,
+                    registration?.FirstName.Value ?? string.Empty,
+                    registration?.LastName.Value ?? string.Empty,
+                    coupon.ExpiresAt);
+            })
             .ToList();
 
         var sentToday = issuedCoupons.Count(c => c.IssuedAt.UtcDateTime.Date == today);
@@ -82,19 +121,6 @@ internal sealed class GetWaitlistDetailsHandler(IRegistrationsWriteStore writeSt
             TotalPending: issuedCoupons.Count,
             SentToday: sentToday);
 
-        return new WaitlistDetailsDto(activeEntryRows, pendingRows, stats);
-    }
-
-    private static string MaskEmail(string email)
-    {
-        var atIndex = email.IndexOf('@');
-        if (atIndex <= 0)
-            return email;
-
-        var local = email[..atIndex];
-        var domain = email[atIndex..];
-
-        var visibleChars = Math.Min(3, local.Length);
-        return local[..visibleChars] + "***" + domain;
+        return new WaitlistDetailsDto(WaitlistEnabled: true, activeEntryRows, pendingRows, stats);
     }
 }

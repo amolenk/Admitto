@@ -808,7 +808,7 @@ describe("EventHeroCard registration capacity summary", () => {
 
         const stat = registeredStat();
         expect(within(stat).getByText("47")).toBeInTheDocument();
-        expect(within(stat).getByText("public 47/\u221E \u00B7 admin 0 \u00B7 total 47")).toBeInTheDocument();
+        expect(within(stat).getByText("47/\u221E")).toBeInTheDocument();
     });
 
     // Given the event's ticket catalog has a configured public capacity of 250
@@ -824,6 +824,6 @@ describe("EventHeroCard registration capacity summary", () => {
 
         const stat = registeredStat();
         expect(within(stat).getByText("47")).toBeInTheDocument();
-        expect(within(stat).getByText("public 47/250 \u00B7 admin 0 \u00B7 total 47")).toBeInTheDocument();
+        expect(within(stat).getByText("47/250")).toBeInTheDocument();
     });
 });

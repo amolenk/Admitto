@@ -9,6 +9,7 @@ import {
     ArrowRightLeft,
     CheckCircle,
     Clock,
+    Hourglass,
     LogIn,
     Mail,
     Sparkles,
@@ -17,7 +18,7 @@ import {
     UserMinus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, RegistrationStatus, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
+import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
 import { formatInEventZone } from "@/lib/time-zones";
@@ -73,12 +74,6 @@ async function fetchTicketTypes(teamId: string, eventId: string): Promise<Ticket
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<RegistrationStatus, string> = {
-    registered: "Registered",
-    waitlisted: "Waitlisted",
-    cancelled: "Cancelled",
-};
 
 function attendeeFullName(r: RegistrationDetailDto): string {
     const full = [r.firstName, r.lastName].filter(Boolean).join(" ").trim();
@@ -212,7 +207,14 @@ function buildTimeline(
             }
         } else if (kind === "waitlistremoved") {
             title = "Removed from waitlist";
-            detail = "Attendee left the waitlist.";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { ticketType?: string };
+                detail = meta.ticketType
+                    ? `Removed from the ${meta.ticketType} waitlist.`
+                    : "Attendee left the waitlist.";
+            } catch {
+                detail = "Attendee left the waitlist.";
+            }
         } else if (kind === "waitlistselectionchanged") {
             title = "Waitlist selection changed";
             try {
@@ -581,59 +583,32 @@ export default function AttendeeDetailPage() {
                     <div className="grid grid-cols-12 gap-5">
                         {/* Left column */}
                         <div className="col-span-12 lg:col-span-5 flex flex-col gap-5">
-                            {/* Attendee details card */}
-                            <Card className="p-5">
-                                <div className="mb-3">
-                                    <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
-                                        Attendee
-                                    </div>
-                                    <h3 className="font-display text-[18px] font-semibold mt-0.5">
-                                        Details
-                                    </h3>
-                                </div>
-                                <dl className="divide-y">
-                                    {[
-                                        ["Full name", name],
-                                        [
-                                            "Email",
-                                            <a
-                                                key="email"
-                                                href={`mailto:${registration.email}`}
-                                                className="text-primary hover:underline truncate inline-block max-w-full"
-                                            >
-                                                {registration.email}
-                                            </a>,
-                                        ],
-                                        [
-                                            "Registration ID",
-                                            <span key="id" className="font-mono text-[12.5px]">
-                                                {registration.id}
-                                            </span>,
-                                        ],
-                                        ["Status", STATUS_LABELS[registration.status]],
-                                        [
-                                            "Reconfirmed",
-                                            registration.hasReconfirmed
-                                                ? formatTs(registration.reconfirmedAt!)
-                                                : "—",
-                                        ],
-                                        ...(Object.keys(registration.additionalDetails ?? {}).length > 0
-                                            ? Object.entries(registration.additionalDetails).map(([k, v]) => [k, v])
-                                            : []),
-                                    ].map(([label, value], i) => (
-                                        <div
-                                            key={i}
-                                            className="grid grid-cols-[130px_1fr] gap-3 py-2.5 text-[13.5px]"
-                                        >
-                                            <dt className="text-muted-foreground">{label}</dt>
-                                            <dd className="min-w-0 truncate">{value}</dd>
+                            {/* Additional fields card — only shown when the event collects custom fields */}
+                            {Object.keys(registration.additionalDetails ?? {}).length > 0 && (
+                                <Card className="p-5">
+                                    <div className="mb-3">
+                                        <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
+                                            Attendee
                                         </div>
-                                    ))}
-                                </dl>
-                                <div className="mt-3 border-t pt-3 text-[13.5px]"><span className="text-muted-foreground">Attendance</span><span className="ml-3">{registration.checkedInAt ? `Checked in · ${eventQuery.data ? formatInEventZone(registration.checkedInAt, eventQuery.data.timeZone, "yyyy-MM-dd HH:mm") : "time unavailable"}` : "Not checked in"}</span></div>
-                            </Card>
+                                        <h3 className="font-display text-[18px] font-semibold mt-0.5">
+                                            Additional fields
+                                        </h3>
+                                    </div>
+                                    <dl className="divide-y">
+                                        {Object.entries(registration.additionalDetails).map(([label, value]) => (
+                                            <div
+                                                key={label}
+                                                className="grid grid-cols-[130px_1fr] gap-3 py-2.5 text-[13.5px]"
+                                            >
+                                                <dt className="text-muted-foreground">{label}</dt>
+                                                <dd className="min-w-0 truncate">{value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </Card>
+                            )}
 
-                            {/* Tickets card */}
+                            {/* Tickets card — one row per ticket type the attendee holds or is waitlisted for */}
                             <Card className="p-5">
                                 <div className="flex items-center justify-between mb-3">
                                     <div>
@@ -658,67 +633,60 @@ export default function AttendeeDetailPage() {
                                     </Button>}
                                 </div>
                                 <div className="flex flex-col gap-3">
-                                    {registration.tickets.length === 0 ? (
+                                    {registration.tickets.length === 0 && registration.waitlistEntries.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">No tickets.</p>
                                     ) : (
-                                        registration.tickets.map((ticket) => {
-                                            const isCancelled = registration.status === "cancelled";
-                                            return (
+                                        <>
+                                            {registration.tickets.map((ticket) => {
+                                                const isCancelled = registration.status === "cancelled";
+                                                return (
+                                                    <Card
+                                                        key={ticket.id}
+                                                        className={`ticket-card overflow-hidden py-3 ${isCancelled ? "opacity-60" : ""}`}
+                                                    >
+                                                        <div className="px-5">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <h4 className="font-display text-lg font-semibold">{ticket.name}</h4>
+                                                                {isCancelled ? (
+                                                                    <Badge variant="secondary">Released</Badge>
+                                                                ) : (
+                                                                    <Badge variant="outline" className="text-success border-success/30 bg-success/10">
+                                                                        Active
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                            <div className="ticket-perf" aria-hidden="true" />
+                                                        </div>
+                                                    </Card>
+                                                );
+                                            })}
+                                            {registration.waitlistEntries.map((entry) => (
                                                 <Card
-                                                    key={ticket.id}
-                                                    className={`ticket-card overflow-hidden py-3 ${isCancelled ? "opacity-60" : ""}`}
+                                                    key={entry.ticketTypeName}
+                                                    className="ticket-card overflow-hidden py-3"
                                                 >
                                                     <div className="px-5">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <h4 className="font-display text-lg font-semibold">{ticket.name}</h4>
-                                                            {isCancelled ? (
-                                                                <Badge variant="secondary">Released</Badge>
-                                                            ) : (
-                                                                <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-                                                                    Active
-                                                                </Badge>
-                                                            )}
+                                                            <h4 className="font-display text-lg font-semibold">{entry.ticketTypeName}</h4>
+                                                            <Badge variant="outline" className="text-amber-600 border-amber-600/30 bg-amber-600/10">
+                                                                <Hourglass className="size-3 mr-1" />
+                                                                Waitlist
+                                                            </Badge>
                                                         </div>
+                                                        <p className="text-[12.5px] text-muted-foreground">
+                                                            {entry.isOffered
+                                                                ? `Coupon offered${entry.offerExpiresAt ? ` · expires ${new Date(entry.offerExpiresAt).toLocaleString()}` : ""}`
+                                                                : `#${entry.position} in line`}
+                                                        </p>
                                                         <div className="ticket-perf" aria-hidden="true" />
                                                     </div>
                                                 </Card>
-                                            );
-                                        })
+                                            ))}
+                                        </>
                                     )}
                                 </div>
                             </Card>
 
-                            {/* Waitlist card — only shown when the attendee holds an active waitlist entry */}
-                            {registration.waitlistEntries.length > 0 && (
-                                <Card className="p-5">
-                                    <div className="mb-3">
-                                        <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
-                                            Waitlist
-                                        </div>
-                                        <h3 className="font-display text-[18px] font-semibold mt-0.5">
-                                            Waiting on
-                                        </h3>
-                                    </div>
-                                    <div className="flex flex-col gap-3">
-                                        {registration.waitlistEntries.map((entry) => (
-                                            <Card
-                                                key={entry.ticketTypeName}
-                                                className="ticket-card overflow-hidden py-3"
-                                            >
-                                                <div className="px-5">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <h4 className="font-display text-lg font-semibold">{entry.ticketTypeName}</h4>
-                                                        <Badge variant="outline">
-                                                            #{entry.position} in line
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="ticket-perf" aria-hidden="true" />
-                                                </div>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                </Card>
-                            )}
                         </div>
 
                         {/* Right column — Activity & emails */}

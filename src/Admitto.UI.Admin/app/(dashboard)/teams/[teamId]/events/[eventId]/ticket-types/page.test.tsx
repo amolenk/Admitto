@@ -107,7 +107,7 @@ describe("TicketTypesPage", () => {
         const card = cardFor("AI Workshop");
         expect(within(card).getByText("Sold out")).toBeInTheDocument();
         expect(within(card).getByText("23")).toBeInTheDocument();
-        expect(within(card).getByText("public 20/20 \u00B7 admin 3 \u00B7 total 23")).toBeInTheDocument();
+        expect(within(card).getByText("23/23")).toBeInTheDocument();
         expect(within(card).queryByText(/exceed/i)).not.toBeInTheDocument();
     });
 
@@ -122,6 +122,6 @@ describe("TicketTypesPage", () => {
         await screen.findByRole("heading", { name: "Staff Pass" });
         const card = cardFor("Staff Pass");
         expect(within(card).getByText("Available")).toBeInTheDocument();
-        expect(within(card).getByText("public 7/\u221E \u00B7 admin 2 \u00B7 total 9")).toBeInTheDocument();
+        expect(within(card).getByText("9/\u221E")).toBeInTheDocument();
     });
 });

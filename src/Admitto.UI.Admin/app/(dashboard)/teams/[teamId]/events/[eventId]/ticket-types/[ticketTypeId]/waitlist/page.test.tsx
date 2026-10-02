@@ -11,7 +11,7 @@ import {
     waitlistEntryRow,
 } from "@/test-utils/builders";
 import { renderWithProviders } from "@/test-utils/render";
-import { routerMock, setRoute } from "@/test-utils/router";
+import { setRoute } from "@/test-utils/router";
 
 import WaitlistPage from "./page";
 
@@ -113,7 +113,9 @@ describe("WaitlistPage", () => {
                 pendingNotifications: [
                     pendingNotificationRow({
                         couponId: "bbbb2222-0000-0000-0000-000000000001",
-                        maskedEmail: "bob***@example.com",
+                        email: "bob@example.com",
+                        firstName: "Bob",
+                        lastName: "Jones",
                         expiresAt: "2026-08-01T15:00:00Z",
                     }),
                 ],
@@ -145,23 +147,24 @@ describe("WaitlistPage", () => {
             const cells = within(activeRows[index]!).getAllByRole("cell");
             expect(cells[0]).toHaveTextContent(position);
             expect(cells[1]).toHaveTextContent(name);
-            expect(cells[2]).toHaveTextContent(email);
-            expect(cells[3]).toHaveTextContent(joined);
+            expect(cells[1]).toHaveTextContent(email);
+            expect(cells[2]).toHaveTextContent(joined);
         });
 
         const pendingRows = within(pendingTable!).getAllByRole("row").slice(1);
         expect(pendingRows).toHaveLength(1);
         const pendingCells = within(pendingRows[0]!).getAllByRole("cell");
-        expect(pendingCells[0]).toHaveTextContent("bob***@example.com");
+        expect(pendingCells[0]).toHaveTextContent("Bob Jones");
+        expect(pendingCells[0]).toHaveTextContent("bob@example.com");
         expect(pendingCells[1]).toHaveTextContent("1 Aug 2026, 15:00");
         expect(pendingCells[2]).toHaveTextContent("in about 5 hours");
     });
 
     // Given an active waitlist entry
-    // When the organizer clicks its row (not an action button)
-    // Then they are navigated to that entry's attendee details, flagged as having come from
-    // this waitlist so the Back button can return here
-    it("navigates to the attendee's registration when an active entry row is clicked", async () => {
+    // When the attendee cell is inspected
+    // Then it links to that entry's registration, flagged as having come from this waitlist so
+    // the Back button can return here
+    it("links an active entry to the attendee's registration", async () => {
         mockEndpoints(
             waitlistDetailsDto({
                 activeEntries: [
@@ -176,40 +179,41 @@ describe("WaitlistPage", () => {
             }),
         );
 
-        const { user } = renderPage();
+        renderPage();
 
-        const alice = await screen.findByText("alice@example.com");
-        await user.click(alice.closest("tr")!);
-
-        expect(routerMock.push).toHaveBeenCalledWith(
+        const link = (await screen.findByText("alice@example.com")).closest("a");
+        expect(link).toHaveAttribute(
+            "href",
             `/teams/${TEAM_ID}/events/${EVENT_ID}/registrations/ccccdddd-0000-0000-0000-000000000001?from=waitlist&ticketTypeId=${TICKET_TYPE_ID}`,
         );
     });
 
-    // Given an active waitlist entry
-    // When the organizer clicks an action button in that row (e.g. Remove from waitlist)
-    // Then the row click does not also navigate to the attendee's details
-    it("does not navigate when an action button in the row is clicked", async () => {
+    // Given a pending notification
+    // When the attendee cell is inspected
+    // Then it links to that attendee's registration, the same way as active entries
+    it("links a pending notification to the attendee's registration", async () => {
         mockEndpoints(
             waitlistDetailsDto({
-                activeEntries: [
-                    waitlistEntryRow({
-                        entryId: "aaaa1111-0000-0000-0000-000000000001",
-                        email: "alice@example.com",
+                activeEntries: [],
+                pendingNotifications: [
+                    pendingNotificationRow({
+                        couponId: "bbbb2222-0000-0000-0000-000000000001",
+                        registrationId: "ddddeeee-0000-0000-0000-000000000001",
+                        email: "bea@example.com",
+                        firstName: "Bea",
+                        lastName: "Jones",
                     }),
                 ],
             }),
         );
-        del.mockResolvedValue(undefined);
 
-        const { user } = renderPage();
+        renderPage();
 
-        const alice = await screen.findByText("alice@example.com");
-        await user.click(
-            within(alice.closest("tr")!).getByRole("button", { name: "Remove from waitlist" }),
+        const link = (await screen.findByText("bea@example.com")).closest("a");
+        expect(link).toHaveAttribute(
+            "href",
+            `/teams/${TEAM_ID}/events/${EVENT_ID}/registrations/ddddeeee-0000-0000-0000-000000000001?from=waitlist&ticketTypeId=${TICKET_TYPE_ID}`,
         );
-
-        expect(routerMock.push).not.toHaveBeenCalled();
     });
 
     // Given a ticket type with nobody on its waitlist
@@ -272,6 +276,7 @@ describe("WaitlistPage", () => {
 
         const row = initialAlice.closest("tr")!;
         await user.click(within(row).getByRole("button", { name: "Remove from waitlist" }));
+        await user.click(await screen.findByRole("button", { name: "Remove" }));
 
         await waitFor(() =>
             expect(del).toHaveBeenCalledWith(
@@ -285,7 +290,7 @@ describe("WaitlistPage", () => {
         const remainingRow = remainingBob.closest("tr")!;
         const remainingCells = within(remainingRow).getAllByRole("cell");
         expect(remainingCells[0]).toHaveTextContent("1");
-        expect(remainingCells[2]).toHaveTextContent("beatrice@example.com");
+        expect(remainingCells[1]).toHaveTextContent("beatrice@example.com");
         expect(screen.queryByText("No one is currently on the waitlist.")).not.toBeInTheDocument();
 
         const waitingStat = statContent("Waiting");
@@ -323,7 +328,9 @@ describe("WaitlistPage", () => {
                 pendingNotifications: [
                     pendingNotificationRow({
                         couponId: "bbbb2222-0000-0000-0000-000000000001",
-                        maskedEmail: "bea***@example.com",
+                        email: "beatrice@example.com",
+                        firstName: "Beatrice",
+                        lastName: "Smith",
                     }),
                 ],
                 stats: { totalWaiting: 1, totalPending: 1, sentToday: 1 },
@@ -355,7 +362,7 @@ describe("WaitlistPage", () => {
             expect(within(activeTable!).queryByText("beatrice@example.com")).not.toBeInTheDocument(),
         );
         expect(within(activeTable!).getByText("alice@example.com")).toBeInTheDocument();
-        expect(within(pendingTable!).getByText("bea***@example.com")).toBeInTheDocument();
+        expect(within(pendingTable!).getByText("beatrice@example.com")).toBeInTheDocument();
         expect(
             within(pendingTable!).queryByRole("button", { name: "Promote to VIP" }),
         ).not.toBeInTheDocument();
@@ -433,6 +440,30 @@ describe("WaitlistPage", () => {
         expect(post).not.toHaveBeenCalled();
     });
 
+    // Given an active waitlist entry
+    // When the organizer clicks "Remove from waitlist"
+    // Then a confirmation dialog warns the removal can't be undone, and no request is sent until confirmed
+    it("asks for confirmation before removing an entry", async () => {
+        mockEndpoints(
+            waitlistDetailsDto({
+                activeEntries: [waitlistEntryRow({ entryId: "aaaa1111-0000-0000-0000-000000000001" })],
+            }),
+        );
+
+        const { user } = renderPage();
+
+        const ali = await screen.findByText("alice@example.com");
+        await user.click(
+            within(ali.closest("tr")!).getByRole("button", { name: "Remove from waitlist" }),
+        );
+
+        expect(await screen.findByText(/can't be undone/)).toBeInTheDocument();
+        expect(del).not.toHaveBeenCalled();
+
+        await user.click(screen.getByRole("button", { name: "Cancel" }));
+        expect(del).not.toHaveBeenCalled();
+    });
+
     // Given an active entry
     // When the organizer removes it and the backend rejects the request
     // Then an error toast is shown instead of failing silently, and the entry stays visible
@@ -457,12 +488,32 @@ describe("WaitlistPage", () => {
         await user.click(
             within(ali.closest("tr")!).getByRole("button", { name: "Remove from waitlist" }),
         );
+        await user.click(await screen.findByRole("button", { name: "Remove" }));
 
         await waitFor(() =>
             expect(toast.error).toHaveBeenCalledWith("The waitlist entry is no longer active."),
         );
         expect(toast.success).not.toHaveBeenCalled();
         expect(screen.getByText("alice@example.com")).toBeInTheDocument();
+    });
+
+    // Given a ticket type that has never had its waitlist enabled
+    // When the page loads
+    // Then a friendly "doesn't use a waitlist" message is shown instead of the generic error
+    it("shows a friendly message when the ticket type has no waitlist configured", async () => {
+        mockEndpoints(waitlistDetailsDto({ waitlistEnabled: false, activeEntries: [], pendingNotifications: [] }));
+
+        renderPage();
+
+        expect(
+            await screen.findByText("This ticket type doesn't use a waitlist."),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText("Failed to load the waitlist. Please refresh and try again."),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByText("No one is currently on the waitlist."),
+        ).not.toBeInTheDocument();
     });
 
     // Given the waitlist query fails
