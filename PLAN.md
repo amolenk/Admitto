@@ -158,7 +158,21 @@ Implementation needed in
 
 </details>
 
-### 2. `DisableWaitlistHandler` (explicit waitlist disable) — Q6
+### 2. `DisableWaitlistHandler` (explicit waitlist disable) — Q6 — DONE
+
+Implemented: `Waitlist.Disable` now returns `(IReadOnlyList<Coupon> Coupons, IReadOnlyList<WaitlistEntry>
+RemovedEntries)` (TDD: new domain test `Disable_RemovesEntries_SurfacesRemovedEntriesForCallers` added
+first, then the signature changed, then the three existing `Disable_*` tests' destructuring updated).
+`DisableWaitlistHandler` loads all of the event's waitlists plus the owning registrations for each
+removed entry's `RegistrationId`, and calls `CancelIfExhausted(..., CancellationReason.TicketTypesRemoved)`
+per registration. New `DisableWaitlistTests.cs` (2 tests, mirroring `RemoveWaitlistEntryTests.cs`) green.
+`ProcessExpiredWaitlistCouponsJobTests` re-run (15/15, no regression). Also fixed a stale assertion in
+`UpdateTicketTypeWaitlistTests.UpdateTicketType_WaitlistDisabled_RemovesAllEntriesAndKeepsOutstandingCoupon`
+left over from the earlier `Offered`-status work — it asserted every entry ends up `Removed`, but an
+entry holding an outstanding, unclaimed offer correctly stays `Offered` across a disable.
+
+<details>
+<summary>Original task description (for reference)</summary>
 
 **No test written yet.** Needs:
 - `Waitlist.Disable(...)` currently returns only `IReadOnlyList<Coupon>` (new coupons issued to
@@ -193,6 +207,8 @@ Implementation needed in
   `ProcessExpiredWaitlistCouponsJobTests` (`Execute_WhenCouponExpiresAfterWaitlistDisabled_...`)
   after this change to make sure nothing regressed.
 
+</details>
+
 ### 3. `UpdatePartnerRegistrationHandler` — Q10 (Offered as a current selection on partner update)
 
 **Not started.** This is the most involved remaining piece. File:
@@ -222,6 +238,7 @@ Required changes (see the earlier design discussion in this conversation for ful
    from their last offer/queue spot" deserves its own reason; this wasn't explicitly settled in
    the conversation — default to `TicketTypesRemoved` (no email) unless revisited, since the
    attendee initiated the change themselves and doesn't need a notification about it.
+   UPDATE: Having a distinct cancel reason here is preferable: something like `LeftWaitlist`
 5. Tests to add in
    `tests/Admitto.Core.IntegrationTests/Registrations/Application/UseCases/Registrations/UpdatePartnerRegistration/`
    (existing fixture `UpdatePartnerRegistrationFixture.WithWaitlistCoupon()` already sets up an

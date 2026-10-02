@@ -132,7 +132,11 @@ public sealed class UpdateTicketTypeWaitlistTests(TestContext testContext) : Asp
             coupon.RedeemedAt.ShouldBeNull();
 
             var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
-            waitlist.Entries.ShouldAllBe(e => e.Status == WaitlistEntryStatus.Removed);
+            // The still-queued entries are removed; the entry holding the outstanding, unclaimed offer stays
+            // Offered (not Removed) — its coupon remains valid until it's redeemed or expires.
+            waitlist.Entries.ShouldAllBe(e =>
+                e.Status == WaitlistEntryStatus.Removed
+                || (e.Status == WaitlistEntryStatus.Offered && e.Email == UpdateTicketTypeWaitlistFixture.OfferedEmail));
             waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Issued);
 
             var ticketType = await GetTicketTypeAsync(dbContext, fixture);

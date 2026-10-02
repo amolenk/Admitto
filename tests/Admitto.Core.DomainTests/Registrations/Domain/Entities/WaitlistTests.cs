@@ -982,7 +982,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var coupons = sut.Disable(freedSlots: 1, CreateTicketedEvent(), _catalog, now);
+        var (coupons, _) = sut.Disable(freedSlots: 1, CreateTicketedEvent(), _catalog, now);
 
         // Assert
         coupons.ShouldHaveSingleItem().Email.Value.ShouldBe("first@example.com");
@@ -1010,7 +1010,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var coupons = sut.Disable(freedSlots: 0, CreateTicketedEvent(), _catalog, now);
+        var (coupons, _) = sut.Disable(freedSlots: 0, CreateTicketedEvent(), _catalog, now);
 
         // Assert
         coupons.ShouldBeEmpty();
@@ -1031,11 +1031,33 @@ public sealed class WaitlistTests
         sut.AddEntry(EmailAddress.From("first@example.com"), DateTimeOffset.UtcNow, _catalog, DefaultRegistrationId);
 
         // Act
-        var coupons = sut.Disable(freedSlots: 3, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
+        var (coupons, removedEntries) = sut.Disable(freedSlots: 3, CreateTicketedEvent(), _catalog, DateTimeOffset.UtcNow);
 
         // Assert
         coupons.ShouldHaveSingleItem();
         sut.ActiveEntryCount.ShouldBe(0);
+        removedEntries.ShouldBeEmpty();
+    }
+
+    // Given a waitlist with three active entries and no freed slots
+    // When the waitlist is disabled
+    // Then the removed entries are surfaced so callers can check whether owning registrations lost their last selection
+    [TestMethod]
+    public void Disable_RemovesEntries_SurfacesRemovedEntriesForCallers()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        var now = DateTimeOffset.UtcNow;
+        sut.AddEntry(EmailAddress.From("first@example.com"), now, _catalog, DefaultRegistrationId);
+        sut.AddEntry(EmailAddress.From("second@example.com"), now.AddMinutes(1), _catalog, DefaultRegistrationId);
+        sut.AddEntry(EmailAddress.From("third@example.com"), now.AddMinutes(2), _catalog, DefaultRegistrationId);
+
+        // Act
+        var (_, removedEntries) = sut.Disable(freedSlots: 1, CreateTicketedEvent(), _catalog, now);
+
+        // Assert
+        removedEntries.Select(e => e.Email.Value)
+            .ShouldBe(["second@example.com", "third@example.com"], ignoreOrder: true);
     }
 
     // ─── Offered entries (outstanding waitlist offers) ───────────────────────

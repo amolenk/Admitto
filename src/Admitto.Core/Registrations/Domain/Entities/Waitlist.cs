@@ -164,9 +164,10 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// Handles an explicit disable of this waitlist's ticket type: offers up to <paramref name="freedSlots"/>
     /// coupons to the front of the queue, then removes everyone still waiting. Removed attendees get no email
     /// (the organizer informs them); outstanding coupons stay valid, and keep their hold, until they are redeemed
-    /// or expire. Returns the newly issued coupons.
+    /// or expire. Returns the newly issued coupons and the entries removed from the queue, so callers can check
+    /// whether a removed entry's owning registration lost its last waitlist selection.
     /// </summary>
-    public IReadOnlyList<Coupon> Disable(
+    public (IReadOnlyList<Coupon> Coupons, IReadOnlyList<WaitlistEntry> RemovedEntries) Disable(
         int freedSlots,
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
@@ -185,7 +186,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         if (remainingEntries.Count > 0)
             CheckExhausted();
 
-        return coupons;
+        return (coupons, remainingEntries);
     }
 
     /// <summary>
