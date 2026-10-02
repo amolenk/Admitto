@@ -30,7 +30,8 @@ public sealed class WaitlistCouponIssuedIntegrationEventHandlerTests(TestContext
                 && intent.TicketedEventId == TicketedEventId.From(fixture.EventId)
                 && intent.CouponCode == "WAIT-456"
                 && intent.TicketTypeName == "Conference Pass"
-                && intent.ExpiresAt == integrationEvent.ExpiresAt),
+                && intent.ExpiresAt == integrationEvent.ExpiresAt
+                && intent.RegistrationId == RegistrationId.From(integrationEvent.RegistrationId)),
             Arg.Any<CancellationToken>());
 
         var delivery = fixture.DeliveryHandler.ReceivedDelivery();
@@ -38,6 +39,6 @@ public sealed class WaitlistCouponIssuedIntegrationEventHandlerTests(TestContext
         delivery.IdempotencyKey.ShouldBe(
             $"waitlist-coupon-issued:{fixture.TeamId}:{fixture.EventId}:WAIT-456");
         delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistNotification);
-        delivery.RegistrationId.ShouldBeNull();
+        delivery.RegistrationId.ShouldBe(Guid.Parse("55555555-5555-5555-5555-555555555555"));
     }
 }

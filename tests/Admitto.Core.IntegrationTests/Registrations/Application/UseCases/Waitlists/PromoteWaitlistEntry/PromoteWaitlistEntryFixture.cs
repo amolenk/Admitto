@@ -59,9 +59,9 @@ internal sealed class PromoteWaitlistEntryFixture
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
                 EventId, WorkshopId, TeamId);
             var now = DateTimeOffset.UtcNow;
-            waitlist.AddEntry(FirstEmail, now, catalog);
-            waitlist.AddEntry(VipEmail, now.AddMinutes(1), catalog);
-            waitlist.AddEntry(ThirdEmail, now.AddMinutes(2), catalog);
+            waitlist.AddEntry(FirstEmail, now, catalog, RegistrationId.New());
+            waitlist.AddEntry(VipEmail, now.AddMinutes(1), catalog, RegistrationId.New());
+            waitlist.AddEntry(ThirdEmail, now.AddMinutes(2), catalog, RegistrationId.New());
             waitlist.ClearDomainEvents();
             VipEntryId = waitlist.Entries.Single(e => e.Email == VipEmail).Id;
             dbContext.Waitlists.Add(waitlist);

@@ -37,7 +37,7 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
             integrationEvent.TicketTypeName,
             integrationEvent.ExpiresAt,
             reason,
-            integrationEvent.RegistrationId is { } registrationId ? RegistrationId.From(registrationId) : null),
+            RegistrationId.From(integrationEvent.RegistrationId)),
             cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,

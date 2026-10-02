@@ -14,4 +14,4 @@ public sealed record WaitlistCouponIssuedIntegrationEvent(
     string TicketTypeName,
     DateTimeOffset ExpiresAt,
     string Reason,
-    Guid? RegistrationId) : IntegrationEvent;
+    Guid RegistrationId) : IntegrationEvent;

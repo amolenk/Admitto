@@ -71,10 +71,11 @@ public class Registration : Aggregate<RegistrationId>
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails? additionalDetails = null,
         DateTimeOffset? registeredAt = null,
-        IReadOnlyList<TicketTypeSnapshot>? waitlistedTickets = null)
+        IReadOnlyList<TicketTypeSnapshot>? waitlistedTickets = null,
+        RegistrationId? id = null)
     {
         return new Registration(
-            RegistrationId.New(),
+            id ?? RegistrationId.New(),
             teamId,
             eventId,
             RegistrationCycleId.New(),

@@ -761,4 +761,23 @@ describe("AttendeeDetailPage", () => {
         const link = await screen.findByRole("link", { name: "Registrations" });
         expect(link).toHaveAttribute("href", `/teams/${TEAM_ID}/events/${EVENT_ID}/registrations`);
     });
+
+    // Given the organizer navigated here from a ticket type's waitlist page
+    // When they look at the back link
+    // Then it points back at that waitlist instead of the registrations list
+    it("has a back link that returns to the waitlist when arriving from it", async () => {
+        mockApi();
+        const ticketTypeId = "99998888-0000-0000-0000-000000000001";
+        setRoute({
+            params: { teamId: TEAM_ID, eventId: EVENT_ID, registrationId: REGISTRATION_ID },
+            searchParams: { from: "waitlist", ticketTypeId },
+        });
+        renderWithProviders(<AttendeeDetailPage />);
+
+        const link = await screen.findByRole("link", { name: "Waitlist" });
+        expect(link).toHaveAttribute(
+            "href",
+            `/teams/${TEAM_ID}/events/${EVENT_ID}/ticket-types/${ticketTypeId}/waitlist`,
+        );
+    });
 });

@@ -58,7 +58,7 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// Adds an active waitlist entry immediately and counts it on the <paramref name="catalog"/>'s ticket type.
     /// Idempotent — returns false without adding a duplicate when the email already has an active entry.
     /// </summary>
-    public bool AddEntry(EmailAddress email, DateTimeOffset addedAt, TicketCatalog catalog)
+    public bool AddEntry(EmailAddress email, DateTimeOffset addedAt, TicketCatalog catalog, RegistrationId registrationId)
     {
         if (_entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Active))
             return false;
@@ -66,7 +66,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         catalog.JoinWaitlistQueue(Id);
 
         var nextPosition = _entries.Count(e => e.Status == WaitlistEntryStatus.Active) + 1;
-        _entries.Add(new WaitlistEntry(WaitlistEntryId.New(), email, nextPosition, addedAt));
+        _entries.Add(new WaitlistEntry(WaitlistEntryId.New(), email, nextPosition, addedAt, registrationId));
         return true;
     }
 
@@ -109,11 +109,10 @@ public class Waitlist : Aggregate<TicketTypeId>
         int freedSlots,
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow,
-        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
+        DateTimeOffset utcNow)
     {
         var coupons = IssueNextCoupons(
-            freedSlots, ticketedEvent, catalog, utcNow, WaitlistOfferReason.AutomaticPromotion, resolveRegistrationId);
+            freedSlots, ticketedEvent, catalog, utcNow, WaitlistOfferReason.AutomaticPromotion);
 
         var remainingEntries = _entries.Where(e => e.Status == WaitlistEntryStatus.Active).ToList();
         foreach (var entry in remainingEntries)
@@ -135,23 +134,20 @@ public class Waitlist : Aggregate<TicketTypeId>
     public IReadOnlyList<Coupon> IssueCouponsToAllEntries(
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow,
-        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
+        DateTimeOffset utcNow)
         => IssueNextCoupons(
-            ActiveEntryCount, ticketedEvent, catalog, utcNow, WaitlistOfferReason.CapacityOpenedForEveryone,
-            resolveRegistrationId);
+            ActiveEntryCount, ticketedEvent, catalog, utcNow, WaitlistOfferReason.CapacityOpenedForEveryone);
 
     private List<Coupon> IssueNextCoupons(
         int maxCount,
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
         DateTimeOffset utcNow,
-        WaitlistOfferReason reason,
-        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
+        WaitlistOfferReason reason)
     {
         var coupons = new List<Coupon>();
         while (coupons.Count < maxCount
-               && IssueNextCouponCore(ticketedEvent, catalog, utcNow, reason, resolveRegistrationId) is { } coupon)
+               && IssueNextCouponCore(ticketedEvent, catalog, utcNow, reason) is { } coupon)
             coupons.Add(coupon);
 
         return coupons;
@@ -165,16 +161,14 @@ public class Waitlist : Aggregate<TicketTypeId>
     public Coupon? IssueNextCoupon(
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow,
-        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
-        => IssueNextCouponCore(ticketedEvent, catalog, utcNow, WaitlistOfferReason.AutomaticPromotion, resolveRegistrationId);
+        DateTimeOffset utcNow)
+        => IssueNextCouponCore(ticketedEvent, catalog, utcNow, WaitlistOfferReason.AutomaticPromotion);
 
     private Coupon? IssueNextCouponCore(
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
         DateTimeOffset utcNow,
-        WaitlistOfferReason reason,
-        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
+        WaitlistOfferReason reason)
     {
         var entry = _entries
             .Where(e => e.Status == WaitlistEntryStatus.Active)
@@ -183,8 +177,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         return entry is null
             ? null
             : IssueCoupon(
-                entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Automatic, reason,
-                resolveRegistrationId(entry.Email));
+                entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Automatic, reason, entry.RegistrationId);
     }
 
     /// <summary>
@@ -196,8 +189,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         WaitlistEntryId entryId,
         TicketedEvent ticketedEvent,
         TicketCatalog catalog,
-        DateTimeOffset utcNow,
-        Func<EmailAddress, RegistrationId?> resolveRegistrationId)
+        DateTimeOffset utcNow)
     {
         var entry = _entries.FirstOrDefault(e => e.Id == entryId && e.Status == WaitlistEntryStatus.Active);
         if (entry is null)
@@ -205,7 +197,7 @@ public class Waitlist : Aggregate<TicketTypeId>
 
         return IssueCoupon(
             entry, ticketedEvent, catalog, utcNow, WaitlistCouponOrigin.Manual, WaitlistOfferReason.VipPromotion,
-            resolveRegistrationId(entry.Email));
+            entry.RegistrationId);
     }
 
     private Coupon IssueCoupon(
@@ -215,7 +207,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         DateTimeOffset utcNow,
         WaitlistCouponOrigin origin,
         WaitlistOfferReason reason,
-        RegistrationId? registrationId)
+        RegistrationId registrationId)
     {
         var ticketType = catalog.FindTicketType(Id);
         if (origin == WaitlistCouponOrigin.Automatic)

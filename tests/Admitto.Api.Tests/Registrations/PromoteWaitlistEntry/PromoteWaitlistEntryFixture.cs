@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.PromoteWaitlistEntry;
 
@@ -50,8 +51,8 @@ internal sealed class PromoteWaitlistEntryFixture
         catalog.Claim([ticketTypeId], ClaimMode.Public);
 
         var waitlist = Waitlist.Create(eventId, ticketTypeId, team.Id);
-        waitlist.AddEntry(EmailAddress.From("first@example.com"), DateTimeOffset.UtcNow, catalog);
-        waitlist.AddEntry(EmailAddress.From("vip@example.com"), DateTimeOffset.UtcNow.AddMinutes(1), catalog);
+        waitlist.AddEntry(EmailAddress.From("first@example.com"), DateTimeOffset.UtcNow, catalog, RegistrationId.New());
+        waitlist.AddEntry(EmailAddress.From("vip@example.com"), DateTimeOffset.UtcNow.AddMinutes(1), catalog, RegistrationId.New());
         VipEntryId = waitlist.Entries.Single(e => e.Position == 2).Id.Value;
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

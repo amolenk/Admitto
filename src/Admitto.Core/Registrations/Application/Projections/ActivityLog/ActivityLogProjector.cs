@@ -134,18 +134,10 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore, IR
         return ValueTask.CompletedTask;
     }
 
-    public async ValueTask HandleAsync(
+    public ValueTask HandleAsync(
         WaitlistCouponIssuedDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
-        // A coupon can be issued before the recipient has ever registered (e.g. a VIP promotion
-        // straight off the waitlist), in which case there is no registration to attach the entry to.
-        var registrationId = domainEvent.RegistrationId
-            ?? await ResolveRegistrationIdAsync(
-                domainEvent.TeamId, domainEvent.TicketedEventId, domainEvent.RecipientEmail, cancellationToken);
-        if (registrationId is null)
-            return;
-
         var metadata = JsonSerializer.Serialize(new
         {
             ticketType = domainEvent.TicketTypeName,
@@ -156,10 +148,12 @@ internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore, IR
         AddEntry(
             domainEvent.TeamId,
             domainEvent.TicketedEventId,
-            registrationId.Value,
+            domainEvent.RegistrationId,
             ActivityType.WaitlistOfferSent,
             domainEvent.OccurredOn,
             metadata);
+
+        return ValueTask.CompletedTask;
     }
 
     public async ValueTask HandleAsync(

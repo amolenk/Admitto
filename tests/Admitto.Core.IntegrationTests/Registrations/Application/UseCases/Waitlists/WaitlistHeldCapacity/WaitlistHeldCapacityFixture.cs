@@ -101,7 +101,7 @@ internal sealed class WaitlistHeldCapacityFixture
 
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
             for (var i = 1; i <= _waitingCount; i++)
-                waitlist.AddEntry(WaitingEmail(i), now.AddMinutes(i), catalog);
+                waitlist.AddEntry(WaitingEmail(i), now.AddMinutes(i), catalog, RegistrationId.New());
             waitlist.ClearDomainEvents();
             dbContext.Waitlists.Add(waitlist);
         });

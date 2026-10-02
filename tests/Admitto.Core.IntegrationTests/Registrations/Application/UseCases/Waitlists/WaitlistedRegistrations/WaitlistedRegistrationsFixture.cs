@@ -94,10 +94,10 @@ internal sealed class WaitlistedRegistrationsFixture
             for (var position = 1; position <= WaitingCount; position++)
             {
                 var email = WaitingEmail(position);
-                conferencePassWaitlist.AddEntry(email, Start.AddMinutes(position - 60), catalog);
+                conferencePassWaitlist.AddEntry(email, Start.AddMinutes(position - 60), catalog, RegistrationId.New());
                 IReadOnlyList<TicketTypeId> waitlistedIds = position == 1 ? [ConferencePassId, WorkshopId] : [ConferencePassId];
                 if (position == 1)
-                    workshopWaitlist.AddEntry(email, Start.AddMinutes(-60), catalog);
+                    workshopWaitlist.AddEntry(email, Start.AddMinutes(-60), catalog, RegistrationId.New());
 
                 var registration = Registration.Create(
                     TeamId,

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -58,16 +57,9 @@ internal sealed class ProcessWaitlistNotificationsHandler(
 
         var utcNow = timeProvider.GetUtcNow();
 
-        var activeEmails = waitlist.Entries
-            .Where(e => e.Status == WaitlistEntryStatus.Active)
-            .Select(e => e.Email)
-            .ToList();
-        var resolveRegistrationId = await WaitlistRegistrationIdResolver.BuildAsync(
-            writeStore, eventId, teamId, activeEmails, cancellationToken);
-
         while (!ticketedEvent.HasRegistrationClosed(utcNow)
                && ticketType.AvailableCapacity > 0
-               && waitlist.IssueNextCoupon(ticketedEvent, catalog, utcNow, resolveRegistrationId) is { } coupon)
+               && waitlist.IssueNextCoupon(ticketedEvent, catalog, utcNow) is { } coupon)
         {
             await writeStore.Coupons.AddAsync(coupon, cancellationToken);
         }

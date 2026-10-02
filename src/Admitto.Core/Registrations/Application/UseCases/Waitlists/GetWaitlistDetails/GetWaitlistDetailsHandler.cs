@@ -42,14 +42,29 @@ internal sealed class GetWaitlistDetailsHandler(IRegistrationsWriteStore writeSt
 
         var couponById = coupons.ToDictionary(c => c.Id);
 
+        var registrationIds = activeEntries.Select(e => e.RegistrationId).ToHashSet();
+
+        var registrationsById = await writeStore.Registrations
+            .AsNoTracking()
+            .Where(r => registrationIds.Contains(r.Id))
+            .Select(r => new { r.Id, r.Email, r.FirstName, r.LastName })
+            .ToDictionaryAsync(r => r.Id, cancellationToken);
+
         var today = DateTimeOffset.UtcNow.Date;
 
         var activeEntryRows = activeEntries
-            .Select(e => new WaitlistEntryRow(
-                e.Id.Value,
-                e.Position,
-                MaskEmail(e.Email.Value),
-                e.AddedAt))
+            .Select(e =>
+            {
+                registrationsById.TryGetValue(e.RegistrationId, out var registration);
+                return new WaitlistEntryRow(
+                    e.Id.Value,
+                    e.Position,
+                    e.RegistrationId.Value,
+                    registration?.Email.Value ?? e.Email.Value,
+                    registration?.FirstName.Value ?? string.Empty,
+                    registration?.LastName.Value ?? string.Empty,
+                    e.AddedAt);
+            })
             .ToList();
 
         var pendingRows = issuedCoupons

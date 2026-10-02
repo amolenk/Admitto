@@ -153,7 +153,7 @@ internal sealed class UpdatePartnerRegistrationHandler(
                 waitlistsById[ticketTypeId] = waitlist;
             }
 
-            waitlist.AddEntry(registration.Email, now, catalog);
+            waitlist.AddEntry(registration.Email, now, catalog, registration.Id);
         }
 
         if (coupon is not null)

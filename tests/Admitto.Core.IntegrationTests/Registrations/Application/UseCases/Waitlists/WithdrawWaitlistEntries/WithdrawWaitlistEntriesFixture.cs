@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Waitlists.WithdrawWaitlistEntries;
 
@@ -64,7 +65,7 @@ internal sealed class WithdrawWaitlistEntriesFixture
                         AddWaitlistEnabledTicketType(catalog, ticketTypeId, $"Workshop {i + 1}");
 
                         var waitlist = Waitlist.Create(EventId, ticketTypeId, TeamId);
-                        waitlist.AddEntry(CancelledAttendeeEmail, now, catalog);
+                        waitlist.AddEntry(CancelledAttendeeEmail, now, catalog, RegistrationId.New());
                         dbContext.Waitlists.Add(waitlist);
                     }
                     break;
@@ -76,9 +77,9 @@ internal sealed class WithdrawWaitlistEntriesFixture
                     AddWaitlistEnabledTicketType(catalog, ticketTypeId, "Workshop");
 
                     var waitlist = Waitlist.Create(EventId, ticketTypeId, TeamId);
-                    waitlist.AddEntry(OtherAttendeeBeforeEmail, now, catalog); // position 1
-                    waitlist.AddEntry(CancelledAttendeeEmail, now.AddMinutes(1), catalog); // position 2 - withdrawn
-                    waitlist.AddEntry(OtherAttendeeAfterEmail, now.AddMinutes(2), catalog); // position 3 -> becomes 2
+                    waitlist.AddEntry(OtherAttendeeBeforeEmail, now, catalog, RegistrationId.New()); // position 1
+                    waitlist.AddEntry(CancelledAttendeeEmail, now.AddMinutes(1), catalog, RegistrationId.New()); // position 2 - withdrawn
+                    waitlist.AddEntry(OtherAttendeeAfterEmail, now.AddMinutes(2), catalog, RegistrationId.New()); // position 3 -> becomes 2
                     dbContext.Waitlists.Add(waitlist);
                     break;
                 }

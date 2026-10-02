@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -50,6 +51,11 @@ public class WaitlistEntityConfiguration : IEntityTypeConfiguration<Waitlist>
 
             b.Property(e => e.AddedAt)
                 .HasJsonPropertyName("added_at")
+                .IsRequired();
+
+            b.Property(e => e.RegistrationId)
+                .HasJsonPropertyName("registration_id")
+                .HasConversion<RegistrationId.EfCoreValueConverter>()
                 .IsRequired();
 
             b.Property(e => e.Status)

@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.TicketTypes;
 
@@ -78,7 +79,7 @@ internal sealed class TicketTypeManagementFixture
             {
                 var waitlist = Waitlist.Create(eventId, ExistingTicketTypeId, team.Id);
                 for (var i = 1; i <= _waitingCount; i++)
-                    waitlist.AddEntry(WaitingEmail(i), DateTimeOffset.UtcNow.AddMinutes(i), catalog);
+                    waitlist.AddEntry(WaitingEmail(i), DateTimeOffset.UtcNow.AddMinutes(i), catalog, RegistrationId.New());
                 db.Waitlists.Add(waitlist);
             }
         });

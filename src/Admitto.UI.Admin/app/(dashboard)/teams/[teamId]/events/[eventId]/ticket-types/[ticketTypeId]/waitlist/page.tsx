@@ -7,7 +7,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { ArrowLeft, Clock, Crown, Trash2, ListOrdered } from "lucide-react";
 import { toast } from "sonner";
 import { FormError } from "@/components/form-error";
-import { WaitlistDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { WaitlistDetailsDto, WaitlistEntryRow, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,14 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+
+function attendeeFullName(entry: WaitlistEntryRow) {
+    const full = [entry.firstName, entry.lastName].filter(Boolean).join(" ").trim();
+    if (full) return full;
+    const at = entry.email.indexOf("@");
+    return at > 0 ? entry.email.slice(0, at) : entry.email;
+}
+
 
 function StatCard({ label, value }: { label: string; value: number | string }) {
     return (
@@ -176,6 +184,7 @@ export default function WaitlistPage() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="w-16">#</TableHead>
+                                            <TableHead>Name</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Joined</TableHead>
                                             <TableHead className="w-48" />
@@ -183,17 +192,28 @@ export default function WaitlistPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {waitlist.activeEntries.map((entry) => (
-                                            <TableRow key={entry.entryId}>
+                                            <TableRow
+                                                key={entry.entryId}
+                                                className="cursor-pointer"
+                                                onClick={() =>
+                                                    router.push(
+                                                        `/teams/${teamId}/events/${eventId}/registrations/${entry.registrationId}?from=waitlist&ticketTypeId=${ticketTypeId}`
+                                                    )
+                                                }
+                                            >
                                                 <TableCell className="font-mono text-muted-foreground">
                                                     {entry.position}
                                                 </TableCell>
+                                                <TableCell className="font-medium">
+                                                    {attendeeFullName(entry)}
+                                                </TableCell>
                                                 <TableCell className="font-mono">
-                                                    {entry.maskedEmail}
+                                                    {entry.email}
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
                                                     {format(new Date(entry.joinedAt), "d MMM yyyy")}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell onClick={(e) => e.stopPropagation()}>
                                                     <div className="flex items-center justify-end gap-1">
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>
@@ -215,7 +235,7 @@ export default function WaitlistPage() {
                                                                 <AlertDialogHeader>
                                                                     <AlertDialogTitle>Promote to VIP</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        This issues {entry.maskedEmail} a VIP offer
+                                                                        This issues {entry.email} a VIP offer
                                                                         right away. It can&apos;t be revoked once
                                                                         sent. It&apos;s an admin ticket on top of
                                                                         public capacity: it doesn&apos;t use a public

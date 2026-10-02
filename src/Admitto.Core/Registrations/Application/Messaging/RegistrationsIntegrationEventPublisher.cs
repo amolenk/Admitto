@@ -189,7 +189,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.TicketTypeName,
             domainEvent.ExpiresAt,
             domainEvent.Reason.ToString(),
-            domainEvent.RegistrationId?.Value));
+            domainEvent.RegistrationId.Value));
 
         return ValueTask.CompletedTask;
     }

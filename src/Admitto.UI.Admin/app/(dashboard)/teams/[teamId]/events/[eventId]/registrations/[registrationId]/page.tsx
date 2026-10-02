@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft,
@@ -248,6 +248,14 @@ export default function AttendeeDetailPage() {
         eventId: string;
         registrationId: string;
     }>();
+    const searchParams = useSearchParams();
+    const cameFromWaitlist = searchParams.get("from") === "waitlist";
+    const waitlistTicketTypeId = searchParams.get("ticketTypeId");
+    const backLink =
+        cameFromWaitlist && waitlistTicketTypeId
+            ? `/teams/${teamId}/events/${eventId}/ticket-types/${waitlistTicketTypeId}/waitlist`
+            : `/teams/${teamId}/events/${eventId}/registrations`;
+    const backLabel = cameFromWaitlist && waitlistTicketTypeId ? "Waitlist" : "Registrations";
     const queryClient = useQueryClient();
     const { selectedTeam } = useTeams();
     const canManageAttendees = selectedTeam?.canManageAttendees === true;
@@ -420,8 +428,8 @@ export default function AttendeeDetailPage() {
             {/* Back link */}
             <div className="flex items-center gap-2 text-[13px]">
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-                    <Link href={`/teams/${teamId}/events/${eventId}/registrations`}>
-                        <ArrowLeft className="size-3.5" /> Registrations
+                    <Link href={backLink}>
+                        <ArrowLeft className="size-3.5" /> {backLabel}
                     </Link>
                 </Button>
                 {name && (

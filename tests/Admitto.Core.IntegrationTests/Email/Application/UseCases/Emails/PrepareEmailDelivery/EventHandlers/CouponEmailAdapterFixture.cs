@@ -83,7 +83,7 @@ internal sealed class CouponEmailAdapterFixture
             "Conference Pass",
             expiresAt,
             nameof(Amolenk.Admitto.Core.Registrations.Domain.ValueObjects.WaitlistOfferReason.AutomaticPromotion),
-            RegistrationId: null);
+            RegistrationId: Guid.Parse("55555555-5555-5555-5555-555555555555"));
 
         return new CouponEmailAdapterFixture(
             teamId,

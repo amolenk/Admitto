@@ -8,7 +8,10 @@ public sealed record WaitlistDetailsDto(
 public sealed record WaitlistEntryRow(
     Guid EntryId,
     int Position,
-    string MaskedEmail,
+    Guid RegistrationId,
+    string Email,
+    string FirstName,
+    string LastName,
     DateTimeOffset JoinedAt);
 
 public sealed record PendingNotificationRow(

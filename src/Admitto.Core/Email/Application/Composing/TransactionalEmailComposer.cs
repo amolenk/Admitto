@@ -74,10 +74,8 @@ internal sealed class TransactionalEmailComposer(
                     ["expires_at"] = FormatWithTimeZone(value.ExpiresAt, context.TimeZone),
                     ["intro_text"] = WaitlistOfferIntroText(value.Reason, context.EventName),
                     ["expiry_note"] = WaitlistOfferExpiryNote(value.Reason),
-                    ["cta_link"] = value.RegistrationId is { } registrationId
-                        ? context.GetLinks(registrationId).EditRegistrationLink
-                        : context.GetLinks(null).RegisterLink,
-                    ["cta_label"] = value.RegistrationId is not null ? "View Your Registration" : "Register Now"
+                    ["cta_link"] = context.GetLinks(value.RegistrationId).EditRegistrationLink,
+                    ["cta_label"] = "View Your Registration"
                 }),
             WaitlistOfferExpiredIntent value => (
                 BuiltInEmailTemplateNames.WaitlistOfferExpired,

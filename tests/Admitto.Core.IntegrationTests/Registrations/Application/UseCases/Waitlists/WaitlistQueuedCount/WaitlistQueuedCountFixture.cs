@@ -91,7 +91,7 @@ internal sealed class WaitlistQueuedCountFixture
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
             for (var i = 1; i <= _waitingCount; i++)
             {
-                waitlist.AddEntry(WaitingEmail(i), now.AddMinutes(i), catalog);
+                waitlist.AddEntry(WaitingEmail(i), now.AddMinutes(i), catalog, RegistrationId.New());
 
                 var registration = Registration.Create(
                     TeamId,

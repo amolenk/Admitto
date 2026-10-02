@@ -273,7 +273,10 @@ export function waitlistEntryRow(overrides: Partial<WaitlistEntryRow> = {}): Wai
     return {
         entryId: "11112222-0000-0000-0000-000000000001",
         position: 1,
-        maskedEmail: "ali***@example.com",
+        registrationId: "22223333-0000-0000-0000-000000000001",
+        email: "alice@example.com",
+        firstName: "Alice",
+        lastName: "Doe",
         joinedAt: "2026-08-01T10:00:00Z",
         ...overrides,
     };

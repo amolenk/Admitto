@@ -135,7 +135,7 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
         var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
             new WaitlistOfferIntent(
                 teamId, eventId, "WAIT-456", "Conference Pass", expiresAt,
-                WaitlistOfferReason.AutomaticPromotion, RegistrationId: null),
+                WaitlistOfferReason.AutomaticPromotion, RegistrationId: RegistrationId.New()),
             testContext.CancellationToken);
 
         rendered.EmailType.ShouldBe(BuiltInEmailTemplateNames.WaitlistNotification);
@@ -177,7 +177,7 @@ public sealed class TransactionalEmailComposerTests(TestContext testContext) : A
 
         var rendered = await fixture.BuildComposer(Environment).ComposeAsync(
             new WaitlistOfferIntent(
-                teamId, eventId, "WAIT-456", "Conference Pass", expiresAt, reason, RegistrationId: null),
+                teamId, eventId, "WAIT-456", "Conference Pass", expiresAt, reason, RegistrationId: RegistrationId.New()),
             testContext.CancellationToken);
 
         rendered.TextBody.ShouldNotContain("next person");

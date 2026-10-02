@@ -336,6 +336,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var ticketTypeId = TicketTypeId.New();
         var couponCode = CouponCode.New();
         var expiresAt = DateTimeOffset.UtcNow.AddHours(8);
+        var registrationId = RegistrationId.New();
 
         var domainEvent = new WaitlistCouponIssuedDomainEvent(
             teamId,
@@ -346,7 +347,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             "Conference Pass",
             expiresAt,
             WaitlistOfferReason.AutomaticPromotion,
-            RegistrationId: null);
+            registrationId);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -359,6 +360,6 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.TicketTypeName.ShouldBe("Conference Pass");
         evt.ExpiresAt.ShouldBe(expiresAt);
         evt.Reason.ShouldBe(nameof(WaitlistOfferReason.AutomaticPromotion));
-        evt.RegistrationId.ShouldBeNull();
+        evt.RegistrationId.ShouldBe(registrationId.Value);
     }
 }

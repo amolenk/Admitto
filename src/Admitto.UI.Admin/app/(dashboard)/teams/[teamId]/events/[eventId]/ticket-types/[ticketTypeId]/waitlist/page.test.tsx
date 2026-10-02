@@ -11,12 +11,13 @@ import {
     waitlistEntryRow,
 } from "@/test-utils/builders";
 import { renderWithProviders } from "@/test-utils/render";
-import { setRoute } from "@/test-utils/router";
+import { routerMock, setRoute } from "@/test-utils/router";
 
 import WaitlistPage from "./page";
 
 // Position shifting and coupon expiry are backend concerns; this page renders the supplied
-// snapshot, masks emails, and lets an organizer remove or VIP-promote an active entry.
+// snapshot with the attendee's full name and email, and lets an organizer remove, VIP-promote,
+// or navigate to an active entry's attendee details.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -75,9 +76,9 @@ describe("WaitlistPage", () => {
     // Given a ticket type with an active waitlist entry and a pending claim notification
     // When the page loads
     // Then the header shows the ticket type name, the stats reflect the snapshot, the entry's
-    // email is shown already masked, and the pending notification shows a relative countdown
+    // name and full email are shown, and the pending notification shows a relative countdown
     // to its expiry alongside the absolute time
-    it("renders entries with masked emails, joined dates and a claim-time countdown", async () => {
+    it("renders entries with names, full emails, joined dates and a claim-time countdown", async () => {
         vi.useFakeTimers({ toFake: ["Date"] });
         vi.setSystemTime(new Date("2026-08-01T10:00:00Z"));
 
@@ -87,19 +88,25 @@ describe("WaitlistPage", () => {
                     waitlistEntryRow({
                         entryId: "aaaa1111-0000-0000-0000-000000000001",
                         position: 1,
-                        maskedEmail: "ali***@example.com",
+                        email: "alice@example.com",
+                        firstName: "Alice",
+                        lastName: "Doe",
                         joinedAt: "2026-08-01T08:00:00Z",
                     }),
                     waitlistEntryRow({
                         entryId: "aaaa1111-0000-0000-0000-000000000002",
                         position: 2,
-                        maskedEmail: "bea***@example.com",
+                        email: "beatrice@example.com",
+                        firstName: "Beatrice",
+                        lastName: "Smith",
                         joinedAt: "2026-07-31T08:00:00Z",
                     }),
                     waitlistEntryRow({
                         entryId: "aaaa1111-0000-0000-0000-000000000003",
                         position: 3,
-                        maskedEmail: "cam***@example.com",
+                        email: "cameron@example.com",
+                        firstName: "Cameron",
+                        lastName: "Lee",
                         joinedAt: "2026-07-30T08:00:00Z",
                     }),
                 ],
@@ -128,17 +135,18 @@ describe("WaitlistPage", () => {
         const [activeTable, pendingTable] = screen.getAllByRole("table");
         const activeRows = within(activeTable!).getAllByRole("row").slice(1);
         const expectedEntries = [
-            ["1", "ali***@example.com", "1 Aug 2026"],
-            ["2", "bea***@example.com", "31 Jul 2026"],
-            ["3", "cam***@example.com", "30 Jul 2026"],
+            ["1", "Alice Doe", "alice@example.com", "1 Aug 2026"],
+            ["2", "Beatrice Smith", "beatrice@example.com", "31 Jul 2026"],
+            ["3", "Cameron Lee", "cameron@example.com", "30 Jul 2026"],
         ];
 
         expect(activeRows).toHaveLength(expectedEntries.length);
-        expectedEntries.forEach(([position, email, joined], index) => {
+        expectedEntries.forEach(([position, name, email, joined], index) => {
             const cells = within(activeRows[index]!).getAllByRole("cell");
             expect(cells[0]).toHaveTextContent(position);
-            expect(cells[1]).toHaveTextContent(email);
-            expect(cells[2]).toHaveTextContent(joined);
+            expect(cells[1]).toHaveTextContent(name);
+            expect(cells[2]).toHaveTextContent(email);
+            expect(cells[3]).toHaveTextContent(joined);
         });
 
         const pendingRows = within(pendingTable!).getAllByRole("row").slice(1);
@@ -147,6 +155,61 @@ describe("WaitlistPage", () => {
         expect(pendingCells[0]).toHaveTextContent("bob***@example.com");
         expect(pendingCells[1]).toHaveTextContent("1 Aug 2026, 15:00");
         expect(pendingCells[2]).toHaveTextContent("in about 5 hours");
+    });
+
+    // Given an active waitlist entry
+    // When the organizer clicks its row (not an action button)
+    // Then they are navigated to that entry's attendee details, flagged as having come from
+    // this waitlist so the Back button can return here
+    it("navigates to the attendee's registration when an active entry row is clicked", async () => {
+        mockEndpoints(
+            waitlistDetailsDto({
+                activeEntries: [
+                    waitlistEntryRow({
+                        entryId: "aaaa1111-0000-0000-0000-000000000001",
+                        registrationId: "ccccdddd-0000-0000-0000-000000000001",
+                        email: "alice@example.com",
+                        firstName: "Alice",
+                        lastName: "Doe",
+                    }),
+                ],
+            }),
+        );
+
+        const { user } = renderPage();
+
+        const alice = await screen.findByText("alice@example.com");
+        await user.click(alice.closest("tr")!);
+
+        expect(routerMock.push).toHaveBeenCalledWith(
+            `/teams/${TEAM_ID}/events/${EVENT_ID}/registrations/ccccdddd-0000-0000-0000-000000000001?from=waitlist&ticketTypeId=${TICKET_TYPE_ID}`,
+        );
+    });
+
+    // Given an active waitlist entry
+    // When the organizer clicks an action button in that row (e.g. Remove from waitlist)
+    // Then the row click does not also navigate to the attendee's details
+    it("does not navigate when an action button in the row is clicked", async () => {
+        mockEndpoints(
+            waitlistDetailsDto({
+                activeEntries: [
+                    waitlistEntryRow({
+                        entryId: "aaaa1111-0000-0000-0000-000000000001",
+                        email: "alice@example.com",
+                    }),
+                ],
+            }),
+        );
+        del.mockResolvedValue(undefined);
+
+        const { user } = renderPage();
+
+        const alice = await screen.findByText("alice@example.com");
+        await user.click(
+            within(alice.closest("tr")!).getByRole("button", { name: "Remove from waitlist" }),
+        );
+
+        expect(routerMock.push).not.toHaveBeenCalled();
     });
 
     // Given a ticket type with nobody on its waitlist
@@ -180,7 +243,7 @@ describe("WaitlistPage", () => {
                 waitlistEntryRow({
                     entryId: "aaaa1111-0000-0000-0000-000000000002",
                     position: 2,
-                    maskedEmail: "bea***@example.com",
+                    email: "beatrice@example.com",
                 }),
             ],
         });
@@ -195,7 +258,7 @@ describe("WaitlistPage", () => {
                     waitlistEntryRow({
                         entryId: "aaaa1111-0000-0000-0000-000000000002",
                         position: 1,
-                        maskedEmail: "bea***@example.com",
+                        email: "beatrice@example.com",
                     }),
                 ],
                 stats: { totalWaiting: 1, totalPending: 0, sentToday: 0 },
@@ -204,7 +267,7 @@ describe("WaitlistPage", () => {
 
         const { user } = renderPage();
 
-        const initialAlice = await screen.findByText("ali***@example.com");
+        const initialAlice = await screen.findByText("alice@example.com");
         expect(within(initialAlice.closest("tr")!).getAllByRole("cell")[0]).toHaveTextContent("1");
 
         const row = initialAlice.closest("tr")!;
@@ -216,13 +279,13 @@ describe("WaitlistPage", () => {
             ),
         );
         await waitFor(() =>
-            expect(screen.queryByText("ali***@example.com")).not.toBeInTheDocument(),
+            expect(screen.queryByText("alice@example.com")).not.toBeInTheDocument(),
         );
-        const remainingBob = screen.getByText("bea***@example.com");
+        const remainingBob = screen.getByText("beatrice@example.com");
         const remainingRow = remainingBob.closest("tr")!;
         const remainingCells = within(remainingRow).getAllByRole("cell");
         expect(remainingCells[0]).toHaveTextContent("1");
-        expect(remainingCells[1]).toHaveTextContent("bea***@example.com");
+        expect(remainingCells[2]).toHaveTextContent("beatrice@example.com");
         expect(screen.queryByText("No one is currently on the waitlist.")).not.toBeInTheDocument();
 
         const waitingStat = statContent("Waiting");
@@ -244,7 +307,7 @@ describe("WaitlistPage", () => {
                 waitlistEntryRow({
                     entryId: "aaaa1111-0000-0000-0000-000000000002",
                     position: 2,
-                    maskedEmail: "bea***@example.com",
+                    email: "beatrice@example.com",
                 }),
             ],
             pendingNotifications: [],
@@ -270,7 +333,7 @@ describe("WaitlistPage", () => {
 
         const { user } = renderPage();
 
-        const bea = await screen.findByText("bea***@example.com");
+        const bea = await screen.findByText("beatrice@example.com");
         await user.click(
             within(bea.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
         );
@@ -289,9 +352,9 @@ describe("WaitlistPage", () => {
 
         const [activeTable, pendingTable] = screen.getAllByRole("table");
         await waitFor(() =>
-            expect(within(activeTable!).queryByText("bea***@example.com")).not.toBeInTheDocument(),
+            expect(within(activeTable!).queryByText("beatrice@example.com")).not.toBeInTheDocument(),
         );
-        expect(within(activeTable!).getByText("ali***@example.com")).toBeInTheDocument();
+        expect(within(activeTable!).getByText("alice@example.com")).toBeInTheDocument();
         expect(within(pendingTable!).getByText("bea***@example.com")).toBeInTheDocument();
         expect(
             within(pendingTable!).queryByRole("button", { name: "Promote to VIP" }),
@@ -325,7 +388,7 @@ describe("WaitlistPage", () => {
 
         const { user } = renderPage();
 
-        const ali = await screen.findByText("ali***@example.com");
+        const ali = await screen.findByText("alice@example.com");
         await user.click(
             within(ali.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
         );
@@ -355,7 +418,7 @@ describe("WaitlistPage", () => {
 
         const { user } = renderPage();
 
-        const ali = await screen.findByText("ali***@example.com");
+        const ali = await screen.findByText("alice@example.com");
         await user.click(
             within(ali.closest("tr")!).getByRole("button", { name: "Promote to VIP" }),
         );
@@ -390,7 +453,7 @@ describe("WaitlistPage", () => {
 
         const { user } = renderPage();
 
-        const ali = await screen.findByText("ali***@example.com");
+        const ali = await screen.findByText("alice@example.com");
         await user.click(
             within(ali.closest("tr")!).getByRole("button", { name: "Remove from waitlist" }),
         );
@@ -399,7 +462,7 @@ describe("WaitlistPage", () => {
             expect(toast.error).toHaveBeenCalledWith("The waitlist entry is no longer active."),
         );
         expect(toast.success).not.toHaveBeenCalled();
-        expect(screen.getByText("ali***@example.com")).toBeInTheDocument();
+        expect(screen.getByText("alice@example.com")).toBeInTheDocument();
     });
 
     // Given the waitlist query fails

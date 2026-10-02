@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Shared;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.Services;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -84,6 +85,10 @@ internal sealed class RegisterAttendeeHandler(
         var outstandingOfferTicketTypeIds = await GetOutstandingOfferTicketTypeIdsAsync(
             waitlists, email, cancellationToken);
 
+        // Pre-generated so the same id can back both the waitlist entries joined below and the registration
+        // created afterward (waitlisted tickets are only known once that loop completes).
+        var registrationId = existingRegistration?.Id ?? RegistrationId.New();
+
         var hasLiveRegistration = existingRegistration?.Status == RegistrationStatus.Registered
                                   || (existingRegistration?.Status == RegistrationStatus.Waitlisted
                                       && (currentWaitlistIds.Count > 0 || outstandingOfferTicketTypeIds.Count > 0));
@@ -120,7 +125,7 @@ internal sealed class RegisterAttendeeHandler(
                 waitlistsById[waitlistTicketTypeId] = waitlist;
             }
 
-            waitlist.AddEntry(email, now, catalog);
+            waitlist.AddEntry(email, now, catalog, registrationId);
         }
 
         var waitlistedTickets = RegistrationCouponHelpers.DescribeActiveWaitlistEntries(
@@ -138,7 +143,8 @@ internal sealed class RegisterAttendeeHandler(
                 tickets,
                 additionalDetails,
                 now,
-                waitlistedTickets);
+                waitlistedTickets,
+                registrationId);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
         else if (publicRegisterIds.Count > 0 || couponGrantedIds.Count > 0 || !hasLiveRegistration)

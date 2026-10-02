@@ -115,10 +115,10 @@ internal sealed class UpdatePartnerRegistrationFixture
         f._catalog = catalog;
 
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, workshopId, f.TeamId);
-        waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog);
-        waitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow, catalog);
+        waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
+        waitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
         f._coupon = waitlist.IssueNextCoupon(
-            f._ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null)!;
+            f._ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
         f._coupon.ClearDomainEvents();
         waitlist.ClearDomainEvents();
         f._waitlists.Add(waitlist);
@@ -167,14 +167,14 @@ internal sealed class UpdatePartnerRegistrationFixture
 
         var workshopWaitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
             f.EventId, workshopId, f.TeamId);
-        workshopWaitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog);
-        workshopWaitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow, catalog);
+        workshopWaitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
+        workshopWaitlist.AddEntry(OtherQueuedEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
         workshopWaitlist.ClearDomainEvents();
         f._waitlists.Add(workshopWaitlist);
 
         var masterclassWaitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
             f.EventId, masterclassId, f.TeamId);
-        masterclassWaitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog);
+        masterclassWaitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
         masterclassWaitlist.ClearDomainEvents();
         f._waitlists.Add(masterclassWaitlist);
 
@@ -207,7 +207,7 @@ internal sealed class UpdatePartnerRegistrationFixture
         {
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
                 f.EventId, workshopId, f.TeamId);
-            waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog);
+            waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
             waitlist.ClearDomainEvents();
             f._waitlists.Add(waitlist);
         }
@@ -244,7 +244,7 @@ internal sealed class UpdatePartnerRegistrationFixture
 
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
             f.EventId, workshopId, f.TeamId);
-        waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog);
+        waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
         waitlist.ClearDomainEvents();
         f._waitlists.Add(waitlist);
 
@@ -277,7 +277,7 @@ internal sealed class UpdatePartnerRegistrationFixture
         {
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(
                 f.EventId, workshopId, f.TeamId);
-            waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog);
+            waitlist.AddEntry(AttendeeEmail, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
             waitlist.ClearDomainEvents();
             f._waitlists.Add(waitlist);
         }

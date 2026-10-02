@@ -68,7 +68,7 @@ internal sealed class CancelRegistrationFixture
                     waitlistedTicketTypeId, TicketTypeName.From("Workshop"), [], publicCapacity: 1, waitlistEnabled: true);
 
                 var waitlist = Waitlist.Create(EventId, waitlistedTicketTypeId, TeamId);
-                waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, catalog);
+                waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, catalog, RegistrationId.New());
                 dbContext.Waitlists.Add(waitlist);
             }
 

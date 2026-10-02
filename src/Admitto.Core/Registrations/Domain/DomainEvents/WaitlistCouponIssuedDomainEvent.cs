@@ -13,4 +13,4 @@ public record WaitlistCouponIssuedDomainEvent(
     string TicketTypeName,
     DateTimeOffset ExpiresAt,
     WaitlistOfferReason Reason,
-    RegistrationId? RegistrationId) : DomainEvent;
+    RegistrationId RegistrationId) : DomainEvent;

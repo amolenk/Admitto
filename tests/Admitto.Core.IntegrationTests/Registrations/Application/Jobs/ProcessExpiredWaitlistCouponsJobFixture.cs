@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.Jobs;
 
@@ -119,7 +120,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
             var now = DateTimeOffset.UtcNow;
             for (var i = 0; i < totalEntries; i++)
-                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i), catalog);
+                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i), catalog, RegistrationId.New());
 
             dbContext.Waitlists.Add(waitlist);
         }, cancellationToken);

@@ -134,7 +134,7 @@ public sealed class WithdrawWaitlistEntriesTests(TestContext testContext) : Aspi
                 .FirstOrDefaultAsync(w => w.Id == fixture.TicketTypeIds[0], testContext.CancellationToken);
             waitlist.ShouldNotBeNull();
 
-            var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null);
+            var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow);
 
             coupon.ShouldBeNull();
         });

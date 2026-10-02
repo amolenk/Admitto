@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
 
@@ -88,11 +89,11 @@ internal sealed class ProcessWaitlistNotificationsFixture
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(EventId, TicketTypeId, TeamId);
             var now = DateTimeOffset.UtcNow;
             for (var i = 0; i < activeEntries + OutstandingVipOffers; i++)
-                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i), catalog);
+                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i), catalog, RegistrationId.New());
             for (var i = 0; i < OutstandingVipOffers; i++)
             {
                 var vipEntry = waitlist.Entries.Where(e => e.Status == WaitlistEntryStatus.Active).MaxBy(e => e.Position)!;
-                dbContext.Coupons.Add(waitlist.IssueCouponToEntry(vipEntry.Id, ticketedEvent, catalog, now, _ => null));
+                dbContext.Coupons.Add(waitlist.IssueCouponToEntry(vipEntry.Id, ticketedEvent, catalog, now));
             }
 
             foreach (var ticket in tickets.Take(FreeSeats))

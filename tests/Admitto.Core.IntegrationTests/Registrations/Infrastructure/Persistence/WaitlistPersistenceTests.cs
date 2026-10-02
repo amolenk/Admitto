@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Infrastructure.Persistence;
 
@@ -16,7 +17,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
     {
         // Arrange — persist a VIP coupon, then strip the origin key from the stored JSON
         var (waitlist, ticketedEvent, catalog) = CreateWaitlistWithOneEntry();
-        waitlist.IssueCouponToEntry(waitlist.Entries.Single().Id, ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null);
+        waitlist.IssueCouponToEntry(waitlist.Entries.Single().Id, ticketedEvent, catalog, DateTimeOffset.UtcNow);
         var ticketTypeId = waitlist.Id;
 
         await Environment.RegistrationsDatabase.SeedAsync(
@@ -47,7 +48,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
     {
         // Arrange
         var (waitlist, ticketedEvent, catalog) = CreateWaitlistWithOneEntry();
-        var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow, _ => null)!;
+        var coupon = waitlist.IssueNextCoupon(ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
         var ticketTypeId = waitlist.Id;
 
         await Environment.RegistrationsDatabase.SeedAsync(
@@ -86,7 +87,7 @@ public sealed class WaitlistPersistenceTests(TestContext testContext) : AspireIn
             waitlistEnabled: true);
 
         var waitlist = Waitlist.Create(eventId, ticketTypeId, teamId);
-        waitlist.AddEntry(EmailAddress.From("attendee@example.com"), DateTimeOffset.UtcNow, catalog);
+        waitlist.AddEntry(EmailAddress.From("attendee@example.com"), DateTimeOffset.UtcNow, catalog, RegistrationId.New());
 
         return (waitlist, ticketedEvent, catalog);
     }

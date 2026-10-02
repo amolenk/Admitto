@@ -122,8 +122,8 @@ internal sealed class GetRegistrationDetailsFixture
             catalog.AddTicketType(WaitlistedTicketTypeId, TicketTypeName.From("Workshop"), [], publicCapacity: 1, waitlistEnabled: true);
             catalog.ClearDomainEvents();
             var waitlist = Waitlist.Create(EventId, WaitlistedTicketTypeId, TeamId);
-            waitlist.AddEntry(EmailAddress.From("someone-else@example.com"), DateTimeOffset.UtcNow.AddDays(-1), catalog);
-            waitlist.AddEntry(registration.Email, DateTimeOffset.UtcNow, catalog);
+            waitlist.AddEntry(EmailAddress.From("someone-else@example.com"), DateTimeOffset.UtcNow.AddDays(-1), catalog, RegistrationId.New());
+            waitlist.AddEntry(registration.Email, DateTimeOffset.UtcNow, catalog, RegistrationId.New());
             waitlist.ClearDomainEvents();
             await environment.RegistrationsDatabase.SeedAsync(db =>
             {

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:37643/"
+      "url": "http://localhost:37981/"
     }
   ],
   "paths": {
@@ -9839,7 +9839,10 @@
         "required": [
           "entryId",
           "position",
-          "maskedEmail",
+          "registrationId",
+          "email",
+          "firstName",
+          "lastName",
           "joinedAt"
         ],
         "type": "object",
@@ -9856,7 +9859,17 @@
             ],
             "format": "int32"
           },
-          "maskedEmail": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
             "type": "string"
           },
           "joinedAt": {

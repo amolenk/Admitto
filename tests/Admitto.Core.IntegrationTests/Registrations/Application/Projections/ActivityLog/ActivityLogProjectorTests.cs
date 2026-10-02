@@ -497,68 +497,6 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
-    // Given a WaitlistCouponIssued domain event with no registration id, for a recipient with a matching registration
-    // When the projector handles the event
-    // Then the registration is resolved by team, event and email, and a WaitlistOfferSent entry is created for it
-    [TestMethod]
-    public async ValueTask HandleAsync_WaitlistCouponIssuedWithoutRegistrationId_ResolvesRegistrationByEmail()
-    {
-        var teamId = TeamId.New();
-        var eventId = TicketedEventId.New();
-        var email = EmailAddress.From("alice@example.com");
-        var registration = Registration.Create(
-            teamId, eventId, email, FirstName.From("Alice"), LastName.From("Doe"), []);
-        await Environment.RegistrationsDatabase.SeedAsync(db => db.Registrations.Add(registration));
-
-        var domainEvent = new WaitlistCouponIssuedDomainEvent(
-            teamId,
-            eventId,
-            TicketTypeId.New(),
-            email,
-            CouponCode.New(),
-            "Workshop",
-            DateTimeOffset.UtcNow.AddHours(24),
-            WaitlistOfferReason.VipPromotion,
-            RegistrationId: null);
-
-        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context, Environment.RegistrationsDatabase.Context);
-        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
-
-        await Environment.RegistrationsDatabase.AssertAsync(async db =>
-        {
-            var entry = await db.ActivityLog.SingleAsync(
-                a => a.RegistrationId == registration.Id.Value,
-                testContext.CancellationToken);
-            entry.ActivityType.ShouldBe(ActivityType.WaitlistOfferSent);
-        });
-    }
-
-    // Given a WaitlistCouponIssued domain event with no registration id and no matching registration
-    // When the projector handles the event
-    // Then no activity log entry is created
-    [TestMethod]
-    public async ValueTask HandleAsync_WaitlistCouponIssuedWithoutMatchingRegistration_CreatesNoEntry()
-    {
-        var domainEvent = new WaitlistCouponIssuedDomainEvent(
-            TeamId.New(),
-            TicketedEventId.New(),
-            TicketTypeId.New(),
-            EmailAddress.From("nobody@example.com"),
-            CouponCode.New(),
-            "Workshop",
-            DateTimeOffset.UtcNow.AddHours(24),
-            WaitlistOfferReason.AutomaticPromotion,
-            RegistrationId: null);
-
-        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context, Environment.RegistrationsDatabase.Context);
-        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
-
-        await Environment.RegistrationsDatabase.AssertAsync(async db =>
-        {
-            (await db.ActivityLog.CountAsync(testContext.CancellationToken)).ShouldBe(0);
-        });
-    }
-
     // Given a WaitlistCouponExpired domain event for a recipient with a matching registration
     // When the projector handles the event
     // Then a WaitlistOfferExpired activity log entry is created with the ticket type as metadata

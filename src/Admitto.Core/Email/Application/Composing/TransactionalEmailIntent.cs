@@ -45,7 +45,7 @@ internal sealed record WaitlistOfferIntent(
     string TicketTypeName,
     DateTimeOffset ExpiresAt,
     WaitlistOfferReason Reason,
-    RegistrationId? RegistrationId)
+    RegistrationId RegistrationId)
     : TransactionalEmailIntent(TeamId, TicketedEventId);
 
 internal sealed record WaitlistOfferExpiredIntent(
