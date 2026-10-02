@@ -52,6 +52,11 @@ _Avoid_: Pending, unconfirmed
 A single-use coupon issued to one attendee for one ticket type's waitlist, automatically to the front of the queue or manually as a VIP promotion, carrying a claim-window expiry. An automatic offer holds a public seat (waitlist-held capacity) until it is redeemed or lapses; a VIP offer holds none, since it claims an admin ticket.
 _Avoid_: Waitlist notification, promotion coupon
 
+## Offered (waitlist entry status)
+
+A waitlist entry's status while it holds an unredeemed waitlist offer: it has left the active queue (excluded from position/count) but still counts as the attendee's current selection for duplicate-join checks, partner updates, and the "does this registration have anything left" exhaustion check. It becomes `Removed` when the offer is redeemed, expires, or is withdrawn.
+_Avoid_: Pending entry, claimed entry
+
 ## VIP promotion
 
 An admin action that issues a waitlist offer to one specific waitlist entry out of first-in-line order, removing it from the queue immediately. It claims an admin ticket on top of public capacity: it never uses a public seat, and nobody else on the waitlist loses their place because of it.
