@@ -212,6 +212,32 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         });
     }
 
+    // Given one free seat at 18:00 and quiet hours from 20:00 to 08:00
+    // When an eight-hour waitlist offer is issued
+    // Then the coupon and tracked offer expire at 14:00 the next day
+    [TestMethod]
+    public async ValueTask ProcessWaitlistNotifications_BeforeQuietHours_PreservesRemainingClaimTime()
+    {
+        var fakeTime = new FakeTimeProvider(new DateTimeOffset(2026, 6, 15, 18, 0, 0, TimeSpan.Zero));
+        var fixture = ProcessWaitlistNotificationsFixture.WithOneEntryAndQuietHours20To08();
+        await fixture.SetupAsync(Environment);
+        var sut = new ProcessWaitlistNotificationsHandler(Environment.RegistrationsDatabase.Context, fakeTime);
+
+        await sut.HandleAsync(
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value),
+            testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var expectedExpiry = new DateTimeOffset(2026, 6, 16, 14, 0, 0, TimeSpan.Zero);
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.ExpiresAt.ShouldBe(expectedExpiry);
+
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Coupons.ShouldHaveSingleItem().ExpiresAt.ShouldBe(expectedExpiry);
+        });
+    }
+
     // Given a waitlist with one active entry and one free seat
     // When waitlist notifications are processed
     // Then the promoted attendee's waitlist offer email is prepared with the correct coupon and expiry

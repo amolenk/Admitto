@@ -22,6 +22,9 @@ internal sealed class ProcessWaitlistNotificationsFixture
     public static ProcessWaitlistNotificationsFixture WithOneEntryOneSlot() =>
         new();
 
+    public static ProcessWaitlistNotificationsFixture WithOneEntryAndQuietHours20To08() =>
+        new() { QuietHoursStart = new TimeOnly(20, 0) };
+
     /// <summary>
     /// Two waitlist entries, only one free seat.
     /// </summary>
@@ -56,6 +59,8 @@ internal sealed class ProcessWaitlistNotificationsFixture
     /// </summary>
     public int OutstandingVipOffers { get; private init; }
 
+    private TimeOnly QuietHoursStart { get; init; } = new(22, 0);
+
     public async ValueTask SetupAsync(
         IntegrationTestEnvironment environment,
         int activeEntries = 1,
@@ -74,6 +79,7 @@ internal sealed class ProcessWaitlistNotificationsFixture
                 DateTimeOffset.UtcNow.AddDays(30),
                 DateTimeOffset.UtcNow.AddDays(31),
                 TimeZone);
+            ticketedEvent.ConfigureWaitlistPolicy(QuietHoursStart, new TimeOnly(8, 0));
             dbContext.TicketedEvents.Add(ticketedEvent);
 
             // TicketCatalog — ticket type with WaitlistEnabled + WaitlistMode active
