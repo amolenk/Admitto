@@ -73,7 +73,7 @@ public sealed class WaitlistClaimWindowCalculatorTests
 
     // Given the current time is outside quiet hours
     // When the claim expiry is computed with a 24-hour claim window
-    // Then it returns the current time plus 24 hours
+    // Then it preserves all 24 waking hours across the overnight quiet period
     [TestMethod]
     public void ComputeExpiresAt_CustomClaimWindow_UsesProvidedHours()
     {
@@ -85,7 +85,8 @@ public sealed class WaitlistClaimWindowCalculatorTests
         var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(utcNow, Amsterdam, QuietStart, QuietEnd, 24, FarFutureEventStart);
 
         // Assert
-        result.ShouldBe(utcNow.AddHours(24), tolerance: TimeSpan.FromSeconds(1));
+        // The last waking hour ends at 22:00 tomorrow, so the deadline moves to the next quiet-hours end.
+        result.ShouldBe(UtcAt(8, tz).AddDays(2));
     }
 
     // Given a same-day quiet window and a current time inside it
@@ -126,12 +127,11 @@ public sealed class WaitlistClaimWindowCalculatorTests
         result.ShouldBe(utcNow.AddHours(8), tolerance: TimeSpan.FromSeconds(1));
     }
 
-    // Given an offer issued in the evening, outside quiet hours, whose claim window would otherwise end
-    // during the following quiet-hours period
+    // Given an evening offer whose claim window crosses overnight quiet hours
     // When the claim expiry is computed
-    // Then it is pushed forward to the moment quiet hours end, so it never expires during quiet hours
+    // Then the remaining two waking hours resume after quiet hours end
     [TestMethod]
-    public void ComputeExpiresAt_WindowWouldEndDuringQuietHours_PushesPastQuietHoursEnd()
+    public void ComputeExpiresAt_WindowWouldEndDuringQuietHours_PreservesRemainingWakingHours()
     {
         // Arrange — issued 20:00 local (outside 22:00-08:00 quiet hours); a naive 4-hour window would
         // expire at 00:00 local, inside quiet hours
@@ -142,9 +142,100 @@ public sealed class WaitlistClaimWindowCalculatorTests
         var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(
             utcNow, Amsterdam, QuietStart, QuietEnd, 4, FarFutureEventStart);
 
-        // Assert — pushed to 08:00 local the next day, not 00:00
-        var expectedExpiresAt = UtcAt(8, tz).AddDays(1);
+        // Assert — two hours before quiet hours and two after, expiring at 10:00 the next day
+        var expectedExpiresAt = UtcAt(10, tz).AddDays(1);
         result.ShouldBe(expectedExpiresAt, tolerance: TimeSpan.FromSeconds(1));
+    }
+
+    // Given quiet hours from 20:00 to 08:00 and an eight-hour offer issued at 18:00
+    // When the claim expiry is computed
+    // Then two hours count before quiet hours and six after, expiring at 14:00 the next day
+    [TestMethod]
+    public void ComputeExpiresAt_OfferAt18WithQuietHours20To08_ExpiresAt14NextDay()
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(Amsterdam.Value);
+        var utcNow = UtcAt(18, tz);
+
+        var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(
+            utcNow, Amsterdam, new TimeOnly(20, 0), QuietEnd, 8, FarFutureEventStart);
+
+        result.ShouldBe(UtcAt(14, tz).AddDays(1));
+    }
+
+    // Given an offer issued exactly when quiet hours start or end
+    // When an eight-hour claim expiry is computed
+    // Then the claim clock starts at 08:00 and expires at 16:00
+    [TestMethod]
+    [DataRow(20, 1)]
+    [DataRow(8, 0)]
+    public void ComputeExpiresAt_AtQuietHoursBoundary_CountsFullWindowAfterQuietEnd(int localHour, int daysLater)
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(Amsterdam.Value);
+
+        var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(
+            UtcAt(localHour, tz), Amsterdam, new TimeOnly(20, 0), QuietEnd, 8, FarFutureEventStart);
+
+        result.ShouldBe(UtcAt(16, tz).AddDays(daysLater));
+    }
+
+    // Given an offer with exactly two waking hours left before quiet hours begin
+    // When a two-hour claim expiry is computed
+    // Then the deadline moves to 08:00 the next day rather than expiring at the quiet-hours start
+    [TestMethod]
+    public void ComputeExpiresAt_WindowEndsAtQuietStart_ExpiresAtQuietEnd()
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(Amsterdam.Value);
+
+        var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(
+            UtcAt(18, tz), Amsterdam, new TimeOnly(20, 0), QuietEnd, 2, FarFutureEventStart);
+
+        result.ShouldBe(UtcAt(8, tz).AddDays(1));
+    }
+
+    // Given a 32-hour offer issued at 18:00 with daily quiet hours from 20:00 to 08:00
+    // When the claim expiry spans three quiet periods
+    // Then all 32 waking hours are preserved, expiring at 14:00 three days later
+    [TestMethod]
+    public void ComputeExpiresAt_WindowCrossesMultipleQuietPeriods_PreservesAllWakingHours()
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(Amsterdam.Value);
+        var utcNow = UtcAt(18, tz);
+
+        var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(
+            utcNow, Amsterdam, new TimeOnly(20, 0), QuietEnd, 32, FarFutureEventStart);
+
+        result.ShouldBe(UtcAt(14, tz).AddDays(3));
+    }
+
+    // Given an eight-hour offer issued before a same-day quiet period from 13:00 to 15:00
+    // When the claim expiry is computed
+    // Then the clock pauses for two hours even though the naive expiry is outside quiet hours
+    [TestMethod]
+    public void ComputeExpiresAt_WindowCrossesSameDayQuietHours_PreservesAllWakingHours()
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(Amsterdam.Value);
+        var utcNow = UtcAt(10, tz);
+
+        var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(
+            utcNow, Amsterdam, new TimeOnly(13, 0), new TimeOnly(15, 0), 8, FarFutureEventStart);
+
+        result.ShouldBe(UtcAt(20, tz));
+    }
+
+    // Given an evening offer before the spring-forward night with quiet hours from 20:00 to 08:00
+    // When an eight-hour claim expiry is computed across the DST change
+    // Then two waking hours count before the night and six after, expiring at 14:00 local
+    [TestMethod]
+    public void ComputeExpiresAt_WindowCrossesSpringForward_PreservesWakingHoursInEventTimeZone()
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(Amsterdam.Value);
+        var localNow = new DateTime(2026, 3, 28, 18, 0, 0, DateTimeKind.Unspecified);
+        var utcNow = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(localNow, tz));
+
+        var result = WaitlistClaimWindowCalculator.ComputeExpiresAt(
+            utcNow, Amsterdam, new TimeOnly(20, 0), QuietEnd, 8, FarFutureEventStart);
+
+        result.ShouldBe(new DateTimeOffset(2026, 3, 29, 12, 0, 0, TimeSpan.Zero));
     }
 
     // Given a quiet-hours end that falls inside a DST spring-forward gap (a local time that never occurs)
