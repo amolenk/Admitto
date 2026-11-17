@@ -30,6 +30,8 @@ internal sealed class GetTicketTypesHandler(IRegistrationsWriteStore writeStore)
                 tt.SelfServiceEnabled,
                 tt.WaitlistEnabled,
                 tt.WaitlistMode,
+                tt.WaitlistQueuedCount,
+                tt.WaitlistHeldCapacity,
                 tt.ClaimWindowHours,
                 tt.MaxReconfirmationEmails?.Value))
             .ToList();

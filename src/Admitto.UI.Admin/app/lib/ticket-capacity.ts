@@ -91,3 +91,41 @@ export function formatCapacitySummary(c: TicketCapacity): string {
     const effectiveCapacity = c.effectiveCapacity == null ? "∞" : String(c.effectiveCapacity);
     return `${c.total}/${effectiveCapacity}`;
 }
+
+/** What saving a new public capacity will do to the people on the ticket type's waitlist. */
+export interface PublicCapacityChangePreview {
+    /** People at the front of the queue who will be sent an offer straight away. */
+    offers: number;
+    /** Public seats left over after those offers. While the waitlist is active they open for self-service only once
+     *  every offer has been claimed or has expired. */
+    seatsOpening: number;
+}
+
+/**
+ * Mirrors the backend's waitlist offer decision (`TicketCatalog.UpdateTicketType`, then
+ * `ProcessWaitlistNotificationsHandler`): raising the public capacity of a ticket type in waitlist mode sends an
+ * offer to the front of the queue for every public seat that isn't used or held by an outstanding offer. Admin
+ * tickets come on top of the public capacity (ADR-019), so they don't reduce the number of offers.
+ * Returns `null` when the change sends no offers.
+ */
+export function previewPublicCapacityChange(
+    t: TicketTypeDto,
+    newPublicCapacity: number | undefined,
+): PublicCapacityChangePreview | null {
+    const currentCapacity = t.publicCapacity == null ? null : Number(t.publicCapacity);
+    if (newPublicCapacity === undefined || newPublicCapacity === currentCapacity) return null;
+    if (!t.waitlistEnabled || !t.waitlistMode) return null;
+
+    const available = newPublicCapacity
+        - (Number(t.publicUsedCapacity) || 0)
+        - (Number(t.waitlistHeldCapacity) || 0);
+    const offers = Math.min(Math.max(0, available), Number(t.waitlistQueuedCount) || 0);
+    if (offers === 0) return null;
+
+    return { offers, seatsOpening: available - offers };
+}
+
+/** "1 person" / "6 people"-style count. */
+export function countOf(count: number, singular: string, plural: string): string {
+    return `${count} ${count === 1 ? singular : plural}`;
+}

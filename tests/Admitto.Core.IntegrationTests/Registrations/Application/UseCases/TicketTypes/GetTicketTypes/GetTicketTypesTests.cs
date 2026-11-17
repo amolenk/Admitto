@@ -57,6 +57,28 @@ public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegra
         workshop.AdminUsedCount.ShouldBe(3);
     }
 
+    // Given a ticket type with people queued on its waitlist and outstanding automatic offers
+    // When the ticket types are queried
+    // Then the queued count and the seats held by offers are returned, so the admin UI can preview a capacity change
+    [TestMethod]
+    public async ValueTask GetTicketTypes_Waitlist_ReturnsQueuedCountAndHeldCapacity()
+    {
+        // Arrange
+        var fixture = GetTicketTypesFixture.WithWaitlist(queued: 6, held: 2);
+        await fixture.SetupAsync(Environment);
+
+        var query = new GetTicketTypesQuery(fixture.EventId, fixture.TeamId);
+        var sut = new GetTicketTypesHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        var result = await sut.HandleAsync(query, testContext.CancellationToken);
+
+        // Assert
+        var workshop = result.ShouldHaveSingleItem();
+        workshop.WaitlistQueuedCount.ShouldBe(6);
+        workshop.WaitlistHeldCapacity.ShouldBe(2);
+    }
+
     // Given an event with no ticket catalog
     // When the ticket types are queried
     // Then an empty list is returned

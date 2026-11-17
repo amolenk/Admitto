@@ -8,6 +8,7 @@ internal sealed class GetTicketTypesFixture
 {
     private bool _seedCatalog;
     private (int publicCapacity, int publicUsed, int adminUsed)? _publicAndAdminScenario;
+    private (int queued, int held)? _waitlistScenario;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
@@ -30,6 +31,11 @@ internal sealed class GetTicketTypesFixture
         _publicAndAdminScenario = (publicCapacity, publicUsed, adminUsed)
     };
 
+    public static GetTicketTypesFixture WithWaitlist(int queued, int held) => new()
+    {
+        _waitlistScenario = (queued, held)
+    };
+
     public static GetTicketTypesFixture NoCatalog() => new();
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -49,6 +55,27 @@ internal sealed class GetTicketTypesFixture
                     catalog.Claim([WorkshopId], ClaimMode.Public);
                 for (var i = 0; i < scenario.adminUsed; i++)
                     catalog.Claim([WorkshopId], ClaimMode.Admin);
+
+                dbContext.TicketCatalogs.Add(catalog);
+            });
+            return;
+        }
+
+        if (_waitlistScenario is { } waitlist)
+        {
+            await environment.RegistrationsDatabase.SeedAsync(dbContext =>
+            {
+                var catalog = TicketCatalog.Create(EventId, TeamId);
+                catalog.AddTicketType(
+                    WorkshopId,
+                    TicketTypeName.From("Workshop"),
+                    [],
+                    publicCapacity: 10);
+
+                for (var i = 0; i < waitlist.queued; i++)
+                    catalog.JoinWaitlistQueue(WorkshopId);
+                for (var i = 0; i < waitlist.held; i++)
+                    catalog.HoldForWaitlistOffer(WorkshopId);
 
                 dbContext.TicketCatalogs.Add(catalog);
             });

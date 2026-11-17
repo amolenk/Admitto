@@ -9524,6 +9524,8 @@
           "selfServiceEnabled",
           "waitlistEnabled",
           "waitlistMode",
+          "waitlistQueuedCount",
+          "waitlistHeldCapacity",
           "claimWindowHours",
           "maxReconfirmationEmails"
         ],
@@ -9575,6 +9577,22 @@
           },
           "waitlistMode": {
             "type": "boolean"
+          },
+          "waitlistQueuedCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "waitlistHeldCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "claimWindowHours": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",

@@ -10,5 +10,7 @@ internal sealed record TicketTypeDto(
     bool SelfServiceEnabled,
     bool WaitlistEnabled,
     bool WaitlistMode,
+    int WaitlistQueuedCount,
+    int WaitlistHeldCapacity,
     int ClaimWindowHours,
     int? MaxReconfirmationEmails);
