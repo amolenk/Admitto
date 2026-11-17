@@ -254,6 +254,69 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
+    // Given an attendee with an early-bird ticket who is queued on the sold-out workshop's waitlist
+    // When an admin adds the workshop ticket to their registration
+    // Then they leave the workshop waitlist and its queued count drops to zero
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_AdminAddsWaitlistedTicketType_RemovesQueuedEntry()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithWaitlistedWorkshop(issueOffer: false);
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value],
+            ChangeMode.Admin);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Entries.ShouldHaveSingleItem().Status.ShouldBe(WaitlistEntryStatus.Removed);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            var workshop = catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!;
+            workshop.WaitlistQueuedCount.ShouldBe(0);
+            workshop.AdminUsedCount.ShouldBe(1);
+        });
+    }
+
+    // Given an attendee with an early-bird ticket who holds an automatic waitlist offer for the workshop
+    // When an admin adds the workshop ticket to their registration
+    // Then the offer is withdrawn: its entry is removed, the coupon expires and the held public seat is released
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_AdminAddsOfferedTicketType_WithdrawsOffer()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithWaitlistedWorkshop(issueOffer: true);
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value],
+            ChangeMode.Admin);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Entries.ShouldHaveSingleItem().Status.ShouldBe(WaitlistEntryStatus.Removed);
+            waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Expired);
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldBeNull();
+            coupon.ExpiresAt.ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.WaitlistHeldCapacity.ShouldBe(0);
+        });
+    }
+
     // Given a waitlist coupon offering a workshop ticket
     // When the attendee self-serves a ticket change that omits the offered workshop ticket
     // Then a no-coupon-ticket-type-selected error is thrown and the coupon remains unredeemed

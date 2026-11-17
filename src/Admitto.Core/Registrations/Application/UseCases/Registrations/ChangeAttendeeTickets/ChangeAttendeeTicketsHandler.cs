@@ -108,8 +108,9 @@ internal sealed class ChangeAttendeeTicketsHandler(
             })
             .ToList();
 
-        // 10. Apply the change to the registration. Waitlist entries are untouched by this change,
-        // except that a coupon redemption clears the entries for the ticket types it granted.
+        // 10. Take the attendee off the waitlists for every ticket type they now hold. Ticket types claimed
+        // without the coupon leave their queue (or have their outstanding offer withdrawn) here; the ones the
+        // coupon granted are cleared by the redemption below.
         var waitlists = await writeStore.Waitlists
             .Where(w => w.EventId == eventId && w.TeamId == teamId)
             .ToListAsync(cancellationToken);
@@ -117,10 +118,15 @@ internal sealed class ChangeAttendeeTicketsHandler(
             .Where(w => w.HasActiveEntry(registration.Email))
             .Select(w => w.Id)
             .ToList();
+
+        await RegistrationCouponHelpers.LeaveWaitlistsAsync(
+            writeStore, waitlists, catalog, registration.Email, toClaim, timeProvider.GetUtcNow(), cancellationToken);
+
+        // 11. Apply the change to the registration.
         registration.ChangeTickets(
             newTickets,
             catalog.DescribeTicketTypes(currentWaitlistIds),
-            catalog.DescribeTicketTypes(currentWaitlistIds.Except(couponGrantedIds)),
+            catalog.DescribeTicketTypes(currentWaitlistIds.Except(toClaim).Except(couponGrantedIds)),
             timeProvider.GetUtcNow());
 
         if (coupon is null)

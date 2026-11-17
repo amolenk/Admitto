@@ -73,6 +73,38 @@ internal static class RegistrationCouponHelpers
         offer?.Expire(now);
     }
 
+    /// <summary>
+    /// For each of the given ticket types the attendee was just given an admin ticket for, takes them off that
+    /// waitlist and withdraws any offer they hold for it. The admin ticket doesn't redeem the offer: it expires
+    /// without an expired-offer email, and an automatic offer's hold goes back to the catalog, so the seat goes to
+    /// the next person waiting.
+    /// </summary>
+    public static async ValueTask LeaveWaitlistsAsync(
+        IRegistrationsWriteStore writeStore,
+        IEnumerable<Waitlist> eventWaitlists,
+        TicketCatalog catalog,
+        EmailAddress email,
+        IReadOnlyCollection<TicketTypeId> ticketTypeIds,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var withdrawnCouponIds = new List<CouponId>();
+        foreach (var waitlist in eventWaitlists.Where(w => ticketTypeIds.Contains(w.Id)))
+        {
+            if (waitlist.RemoveEntry(email, catalog) is { } couponId)
+                withdrawnCouponIds.Add(couponId);
+        }
+
+        if (withdrawnCouponIds.Count == 0)
+            return;
+
+        var offers = await writeStore.Coupons
+            .Where(c => withdrawnCouponIds.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+        foreach (var offer in offers)
+            offer.Expire(now);
+    }
+
     public static async ValueTask ApplyRedemptionToWaitlistsAsync(
         IRegistrationsWriteStore writeStore,
         IEnumerable<Waitlist> eventWaitlists,
