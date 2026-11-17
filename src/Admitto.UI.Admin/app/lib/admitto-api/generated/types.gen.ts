@@ -550,6 +550,8 @@ export type TicketTypeDto = {
     selfServiceEnabled: boolean;
     waitlistEnabled: boolean;
     waitlistMode: boolean;
+    waitlistQueuedCount: number | string;
+    waitlistHeldCapacity: number | string;
     claimWindowHours: number | string;
     maxReconfirmationEmails: null | number | string;
 };

@@ -102,6 +102,8 @@ export function ticketTypeDto(overrides: Partial<TicketTypeDto> = {}): TicketTyp
         selfServiceEnabled: true,
         waitlistEnabled: false,
         waitlistMode: false,
+        waitlistQueuedCount: 0,
+        waitlistHeldCapacity: 0,
         claimWindowHours: 0,
         maxReconfirmationEmails: null,
         ...overrides,

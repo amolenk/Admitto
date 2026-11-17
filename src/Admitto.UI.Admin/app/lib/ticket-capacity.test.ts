@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { ticketTypeDto } from "@/test-utils/builders";
 
-import { formatCapacitySummary, ticketCapacity, totalTicketCapacity } from "./ticket-capacity";
+import {
+    formatCapacitySummary,
+    previewPublicCapacityChange,
+    ticketCapacity,
+    totalTicketCapacity,
+} from "./ticket-capacity";
 
 describe("ticketCapacity", () => {
     // Given a ticket type with admin tickets on top of a full public capacity
@@ -82,5 +87,42 @@ describe("formatCapacitySummary", () => {
             ticketCapacity(ticketTypeDto({ publicCapacity: null, publicUsedCapacity: 7 })));
 
         expect(summary).toBe("7/∞");
+    });
+});
+
+describe("previewPublicCapacityChange", () => {
+    const waiting = { publicCapacity: 7, publicUsedCapacity: 7, adminUsedCount: 8, waitlistEnabled: true, waitlistMode: true, waitlistQueuedCount: 6 };
+
+    // Given 7 public seats taken, 8 admin tickets on top and 6 people waiting
+    // When the public capacity is raised to 15
+    // Then everyone waiting gets an offer and 2 seats are left over, because admin tickets don't count
+    it("offers the freed public seats to the queue, ignoring admin tickets", () => {
+        expect(previewPublicCapacityChange(ticketTypeDto(waiting), 15)).toEqual({ offers: 6, seatsOpening: 2 });
+    });
+
+    // Given 6 people waiting
+    // When the public capacity is raised by fewer seats than people waiting
+    // Then only that many offers go out
+    it("caps the offers at the freed seats", () => {
+        expect(previewPublicCapacityChange(ticketTypeDto(waiting), 10)).toEqual({ offers: 3, seatsOpening: 0 });
+    });
+
+    // Given outstanding offers already holding public seats
+    // When the public capacity is raised
+    // Then the held seats are covered before anyone else gets an offer
+    it("covers seats held by outstanding offers first", () => {
+        const t = ticketTypeDto({ ...waiting, publicUsedCapacity: 5, waitlistHeldCapacity: 2 });
+        expect(previewPublicCapacityChange(t, 8)).toEqual({ offers: 1, seatsOpening: 0 });
+    });
+
+    // Given a ticket type that is not in waitlist mode, or a capacity that doesn't free a seat
+    // When the public capacity changes
+    // Then no offers are previewed
+    it("returns null when the change sends no offers", () => {
+        expect(previewPublicCapacityChange(ticketTypeDto({ ...waiting, waitlistMode: false }), 15)).toBeNull();
+        expect(previewPublicCapacityChange(ticketTypeDto(waiting), 7)).toBeNull();
+        expect(previewPublicCapacityChange(ticketTypeDto(waiting), 6)).toBeNull();
+        expect(previewPublicCapacityChange(ticketTypeDto(waiting), undefined)).toBeNull();
+        expect(previewPublicCapacityChange(ticketTypeDto({ ...waiting, waitlistQueuedCount: 0 }), 15)).toBeNull();
     });
 });

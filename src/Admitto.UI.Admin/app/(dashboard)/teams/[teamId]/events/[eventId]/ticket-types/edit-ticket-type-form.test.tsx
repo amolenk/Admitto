@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiClient } from "@/lib/api-client";
@@ -234,5 +234,103 @@ describe("EditTicketTypeForm waitlist disable and capacity-limit removal", () =>
         await user.click(screen.getByRole("switch", { name: /limit capacity/i }));
 
         expect(screen.queryByText(/everyone waiting will receive an offer/i)).not.toBeInTheDocument();
+    });
+});
+
+describe("EditTicketTypeForm raising capacity while people are waiting", () => {
+    // 7 public seats taken, 8 admin tickets on top, 6 people waiting: the situation where an organizer, thinking
+    // of 15 attendees, raised the public capacity to 15 and unexpectedly sent 6 offers.
+    const waitingTicketType = {
+        publicCapacity: 7,
+        publicUsedCapacity: 7,
+        adminUsedCount: 8,
+        waitlistEnabled: true,
+        waitlistMode: true,
+        waitlistQueuedCount: 6,
+    };
+
+    beforeEach(() => {
+        put.mockReset();
+        put.mockResolvedValue(undefined);
+    });
+
+    function setPublicCapacity(value: string) {
+        fireEvent.change(screen.getByPlaceholderText("e.g. 100"), { target: { value } });
+    }
+
+    // Given a ticket type with public, admin and waitlisted attendees
+    // When the edit form renders
+    // Then the capacity field shows that admin tickets come on top and how many people are waiting
+    it("shows the public, admin and waitlist counts next to the public capacity", () => {
+        renderForm(waitingTicketType);
+
+        expect(screen.getByTestId("capacity-breakdown")).toHaveTextContent(
+            "Now: 7 public tickets taken, plus 8 admin tickets on top (not counted); 6 people on the waitlist.",
+        );
+    });
+
+    // Given 6 people waiting and 8 admin tickets on top of 7 public seats
+    // When the organizer raises the public capacity to 15
+    // Then a note says all 6 will receive an offer and 2 seats open once the offers are settled
+    it("previews the offers the new capacity will send", async () => {
+        renderForm(waitingTicketType);
+
+        setPublicCapacity("15");
+
+        const note = screen.getByRole("alert");
+        expect(note).toHaveTextContent("6 people on the waitlist will receive an offer");
+        expect(note).toHaveTextContent("frees 8 public seats; admin tickets don't count towards it");
+        expect(note).toHaveTextContent("The other 2 seats open for self-service once every offer");
+    });
+
+    // Given the organizer raised the public capacity while people are waiting
+    // When they save
+    // Then nothing is saved until they confirm sending the offers
+    it("asks for confirmation before saving a capacity that sends offers", async () => {
+        const { user } = renderForm(waitingTicketType);
+
+        setPublicCapacity("15");
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+        const dialog = await screen.findByRole("alertdialog");
+        expect(dialog).toHaveTextContent("Send 6 waitlist offers?");
+        expect(put).not.toHaveBeenCalled();
+
+        await user.click(screen.getByRole("button", { name: "Save and send offers" }));
+
+        await waitFor(() =>
+            expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, expect.objectContaining({ publicCapacity: 15 })),
+        );
+    });
+
+    // Given the offer confirmation is showing
+    // When the organizer cancels
+    // Then nothing is saved
+    it("saves nothing when the organizer cancels the offer confirmation", async () => {
+        const { user } = renderForm(waitingTicketType);
+
+        setPublicCapacity("15");
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+        await user.click(await screen.findByRole("button", { name: "Cancel" }));
+
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(put).not.toHaveBeenCalled();
+    });
+
+    // Given people are waiting
+    // When the organizer saves a capacity change that frees no public seat
+    // Then it saves without a note or confirmation
+    it("saves without confirmation when the change sends no offers", async () => {
+        const { user } = renderForm(waitingTicketType);
+
+        setPublicCapacity("6");
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+        await waitFor(() =>
+            expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, expect.objectContaining({ publicCapacity: 6 })),
+        );
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
 });

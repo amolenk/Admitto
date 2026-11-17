@@ -28,7 +28,13 @@ import {
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
-import { PUBLIC_CAPACITY_HELP, requirePublicCapacityWhenLimited } from "@/lib/ticket-capacity";
+import {
+    countOf,
+    PUBLIC_CAPACITY_HELP,
+    previewPublicCapacityChange,
+    requirePublicCapacityWhenLimited,
+    type PublicCapacityChangePreview,
+} from "@/lib/ticket-capacity";
 
 const editSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -41,6 +47,10 @@ const editSchema = z.object({
 }).superRefine(requirePublicCapacityWhenLimited);
 
 type EditValues = z.infer<typeof editSchema>;
+
+type PendingConfirmation =
+    | { kind: "disable-waitlist"; values: EditValues }
+    | { kind: "send-offers"; values: EditValues; preview: PublicCapacityChangePreview };
 
 export function EditTicketTypeForm({
     teamId,
@@ -71,20 +81,37 @@ export function EditTicketTypeForm({
 
     const limitCapacity = form.watch("limitCapacity");
     const waitlistEnabled = form.watch("waitlistEnabled");
-    const [showDisableWaitlistConfirm, setShowDisableWaitlistConfirm] = useState(false);
-    const [pendingSubmitValues, setPendingSubmitValues] = useState<EditValues | null>(null);
+    const publicCapacity = form.watch("publicCapacity");
+    const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
 
     // A waitlist only has people waiting while the ticket type is in waitlist mode. Removing the capacity
     // limit also switches the waitlist off, but then everyone waiting receives an offer instead.
     const hasPeopleWaiting = ticketType.waitlistEnabled && ticketType.waitlistMode;
+
+    const publicUsed = Number(ticketType.publicUsedCapacity) || 0;
+    const adminUsed = Number(ticketType.adminUsedCount) || 0;
+    const queued = Number(ticketType.waitlistQueuedCount) || 0;
+
+    // Raising the public capacity while people are waiting sends them offers on save. Admin tickets come on top of
+    // the public capacity, so they don't reduce the number of offers — easy to miss when thinking in total attendees.
+    const offerPreview = limitCapacity && waitlistEnabled
+        ? previewPublicCapacityChange(ticketType, publicCapacity)
+        : null;
 
     async function onSubmit(values: EditValues) {
         const isDisablingActiveWaitlist =
             hasPeopleWaiting && values.limitCapacity && !values.waitlistEnabled;
 
         if (isDisablingActiveWaitlist) {
-            setPendingSubmitValues(values);
-            setShowDisableWaitlistConfirm(true);
+            setPendingConfirmation({ kind: "disable-waitlist", values });
+            return;
+        }
+
+        const preview = values.limitCapacity && values.waitlistEnabled
+            ? previewPublicCapacityChange(ticketType, values.publicCapacity)
+            : null;
+        if (preview) {
+            setPendingConfirmation({ kind: "send-offers", values, preview });
             return;
         }
 
@@ -109,27 +136,45 @@ export function EditTicketTypeForm({
 
     return (
         <>
-            <AlertDialog open={showDisableWaitlistConfirm} onOpenChange={setShowDisableWaitlistConfirm}>
+            <AlertDialog
+                open={pendingConfirmation !== null}
+                onOpenChange={(open) => {
+                    if (!open) setPendingConfirmation(null);
+                }}
+            >
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Disable waitlist?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Disabling the waitlist removes everyone who is still waiting. You&apos;ll need to
-                            inform them yourself. Offers already sent stay valid until they expire.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
+                    {pendingConfirmation?.kind === "send-offers" ? (
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                Send {countOf(pendingConfirmation.preview.offers, "waitlist offer", "waitlist offers")}?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                <OfferPreviewText
+                                    preview={pendingConfirmation.preview}
+                                    publicCapacity={pendingConfirmation.values.publicCapacity}
+                                />{" "}
+                                Offers are emailed straight away and can&apos;t be taken back.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                    ) : (
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Disable waitlist?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Disabling the waitlist removes everyone who is still waiting. You&apos;ll need to
+                                inform them yourself. Offers already sent stay valid until they expire.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                    )}
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setPendingSubmitValues(null)}>
-                            Cancel
-                        </AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={async () => {
-                                if (pendingSubmitValues) {
-                                    await performSave(pendingSubmitValues);
+                                if (pendingConfirmation) {
+                                    await performSave(pendingConfirmation.values);
                                 }
                             }}
                         >
-                            Disable waitlist
+                            {pendingConfirmation?.kind === "send-offers" ? "Save and send offers" : "Disable waitlist"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -223,10 +268,27 @@ export function EditTicketTypeForm({
                                             <FormDescription>
                                                 {PUBLIC_CAPACITY_HELP}
                                             </FormDescription>
+                                            <p className="text-xs text-muted-foreground" data-testid="capacity-breakdown">
+                                                Now: {countOf(publicUsed, "public ticket", "public tickets")} taken
+                                                {adminUsed > 0 && <>, plus {countOf(adminUsed, "admin ticket", "admin tickets")} on top (not counted)</>}
+                                                {hasPeopleWaiting && queued > 0 && <>; {countOf(queued, "person", "people")} on the waitlist</>}
+                                                .
+                                            </p>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
+                            )}
+                            {offerPreview && (
+                                <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertTitle>
+                                        {countOf(offerPreview.offers, "person", "people")} on the waitlist will receive an offer
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        <OfferPreviewText preview={offerPreview} publicCapacity={publicCapacity} />
+                                    </AlertDescription>
+                                </Alert>
                             )}
                             {limitCapacity && (
                                 <FormField
@@ -326,6 +388,29 @@ export function EditTicketTypeForm({
                     </SheetFooter>
                 </form>
             </Form>
+        </>
+    );
+}
+
+function OfferPreviewText({
+    preview,
+    publicCapacity,
+}: {
+    preview: PublicCapacityChangePreview;
+    publicCapacity: number | undefined;
+}) {
+    const freed = preview.offers + preview.seatsOpening;
+    return (
+        <>
+            Public capacity {publicCapacity} frees {countOf(freed, "public seat", "public seats")}; admin tickets
+            don&apos;t count towards it. The first {countOf(preview.offers, "person", "people")} on the waitlist
+            {preview.offers === 1 ? " gets" : " get"} an offer.
+            {preview.seatsOpening > 0 && (
+                <>
+                    {" "}The other {countOf(preview.seatsOpening, "seat opens", "seats open")} for self-service once
+                    every offer has been claimed or has expired.
+                </>
+            )}
         </>
     );
 }
