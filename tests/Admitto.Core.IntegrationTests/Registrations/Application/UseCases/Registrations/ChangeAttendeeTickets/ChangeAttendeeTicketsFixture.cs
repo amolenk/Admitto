@@ -88,6 +88,13 @@ internal sealed class ChangeAttendeeTicketsFixture
         return f;
     }
     public static ChangeAttendeeTicketsFixture WithWaitlistCoupon(bool overlappingTickets = false)
+        => WithWaitlistedWorkshop(issueOffer: true, overlappingTickets);
+
+    /// <summary>
+    /// The attendee holds an early-bird ticket and is on the sold-out workshop's waitlist: still queued, or (with
+    /// <paramref name="issueOffer"/>) holding an automatic offer for it.
+    /// </summary>
+    public static ChangeAttendeeTicketsFixture WithWaitlistedWorkshop(bool issueOffer, bool overlappingTickets = false)
     {
         var f = new ChangeAttendeeTicketsFixture();
         f._ticketedEvent = f.MakeActiveEvent();
@@ -108,9 +115,12 @@ internal sealed class ChangeAttendeeTicketsFixture
 
         var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(f.EventId, workshopId, f.TeamId);
         waitlist.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow, catalog, RegistrationId.New());
-        f._coupon = waitlist.IssueNextCoupon(
-            f._ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
-        f._coupon.ClearDomainEvents();
+        if (issueOffer)
+        {
+            f._coupon = waitlist.IssueNextCoupon(
+                f._ticketedEvent, catalog, DateTimeOffset.UtcNow)!;
+            f._coupon.ClearDomainEvents();
+        }
         waitlist.ClearDomainEvents();
         f._waitlist = waitlist;
 
